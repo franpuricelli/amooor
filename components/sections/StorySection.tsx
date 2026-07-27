@@ -1,7 +1,7 @@
 "use client";
 
 import StoryRow from "@/components/StoryRow";
-import { content } from "@/lib/content";
+import { useContent } from "@/lib/tenant";
 import { photos } from "@/lib/photos";
 
 /**
@@ -10,6 +10,7 @@ import { photos } from "@/lib/photos";
  * "historia" (3 beats) or "cocina" (1 beat) purely from the id.
  */
 export default function StorySection({ id }: { id: string }) {
+  const content = useContent();
   const section = content.story[id as keyof typeof content.story];
   if (!section) return null;
 

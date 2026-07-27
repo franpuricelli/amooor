@@ -1,13 +1,14 @@
 "use client";
 
 import SectionHead from "@/components/SectionHead";
-import { content, fill } from "@/lib/content";
+import { fill } from "@/lib/content";
+import { useContent } from "@/lib/tenant";
 import { full, photos, thumb } from "@/lib/photos";
 import { useLightbox } from "@/components/Lightbox";
 
 export default function Momentos({ id }: { id: string }) {
   const { open } = useLightbox();
-  const { moments, ui } = content;
+  const { moments, ui } = useContent();
 
   return (
     <section id={id} className="section-pad">

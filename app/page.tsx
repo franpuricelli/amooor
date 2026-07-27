@@ -1,13 +1,17 @@
+"use client";
+
 import SmoothScroll from "@/components/SmoothScroll";
 import RevealInit from "@/components/RevealInit";
 import LightboxProvider from "@/components/Lightbox";
 import HeartCursor from "@/components/HeartCursor";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
-import { content } from "@/lib/content";
+import { useContent } from "@/lib/tenant";
 import { SECTION_REGISTRY } from "@/components/sections/registry";
 
 export default function Home() {
+  const content = useContent();
+
   return (
     <SmoothScroll>
       <LightboxProvider>

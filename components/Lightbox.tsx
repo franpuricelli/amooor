@@ -10,7 +10,8 @@ import {
   type ReactNode,
 } from "react";
 import { useLenis } from "lenis/react";
-import { content, fill } from "@/lib/content";
+import { fill } from "@/lib/content";
+import { useContent } from "@/lib/tenant";
 
 /**
  * Fixed-size stage for the carousel. The (already-cached) thumb renders
@@ -59,6 +60,7 @@ function Filmstrip({
   index: number;
   jumpTo: (i: number) => void;
 }) {
+  const content = useContent();
   const currentRef = useRef<HTMLButtonElement>(null);
 
   // keep the active thumb centered as you navigate
@@ -111,6 +113,7 @@ export function useLightbox() {
 }
 
 export default function LightboxProvider({ children }: { children: ReactNode }) {
+  const content = useContent();
   const [state, setState] = useState<LightboxState | null>(null);
   const lenis = useLenis();
 

@@ -1,7 +1,11 @@
-import { content, fill } from "@/lib/content";
+"use client";
+
+import { fill } from "@/lib/content";
+import { useContent } from "@/lib/tenant";
 import DrawingFlip from "@/components/DrawingFlip";
 
 export default function Footer() {
+  const content = useContent();
   const { footer, dates } = content;
   return (
     <footer className="footer section-dark">

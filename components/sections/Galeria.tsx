@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import SectionHead from "@/components/SectionHead";
 import { allPhotos, full, thumb, totalPhotos } from "@/lib/photos";
-import { content, fill } from "@/lib/content";
+import { fill } from "@/lib/content";
+import { useContent } from "@/lib/tenant";
 import { useLightbox } from "@/components/Lightbox";
 import { useLenis } from "lenis/react";
 
@@ -17,7 +18,7 @@ export default function Galeria({ id }: { id: string }) {
   const { open } = useLightbox();
   const lenis = useLenis();
   const [showAll, setShowAll] = useState(false);
-  const { gallery, ui } = content;
+  const { gallery, ui } = useContent();
 
   const items = useMemo(
     () => allPhotos.map((p) => ({ src: full(p.cat, p.slug), thumb: thumb(p.cat, p.slug) })),

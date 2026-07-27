@@ -1,9 +1,12 @@
+"use client";
+
 import SectionHead from "@/components/SectionHead";
 import TikTokEmbed from "@/components/TikTokEmbed";
-import { content, fill } from "@/lib/content";
+import { fill } from "@/lib/content";
+import { useContent } from "@/lib/tenant";
 
 export default function Pelis({ id }: { id: string }) {
-  const { watch } = content;
+  const { watch } = useContent();
   const list = watch.list;
   const featured = list.filter((m) => m.note);
   const rest = list.filter((m) => !m.note);

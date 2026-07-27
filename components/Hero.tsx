@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { content } from "@/lib/content";
 import type { Person } from "@/lib/content";
+import { useContent } from "@/lib/tenant";
 import { full } from "@/lib/photos";
 import Hearts, { PixelHeart } from "@/components/Hearts";
 
@@ -32,6 +32,7 @@ function PersonCard({
   side: Side;
   active: boolean;
 }) {
+  const content = useContent();
   return (
     <aside
       className={`person-card glass-card ${side} ${active ? "on" : ""}`}
@@ -68,6 +69,7 @@ function PersonCard({
 }
 
 export default function Hero({ id }: { id: string }) {
+  const content = useContent();
   const [active, setActive] = useState<Side | null>(null);
   const { left, right } = content.people;
   const { hero } = content;

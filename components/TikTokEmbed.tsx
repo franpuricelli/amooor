@@ -1,7 +1,7 @@
 "use client";
 
 import Script from "next/script";
-import { content } from "@/lib/content";
+import { useContent } from "@/lib/tenant";
 
 /**
  * The closing video of the "watch" section. Two providers, chosen by data:
@@ -11,7 +11,7 @@ import { content } from "@/lib/content";
  *    the replacement path so a tenant can drop in their own clip.
  */
 export default function TikTokEmbed() {
-  const v = content.watch.video;
+  const v = useContent().watch.video;
 
   if (v.provider === "video" && v.src) {
     return (

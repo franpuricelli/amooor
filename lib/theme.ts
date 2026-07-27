@@ -143,10 +143,12 @@ export function paletteVars(p: Palette): Record<string, string> {
   return out;
 }
 
-/** Resuelve un theme (id de paleta + overrides opcionales) a una Palette concreta. */
+/** Resuelve un theme (id de paleta + overrides opcionales) a una Palette concreta.
+ *  Si la paleta no existe (dato de un tenant), cae a la default en vez de romper. */
 export function resolvePalette(theme: {
-  palette: PaletteId;
+  palette: PaletteId | string;
   overrides?: Partial<Palette>;
 }): Palette {
-  return { ...palettes[theme.palette], ...(theme.overrides ?? {}) };
+  const base = palettes[theme.palette as PaletteId] ?? palettes[defaultPaletteId];
+  return { ...base, ...(theme.overrides ?? {}) };
 }

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { content, fill } from "@/lib/content";
+import { fill } from "@/lib/content";
+import { useContent } from "@/lib/tenant";
 import { totalPhotos } from "@/lib/photos";
 
 function diff(from: Date, to: Date) {
@@ -21,6 +22,7 @@ const pad = (n: number) => String(n).padStart(2, "0");
 const NUM_LOCALE = "es-AR";
 
 export default function Stats({ id }: { id: string }) {
+  const content = useContent();
   const { stats, dates, watch } = content;
   const together = new Date(`${dates.together}T00:00:00`);
   const met = new Date(`${dates.met}T00:00:00`);

@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { content } from "@/lib/content";
+import { useContent } from "@/lib/tenant";
 
 /** Hand-drawn card in the footer: click to flip it over and reveal the message. */
 export default function DrawingFlip() {
   const [flipped, setFlipped] = useState(false);
-  const { drawing } = content;
+  const { drawing } = useContent();
 
   // NOTE: the `reveal` class lives on a wrapper whose className never changes,
   // so React doesn't wipe the `in` class that RevealInit adds to the DOM.

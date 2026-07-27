@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { full, photos, thumb } from "@/lib/photos";
-import { content, fill } from "@/lib/content";
+import { fill } from "@/lib/content";
+import { useContent } from "@/lib/tenant";
 import { useLightbox } from "@/components/Lightbox";
 
 export interface StoryPhoto {
@@ -32,6 +33,7 @@ export default function StoryRow({
   flip?: boolean;
 }) {
   const { open } = useLightbox();
+  const content = useContent();
   const catsKey = cats.join(",");
   const album = useMemo(
     () => cats.flatMap((c) => photos(c).map((slug) => ({ cat: c, slug }))),

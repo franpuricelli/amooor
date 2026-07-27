@@ -3,7 +3,8 @@
 import SectionHead from "@/components/SectionHead";
 import PhotoStrip from "@/components/PhotoStrip";
 import { useLightbox } from "@/components/Lightbox";
-import { content, fill } from "@/lib/content";
+import { fill } from "@/lib/content";
+import { useContent } from "@/lib/tenant";
 import { full, photos, thumb } from "@/lib/photos";
 
 /**
@@ -12,7 +13,7 @@ import { full, photos, thumb } from "@/lib/photos";
  */
 export default function Viajes({ id }: { id: string }) {
   const { open } = useLightbox();
-  const { travel, ui } = content;
+  const { travel, ui } = useContent();
 
   return (
     <section id={id}>
