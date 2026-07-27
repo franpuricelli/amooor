@@ -19,7 +19,7 @@ import {
 
 // ── contentSchema (Zod) ──────────────────────────────────────────────────────
 const trait = z.object({ icon: z.string(), label: z.string() });
-const artist = z.object({ name: z.string(), img: z.string() });
+const artist = z.object({ name: z.string(), img: z.string().optional() });
 const person = z.object({
   name: z.string(),
   tagline: z.string(),

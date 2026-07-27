@@ -836,12 +836,24 @@ section {
   font-size: 0.92rem;
   font-weight: 550;
 }
-.artist-row img {
+.artist-avatar {
   width: 34px;
   height: 34px;
   border-radius: 50%;
   object-fit: cover;
   border: 1px solid var(--glass-border);
+  flex-shrink: 0;
+}
+/* neutral placeholder when an artist has no image: initial on a glass disc */
+.artist-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass-strong);
+  color: var(--white);
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1;
 }
 .hero-hint {
   position: absolute;

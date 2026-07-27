@@ -52,7 +52,13 @@ function PersonCard({
         <span className="person-artists-label">{content.people.artistsLabel}</span>
         {person.artists.map((a) => (
           <span className="artist-row" key={a.name}>
-            <img src={a.img} alt="" loading="lazy" />
+            {a.img ? (
+              <img className="artist-avatar" src={a.img} alt="" loading="lazy" />
+            ) : (
+              <span className="artist-avatar artist-avatar-fallback" aria-hidden>
+                {a.name.trim().charAt(0).toUpperCase()}
+              </span>
+            )}
             {a.name}
           </span>
         ))}

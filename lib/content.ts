@@ -27,7 +27,7 @@ export interface Trait {
 }
 export interface Artist {
   name: string;
-  img: string;
+  img?: string; // opcional — sin imagen se muestra un avatar neutro con la inicial
 }
 export interface Person {
   name: string;
@@ -132,9 +132,9 @@ export const content = {
         { icon: "📈", label: "Marketing loverr" },
       ],
       artists: [
-        { name: "Sabrina Carpenter", img: "/brand/artists/sabrina-carpenter.jpg" },
-        { name: "Tini", img: "/brand/artists/tini.jpg" },
-        { name: "Emilia", img: "/brand/artists/emilia.jpg" },
+        { name: "Sabrina Carpenter" },
+        { name: "Tini" },
+        { name: "Emilia" },
       ],
     } as Person,
     right: {
@@ -147,9 +147,9 @@ export const content = {
         { icon: "🍳", label: "Cocinar" },
       ],
       artists: [
-        { name: "The Beatles", img: "/brand/artists/the-beatles.jpg" },
-        { name: "Red Hot Chili Peppers", img: "/brand/artists/rhcp.jpg" },
-        { name: "Imagine Dragons", img: "/brand/artists/imagine-dragons.jpg" },
+        { name: "The Beatles" },
+        { name: "Red Hot Chili Peppers" },
+        { name: "Imagine Dragons" },
       ],
     } as Person,
   },
