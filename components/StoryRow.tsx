@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { full, photos, thumb } from "@/lib/photos";
+import { content, fill } from "@/lib/content";
 import { useLightbox } from "@/components/Lightbox";
 
 export interface StoryPhoto {
@@ -11,20 +12,21 @@ export interface StoryPhoto {
 
 /**
  * One beat of the story: narrative text on one side, a small tilted photo
- * collage on the other. The photos are a complement — the full album lives
- * behind the button / the collage clicks (lightbox).
+ * collage on the other. All copy is passed in from `content` by the section.
  */
 export default function StoryRow({
   kicker,
   title,
+  titleHeart = false,
   text,
   cats,
   picks,
   flip = false,
 }: {
   kicker: string;
-  title: React.ReactNode;
-  text: React.ReactNode;
+  title: string;
+  titleHeart?: boolean;
+  text: string;
   cats: string[]; // categories that make up this beat's full album
   picks: StoryPhoto[]; // the 2–4 photos shown in the collage
   flip?: boolean;
@@ -63,6 +65,7 @@ export default function StoryRow({
           style={{ "--reveal-delay": "0.06s" } as React.CSSProperties}
         >
           {title}
+          {titleHeart && <span className="story-heart"> ❤</span>}
         </h2>
         <p
           className="lede reveal"
@@ -75,7 +78,7 @@ export default function StoryRow({
           style={{ "--reveal-delay": "0.18s" } as React.CSSProperties}
           onClick={() => open(items, 0)}
         >
-          Ver las {album.length} fotos →
+          {fill(content.ui.seeAllPhotos, { count: album.length })}
         </button>
       </div>
 
@@ -85,7 +88,7 @@ export default function StoryRow({
             key={`${p.cat}/${p.slug}`}
             className={`collage-tile ct-${i + 1}`}
             onClick={() => open(items, indexOf(p))}
-            aria-label="Ver foto"
+            aria-label={content.ui.photoView}
           >
             <img src={thumb(p.cat, p.slug)} alt="" loading="lazy" decoding="async" />
           </button>

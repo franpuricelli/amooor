@@ -1,15 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { config } from "@/lib/config";
+import { content } from "@/lib/content";
+import type { Person } from "@/lib/content";
 import { full } from "@/lib/photos";
 import Hearts, { PixelHeart } from "@/components/Hearts";
 
 // Little hearts popping above their heads in the 8-bit art. Deterministic
-// (index-derived, no Math.random) so SSR and client render identically.
-const HEAD_HEART_FILLS = ["#ff2e8c", "#ffc7e2", "rgba(255,255,255,0.95)"];
+// (index-derived, no Math.random) so SSR and client render identically. The
+// fills come from the active palette (theme tokens), so they re-theme too.
+const HEAD_HEART_FILLS = ["var(--heart-1)", "var(--heart-2)", "rgba(255,255,255,0.95)"];
 const HEAD_HEARTS = Array.from({ length: 8 }, (_, i) => {
-  const side = i % 2; // alternate: Ivi's head / Fran's head
+  const side = i % 2; // alternate: left head / right head
   const left = (side ? 52.5 : 42.5) + ((i * 2.3) % 5.5);
   const top = 24 + ((i * 3.1) % 8);
   const size = 13 + ((i * 5) % 11);
@@ -19,13 +21,7 @@ const HEAD_HEARTS = Array.from({ length: 8 }, (_, i) => {
   return { left, top, size, delay, dur, tone };
 });
 
-interface Person {
-  name: string;
-  tagline: string;
-  traits: readonly { icon: string; label: string }[];
-  artists: readonly { name: string; img: string }[];
-}
-type Side = "ivi" | "fran";
+type Side = "left" | "right";
 
 function PersonCard({
   person,
@@ -53,7 +49,7 @@ function PersonCard({
         ))}
       </div>
       <div className="person-artists">
-        <span className="person-artists-label">Artistas favoritos</span>
+        <span className="person-artists-label">{content.people.artistsLabel}</span>
         {person.artists.map((a) => (
           <span className="artist-row" key={a.name}>
             <img src={a.img} alt="" loading="lazy" />
@@ -65,21 +61,21 @@ function PersonCard({
   );
 }
 
-export default function Hero() {
+export default function Hero({ id }: { id: string }) {
   const [active, setActive] = useState<Side | null>(null);
-  const { ivi, fran } = config.people;
+  const { left, right } = content.people;
+  const { hero } = content;
   // The 8-bit hero art. If the file is ever missing we fall back to the real
-  // Bariloche photo so nothing renders broken.
-  const pixelSrc = config.hero.pixelSrc;
-  const realSrc = full(config.hero.cat, config.hero.slug);
-  const [src, setSrc] = useState<string>(pixelSrc ?? realSrc);
+  // photo so nothing renders broken.
+  const realSrc = full(hero.cat, hero.slug);
+  const [src, setSrc] = useState<string>(hero.pixelSrc ?? realSrc);
 
   return (
-    <section id="inicio" className="hero" onMouseLeave={() => setActive(null)}>
-      {/* full-screen 8-bit backdrop */}
+    <section id={id} className="hero" onMouseLeave={() => setActive(null)}>
+      {/* full-screen backdrop */}
       <img
         src={src}
-        alt="Puri e Ivi, en 8-bit"
+        alt={hero.bgAlt}
         className="hero-bg"
         fetchPriority="high"
         onError={() => {
@@ -113,43 +109,42 @@ export default function Hero() {
 
       <div className="hero-content">
         <span className="eyebrow hero-in" style={{ animationDelay: "0.05s" }}>
-          26 · 07 · 2022 → ∞
+          {hero.eyebrow}
         </span>
         <h1 className="display hero-in" style={{ animationDelay: "0.15s" }}>
-          Puri <span className="hero-amp">&</span> Ivi
+          {hero.nameStart} <span className="hero-amp">&</span> {hero.nameEnd}
         </h1>
         <p className="lede hero-in" style={{ animationDelay: "0.25s" }}>
-          Cuatro años de nosotros. Esta es nuestra historia, desde el día que
-          nos cruzamos en la facu hasta hoy.
+          {hero.lede}
         </p>
       </div>
 
-      {/* hover zones: Ivi is on the left, Fran on the right */}
+      {/* hover zones: left person on the left, right person on the right */}
       <button
         className="zone zone-l"
-        aria-label="Conocé a Ivi"
-        onMouseEnter={() => setActive("ivi")}
-        onFocus={() => setActive("ivi")}
-        onClick={() => setActive(active === "ivi" ? null : "ivi")}
+        aria-label={left.zoneLabel}
+        onMouseEnter={() => setActive("left")}
+        onFocus={() => setActive("left")}
+        onClick={() => setActive(active === "left" ? null : "left")}
       />
       <button
         className="zone zone-r"
-        aria-label="Conocé a Fran"
-        onMouseEnter={() => setActive("fran")}
-        onFocus={() => setActive("fran")}
-        onClick={() => setActive(active === "fran" ? null : "fran")}
+        aria-label={right.zoneLabel}
+        onMouseEnter={() => setActive("right")}
+        onFocus={() => setActive("right")}
+        onClick={() => setActive(active === "right" ? null : "right")}
       />
 
       {/* visible affordances */}
-      <span className={`person-pill glass left ${active === "ivi" ? "on" : ""}`}>
-        {ivi.name}
+      <span className={`person-pill glass left ${active === "left" ? "on" : ""}`}>
+        {left.name}
       </span>
-      <span className={`person-pill glass right ${active === "fran" ? "on" : ""}`}>
-        {fran.name}
+      <span className={`person-pill glass right ${active === "right" ? "on" : ""}`}>
+        {right.name}
       </span>
 
-      <PersonCard person={ivi} side="ivi" active={active === "ivi"} />
-      <PersonCard person={fran} side="fran" active={active === "fran"} />
+      <PersonCard person={left} side="left" active={active === "left"} />
+      <PersonCard person={right} side="right" active={active === "right"} />
     </section>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { config } from "@/lib/config";
+import { content, fill } from "@/lib/content";
 import { totalPhotos } from "@/lib/photos";
 
 function diff(from: Date, to: Date) {
@@ -18,10 +18,12 @@ function diff(from: Date, to: Date) {
 }
 
 const pad = (n: number) => String(n).padStart(2, "0");
+const NUM_LOCALE = "es-AR";
 
-export default function Stats() {
-  const together = new Date(`${config.dates.together}T00:00:00`);
-  const met = new Date(`${config.dates.met}T00:00:00`);
+export default function Stats({ id }: { id: string }) {
+  const { stats, dates, watch } = content;
+  const together = new Date(`${dates.together}T00:00:00`);
+  const met = new Date(`${dates.met}T00:00:00`);
 
   // SSR renders placeholders; live values fill in after mount (no hydration
   // mismatch on the clock).
@@ -37,24 +39,21 @@ export default function Stats() {
   const daysMet = t ? Math.floor((Date.now() - met.getTime()) / 86400000) : null;
 
   const cells = [
-    { v: t ? t.days.toLocaleString("es-AR") : "···", l: "días" },
-    { v: t ? pad(t.hours) : "--", l: "horas" },
-    { v: t ? pad(t.mins) : "--", l: "min" },
-    { v: t ? pad(t.secs) : "--", l: "seg" },
+    { v: t ? t.days.toLocaleString(NUM_LOCALE) : "···", l: stats.labels.days },
+    { v: t ? pad(t.hours) : "--", l: stats.labels.hours },
+    { v: t ? pad(t.mins) : "--", l: stats.labels.mins },
+    { v: t ? pad(t.secs) : "--", l: stats.labels.secs },
   ];
 
-  const extra = [
-    `${totalPhotos} fotos`,
-    "5 países",
-    `${config.watchlist.length} títulos vistos`,
-    "∞ mates",
-  ];
+  const chips = stats.chips.map((c) =>
+    fill(c, { photos: totalPhotos, titles: watch.list.length })
+  );
 
   return (
-    <section className="section-pad">
+    <section id={id} className="section-pad">
       <div className="wrap">
         <div className="stats-band glass-card reveal-scale">
-          <p className="stats-kicker">…y acá estamos: juntos desde el 26 · 07 · 2022</p>
+          <p className="stats-kicker">{stats.kicker}</p>
           <div className="stats-grid">
             {cells.map((c) => (
               <div key={c.l} className="stats-cell">
@@ -64,15 +63,22 @@ export default function Stats() {
             ))}
           </div>
           <div className="stats-chips">
-            {extra.map((e) => (
+            {chips.map((e) => (
               <span className="chip" key={e}>
                 {e}
               </span>
             ))}
           </div>
           <p className="stats-met">
-            …y contando. Nos conocimos el <strong>15 · 03 · 2022</strong>
-            {daysMet !== null && <>, hace {daysMet.toLocaleString("es-AR")} días</>}.
+            {stats.metLead}
+            <strong>{stats.metDate}</strong>
+            {daysMet !== null && (
+              <>
+                , {stats.metAgoPrefix} {daysMet.toLocaleString(NUM_LOCALE)}{" "}
+                {stats.metAgoSuffix}
+              </>
+            )}
+            .
           </p>
         </div>
       </div>

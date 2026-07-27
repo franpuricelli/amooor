@@ -1,22 +1,19 @@
 "use client";
 
 import SectionHead from "@/components/SectionHead";
-import { config } from "@/lib/config";
+import { content, fill } from "@/lib/content";
 import { full, photos, thumb } from "@/lib/photos";
 import { useLightbox } from "@/components/Lightbox";
 
-export default function Momentos() {
+export default function Momentos({ id }: { id: string }) {
   const { open } = useLightbox();
+  const { moments, ui } = content;
 
   return (
-    <section id="momentos" className="section-pad">
-      <SectionHead
-        kicker="y en el medio…"
-        title="Celebramos todo"
-        lede="San Valentín, aniversarios, el Mundial que ganamos y todas las cositas cute del medio. Tocá una carta para verlas todas."
-      />
+    <section id={id} className="section-pad">
+      <SectionHead kicker={moments.kicker} title={moments.title} lede={moments.lede} />
       <div className="wrap bento">
-        {config.momentos.map((m, i) => {
+        {moments.cards.map((m, i) => {
           const slugs = photos(m.cat);
           if (!slugs.length) return null;
           const items = slugs.map((s) => ({
@@ -30,7 +27,7 @@ export default function Momentos() {
               className={`moment-card reveal-scale span-${i < 2 ? 3 : 2}`}
               style={{ "--reveal-delay": `${(i % 3) * 0.07}s` } as React.CSSProperties}
               onClick={() => open(items, 0)}
-              aria-label={`Ver fotos de ${m.title}`}
+              aria-label={fill(ui.momentAria, { title: m.title })}
             >
               <img
                 className="moment-cover"
@@ -42,12 +39,10 @@ export default function Momentos() {
               <span className="moment-overlay" aria-hidden />
               <span className="moment-meta">
                 <span className="moment-title">
-                  {"flag" in m && m.flag ? (
-                    <img className="flag" src={m.flag} alt="" />
-                  ) : null}
-                  <span aria-hidden>{m.emoji}</span> {m.title}
+                  {m.flag ? <img className="flag" src={m.flag} alt="" /> : null}
+                  {m.emoji ? <span aria-hidden>{m.emoji}</span> : null} {m.title}
                 </span>
-                <span className="chip">{slugs.length} fotos</span>
+                <span className="chip">{fill(ui.photosCount, { count: slugs.length })}</span>
               </span>
             </button>
           );

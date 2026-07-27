@@ -1,25 +1,42 @@
 "use client";
 
 import Script from "next/script";
-import { config } from "@/lib/config";
+import { content } from "@/lib/content";
 
 /**
- * Official TikTok blockquote embed. embed.js hydrates the blockquote into the
- * real player; it works most reliably on a deployed domain (see README).
+ * The closing video of the "watch" section. Two providers, chosen by data:
+ *  - "tiktok": official TikTok blockquote embed (embed.js hydrates it into the
+ *    real player; works most reliably on a deployed domain — see README).
+ *  - "video": a self-hosted <video> (mp4/webm) from `content.watch.video.src`,
+ *    the replacement path so a tenant can drop in their own clip.
  */
 export default function TikTokEmbed() {
-  const { url, videoId, caption } = config.tiktok;
+  const v = content.watch.video;
+
+  if (v.provider === "video" && v.src) {
+    return (
+      <video
+        className="watch-video"
+        src={v.src}
+        poster={v.poster ?? undefined}
+        controls
+        playsInline
+        style={{ width: "100%", borderRadius: "var(--r-lg)" }}
+      />
+    );
+  }
+
   return (
     <>
       <blockquote
         className="tiktok-embed"
-        cite={url}
-        data-video-id={videoId}
+        cite={v.url}
+        data-video-id={v.videoId}
         style={{ maxWidth: "605px", minWidth: "280px", margin: "0 auto" }}
       >
         <section>
-          <a target="_blank" rel="noreferrer" href={url}>
-            {caption}
+          <a target="_blank" rel="noreferrer" href={v.url}>
+            {v.caption}
           </a>
         </section>
       </blockquote>

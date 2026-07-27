@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { useLenis } from "lenis/react";
+import { content, fill } from "@/lib/content";
 
 /**
  * Fixed-size stage for the carousel. The (already-cached) thumb renders
@@ -77,7 +78,7 @@ function Filmstrip({
           ref={i === index ? currentRef : undefined}
           className={`lightbox-strip-thumb ${i === index ? "current" : ""}`}
           onClick={() => jumpTo(i)}
-          aria-label={`Foto ${i + 1}`}
+          aria-label={fill(content.ui.photoN, { n: i + 1 })}
           aria-current={i === index}
         >
           <img src={p.thumb ?? p.src} alt="" loading="lazy" decoding="async" />
@@ -185,7 +186,7 @@ export default function LightboxProvider({ children }: { children: ReactNode }) 
                   key={p.src}
                   className={`lightbox-grid-tile ${i === state.index ? "current" : ""}`}
                   onClick={() => jumpTo(i)}
-                  aria-label={`Foto ${i + 1}`}
+                  aria-label={fill(content.ui.photoN, { n: i + 1 })}
                 >
                   <img src={p.thumb ?? p.src} alt="" loading="lazy" decoding="async" />
                 </button>
@@ -206,13 +207,13 @@ export default function LightboxProvider({ children }: { children: ReactNode }) 
             </span>
             {state.photos.length > 1 && (
               <button className="lightbox-grid-toggle" onClick={toggleGrid}>
-                {state.grid ? "◂ volver" : "▦ ver todas"}
+                {state.grid ? content.ui.backFromGrid : content.ui.seeAllGrid}
               </button>
             )}
           </div>
           <button
             className="lightbox-btn lightbox-close glass"
-            aria-label="Cerrar"
+            aria-label={content.ui.close}
             onClick={close}
           >
             ✕
@@ -221,7 +222,7 @@ export default function LightboxProvider({ children }: { children: ReactNode }) 
             <>
               <button
                 className="lightbox-btn lightbox-prev glass"
-                aria-label="Anterior"
+                aria-label={content.ui.prev}
                 onClick={(e) => {
                   e.stopPropagation();
                   step(-1);
@@ -231,7 +232,7 @@ export default function LightboxProvider({ children }: { children: ReactNode }) 
               </button>
               <button
                 className="lightbox-btn lightbox-next glass"
-                aria-label="Siguiente"
+                aria-label={content.ui.next}
                 onClick={(e) => {
                   e.stopPropagation();
                   step(1);

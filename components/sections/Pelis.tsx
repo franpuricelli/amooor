@@ -1,18 +1,19 @@
 import SectionHead from "@/components/SectionHead";
 import TikTokEmbed from "@/components/TikTokEmbed";
-import { config } from "@/lib/config";
+import { content, fill } from "@/lib/content";
 
-export default function Pelis() {
-  const list = config.watchlist;
+export default function Pelis({ id }: { id: string }) {
+  const { watch } = content;
+  const list = watch.list;
   const featured = list.filter((m) => m.note);
   const rest = list.filter((m) => !m.note);
 
   return (
-    <section id="pelis" className="section-pad section-dark sheet-top">
+    <section id={id} className="section-pad section-dark sheet-top">
       <SectionHead
-        kicker={`de noche · ${list.length} títulos`}
-        title="Maratoneamos"
-        lede="Pelis, series y madrugadas de «un capítulo más». Nuestra propia programación."
+        kicker={fill(watch.kicker, { count: list.length })}
+        title={watch.title}
+        lede={watch.lede}
       />
 
       <div className="wrap">
@@ -41,11 +42,11 @@ export default function Pelis() {
           ))}
         </div>
 
-        <p className="watch-more reveal">…y las que faltan</p>
+        <p className="watch-more reveal">{watch.moreLabel}</p>
 
-        {/* la película sin fin */}
+        {/* the never-ending movie */}
         <div className="tiktok-card glass-card reveal">
-          <p className="tiktok-label">y nuestra película sin fin ↓</p>
+          <p className="tiktok-label">{watch.video.label}</p>
           <TikTokEmbed />
         </div>
       </div>
