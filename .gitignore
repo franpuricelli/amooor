@@ -1,0 +1,27 @@
+/node_modules
+/.next
+/out
+/build
+.DS_Store
+
+# private tenant media — never commit real couple photos/audio to this public repo.
+# WP-1 renders neutral placeholders when these are absent; real assets live in
+# Cloudflare Images per-tenant (see docs/PLAN.md §4/§5).
+/public/photos
+/public/thumbs
+/public/*.mp3
+*.pem
+npm-debug.log*
+.env*.local
+.vercel
+*.tsbuildinfo
+next-env.d.ts.timestamp
+.context
+
+# dev/curation artifacts (machine-specific; regenerate from tools/*.sh|*.mjs)
+tools/photo-index.tsv
+tools/photo-dates.tsv
+tools/curated-slugs.txt
+tools/sheets/
+tools/shots/
+tools/curation/
