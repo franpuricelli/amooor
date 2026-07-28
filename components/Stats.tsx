@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { fill } from "@/lib/content";
 import { useContent } from "@/lib/tenant";
-import { totalPhotos } from "@/lib/photos";
+import { usePhotos } from "@/lib/photos-context";
 
 function diff(from: Date, to: Date) {
   let ms = to.getTime() - from.getTime();
@@ -23,6 +23,7 @@ const NUM_LOCALE = "es-AR";
 
 export default function Stats({ id }: { id: string }) {
   const content = useContent();
+  const { totalPhotos } = usePhotos();
   const { stats, dates, watch } = content;
   const together = new Date(`${dates.together}T00:00:00`);
   const met = new Date(`${dates.met}T00:00:00`);

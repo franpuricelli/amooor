@@ -1,3 +1,6 @@
+import { fileURLToPath } from "node:url";
+import { dirname } from "node:path";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Images are pre-optimized by tools/prepare-photos.sh and served as static
@@ -5,6 +8,9 @@ const nextConfig = {
   // hobby-tier image quota).
   images: { unoptimized: true },
   reactStrictMode: true,
+  // Este repo vive anidado dentro de otro (staging) en dev; fijamos la raíz de
+  // trazado a este directorio para que Next no tome el lockfile del padre.
+  outputFileTracingRoot: dirname(fileURLToPath(import.meta.url)),
 };
 
 export default nextConfig;

@@ -3,12 +3,13 @@
 import SectionHead from "@/components/SectionHead";
 import { fill } from "@/lib/content";
 import { useContent } from "@/lib/tenant";
-import { full, photos, thumb } from "@/lib/photos";
+import { usePhotos } from "@/lib/photos-context";
 import { useLightbox } from "@/components/Lightbox";
 
 export default function Momentos({ id }: { id: string }) {
   const { open } = useLightbox();
   const { moments, ui } = useContent();
+  const { full, photos, thumb } = usePhotos();
 
   return (
     <section id={id} className="section-pad">

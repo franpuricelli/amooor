@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { Person } from "@/lib/content";
 import { useContent } from "@/lib/tenant";
-import { full } from "@/lib/photos";
+import { usePhotos } from "@/lib/photos-context";
 import Hearts, { PixelHeart } from "@/components/Hearts";
 
 // Little hearts popping above their heads in the 8-bit art. Deterministic
@@ -70,6 +70,7 @@ function PersonCard({
 
 export default function Hero({ id }: { id: string }) {
   const content = useContent();
+  const { full } = usePhotos();
   const [active, setActive] = useState<Side | null>(null);
   const { left, right } = content.people;
   const { hero } = content;

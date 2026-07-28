@@ -183,6 +183,18 @@ export const contentSchema = z.object({
     seeAllGrid: z.string(),
     backFromGrid: z.string(),
   }),
+  // Fotos del tenant, con URLs resueltas (WP-3/WP-4). Opcional: el default usa
+  // el manifiesto estático; un tenant generado trae sus fotos acá.
+  media: z
+    .object({
+      photos: z.record(
+        z.array(
+          z.object({ slug: z.string(), thumb: z.string(), full: z.string() })
+        )
+      ),
+      audioUrl: z.string().optional(),
+    })
+    .optional(),
 });
 
 /** El `theme` de un tenant: una paleta base + overrides opcionales. */

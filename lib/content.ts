@@ -71,6 +71,22 @@ export interface SectionEntry {
   enabled: boolean;
 }
 
+// ── Media por tenant (WP-3/WP-4) ─────────────────────────────────────────────
+//  Fotos subidas por el usuario, con las URLs ya resueltas (Cloudflare Images).
+//  Cuando `content.media` existe, el sitio usa ESTAS fotos; cuando no (el default
+//  Puri & Ivi), cae al manifiesto estático `lib/photos.ts`. Ver lib/photos-context.tsx.
+export interface MediaPhoto {
+  slug: string; // id estable dentro de la categoría
+  thumb: string; // URL de la variante `thumb`
+  full: string; // URL de la variante `full`
+}
+export interface MediaSet {
+  /** categoría → fotos (incluye "all" = no categorizadas). */
+  photos: Record<string, MediaPhoto[]>;
+  /** canción propia subida (si el usuario no eligió una de la librería). */
+  audioUrl?: string;
+}
+
 export const content = {
   // ── Metadata del sitio (app/layout.tsx) ──────────────────────────────────
   site: {
@@ -195,7 +211,9 @@ export const content = {
         },
       ] as StoryBeat[],
     },
-  },
+    // Nota: el shape se ensancha a un record genérico para que un tenant generado
+    // pueda tener CUALQUIER conjunto de secciones "story" (no sólo historia/cocina).
+  } as Record<string, { beats: StoryBeat[] }>,
 
   // ── Viajes ────────────────────────────────────────────────────────────────
   travel: {
@@ -383,7 +401,9 @@ export const content = {
   },
 };
 
-export type Content = typeof content;
+// El default (Puri & Ivi) no trae `media` — usa el manifiesto estático de fotos.
+// Un tenant generado por el wizard sí lo incluye (sus fotos subidas).
+export type Content = typeof content & { media?: MediaSet };
 
 /** Reemplaza `{key}` en un string por los valores dados. */
 export function fill(tpl: string, vars: Record<string, string | number>): string {

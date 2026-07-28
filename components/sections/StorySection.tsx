@@ -2,7 +2,7 @@
 
 import StoryRow from "@/components/StoryRow";
 import { useContent } from "@/lib/tenant";
-import { photos } from "@/lib/photos";
+import { usePhotos } from "@/lib/photos-context";
 
 /**
  * A "story" section: a stack of narrative beats (text + tilted photo collage).
@@ -11,6 +11,7 @@ import { photos } from "@/lib/photos";
  */
 export default function StorySection({ id }: { id: string }) {
   const content = useContent();
+  const { photos } = usePhotos();
   const section = content.story[id as keyof typeof content.story];
   if (!section) return null;
 

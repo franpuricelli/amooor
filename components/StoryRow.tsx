@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { full, photos, thumb } from "@/lib/photos";
 import { fill } from "@/lib/content";
 import { useContent } from "@/lib/tenant";
+import { usePhotos } from "@/lib/photos-context";
 import { useLightbox } from "@/components/Lightbox";
 
 export interface StoryPhoto {
@@ -34,10 +34,12 @@ export default function StoryRow({
 }) {
   const { open } = useLightbox();
   const content = useContent();
+  const { full, photos, thumb } = usePhotos();
   const catsKey = cats.join(",");
   const album = useMemo(
     () => cats.flatMap((c) => photos(c).map((slug) => ({ cat: c, slug }))),
-    [catsKey] // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [catsKey, photos]
   );
 
   // Collage photos are randomized per visit. SSR renders the curated picks,
@@ -53,7 +55,7 @@ export default function StoryRow({
   }, [album, picks.length]);
   const items = useMemo(
     () => album.map((p) => ({ src: full(p.cat, p.slug), thumb: thumb(p.cat, p.slug) })),
-    [album]
+    [album, full, thumb]
   );
   const indexOf = (p: StoryPhoto) =>
     Math.max(0, album.findIndex((a) => a.cat === p.cat && a.slug === p.slug));
