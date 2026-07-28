@@ -1,166 +1,28 @@
 // ─────────────────────────────────────────────────────────────────────────────
-//  lib/rebill.ts — cliente REST de Rebill para pagos únicos (WP-4, LATAM).
+//  lib/rebill.ts — integración de pagos con Rebill (WP-4, LATAM, pago único).
 //
-//  Necesita:
-//    REBILL_SECRET_KEY      → clave secreta (Bearer token para la API)
+//  Modelo REAL de Rebill v3 (confirmado con sus repos de ejemplo,
+//  github.com/rebillto/v2_example-sdk-using-nextjs): el checkout es un WIDGET de
+//  FRONT embebido, NO un redirect server-side:
+//    <script src="https://sdk.rebill.com/v3/rebill.js"></script>
+//    const rebill = new window.Rebill(PUBLIC_KEY);         // pk_...
+//    const form = rebill.checkout.create({ name, amount, currency, metadata });
+//    form.mount("rebill");                                  // inserta el iframe
+//  → lo maneja components/wizard/RebillCheckout.tsx. `amount` va en DÓLARES.
+//
+//  Este módulo (server) sólo cubre el WEBHOOK: verifica la firma con la clave
+//  secreta y extrae el evento. Necesita:
 //    REBILL_WEBHOOK_SECRET  → secreto HMAC para verificar webhooks
-//    REBILL_API_BASE        → (opcional) base URL; default https://api.rebill.to/v2
+//    REBILL_SECRET_KEY      → (reservado) para consultar la API de pagos si hiciera falta
 //
-//  ⚠️  PENDIENTE CONFIRMAR CON DASHBOARD/SANDBOX DE REBILL:
-//    1. Ruta exacta para crear pago único: /payment-links (asumida)
-//    2. Campos del request body: amount, currency, metadata, successUrl, cancelUrl
-//       (asumidos por analogía con Stripe/MercadoPago; Rebill puede usar snake_case)
-//    3. Campos de la respuesta: id + url|paymentUrl|link (normalizados defensivamente)
-//    4. Header de firma en webhooks: 'rebill-signature' (asumido; alternativas en webhook route)
-//    5. Tipos de eventos: 'payment.approved'|'payment.paid'|'charge.approved' (asumidos)
-//    6. Algoritmo de firma: HMAC-SHA256 hex (asumido; estándar de la industria)
+//  ⚠️  A CONFIRMAR CON EL DASHBOARD/SANDBOX DE REBILL (el resto ya es correcto):
+//    - Header de firma del webhook (probamos 'rebill-signature'/'x-rebill-signature'/'x-signature').
+//    - Algoritmo de firma (asumido HMAC-SHA256 hex).
+//    - Strings de los eventos de pago exitoso (ver isPaymentSuccess).
+//    - Que `checkout.create` acepte `metadata` (para recuperar el draftToken) — muy probable.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import crypto from "node:crypto";
-
-// ── Configuración ─────────────────────────────────────────────────────────────
-
-/** Base URL configurable por env var. Confirmar con el dashboard de Rebill. */
-const BASE = process.env.REBILL_API_BASE ?? "https://api.rebill.to/v2";
-
-function getSecretKey(): string {
-  const key = process.env.REBILL_SECRET_KEY;
-  if (!key) throw new Error("REBILL_SECRET_KEY no configurado");
-  return key;
-}
-
-// ── Tipos internos ─────────────────────────────────────────────────────────────
-
-interface RebillPaymentLinkRequest {
-  /** Monto en centavos (ej: 5000 = USD 50.00). ⚠️ Confirmar si Rebill acepta centavos o entero. */
-  amount: number;
-  currency: string;
-  /** URL de retorno en pago exitoso. */
-  successUrl: string;
-  /** URL de retorno si el usuario cancela. */
-  cancelUrl: string;
-  /** Metadatos libres para recuperar en el webhook. */
-  metadata: Record<string, string>;
-  /** Email del comprador (prefill en el checkout). */
-  email?: string;
-}
-
-/** Respuesta cruda de Rebill (múltiples variantes defensivas). */
-interface RebillPaymentLinkRaw {
-  id?: string;
-  paymentId?: string;
-  url?: string;
-  checkoutUrl?: string;
-  paymentUrl?: string;
-  link?: string;
-  payment_url?: string;
-  checkout_url?: string;
-  // Rebill puede anidar en data
-  data?: {
-    id?: string;
-    url?: string;
-    checkoutUrl?: string;
-    paymentUrl?: string;
-    link?: string;
-  };
-}
-
-export interface CreateCheckoutResult {
-  checkoutUrl: string;
-  providerId: string;
-}
-
-// ── createCheckout ─────────────────────────────────────────────────────────────
-
-/**
- * Crea un link de pago único en Rebill.
- *
- * Endpoint asumido: POST ${BASE}/payment-links
- * ⚠️ Confirmar la ruta exacta, los campos del body y los nombres en la respuesta
- *    contra el dashboard/sandbox de Rebill antes de ir a producción.
- */
-export async function createCheckout({
-  draftToken,
-  plan,
-  amount,
-  currency,
-  email,
-  orderId,
-  successUrl,
-  cancelUrl,
-}: {
-  draftToken: string;
-  plan: string;
-  amount: number;
-  currency: string;
-  email?: string;
-  orderId: string;
-  successUrl: string;
-  cancelUrl: string;
-}): Promise<CreateCheckoutResult> {
-  const secretKey = getSecretKey();
-
-  const body: RebillPaymentLinkRequest = {
-    amount,
-    currency,
-    successUrl,
-    cancelUrl,
-    metadata: {
-      draftToken,
-      orderId,
-      plan,
-    },
-    ...(email ? { email } : {}),
-  };
-
-  // ⚠️ Ruta asumida: /payment-links. Alternativas frecuentes: /checkout, /payments
-  const res = await fetch(`${BASE}/payment-links`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${secretKey}`,
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => "(sin cuerpo)");
-    throw new Error(
-      `Rebill createCheckout falló: ${res.status} ${res.statusText} — ${text}`
-    );
-  }
-
-  const raw: RebillPaymentLinkRaw = (await res.json()) as RebillPaymentLinkRaw;
-
-  // Normalización defensiva: buscar el ID y la URL en varios campos posibles.
-  const nested = raw.data;
-  const providerId =
-    raw.id ??
-    raw.paymentId ??
-    nested?.id ??
-    null;
-
-  const checkoutUrl =
-    raw.url ??
-    raw.checkoutUrl ??
-    raw.paymentUrl ??
-    raw.link ??
-    raw.payment_url ??
-    raw.checkout_url ??
-    nested?.url ??
-    nested?.checkoutUrl ??
-    nested?.paymentUrl ??
-    nested?.link ??
-    null;
-
-  if (!providerId || !checkoutUrl) {
-    throw new Error(
-      `Rebill devolvió una respuesta inesperada (sin id o url): ${JSON.stringify(raw)}`
-    );
-  }
-
-  return { checkoutUrl, providerId };
-}
 
 // ── verifyWebhook ──────────────────────────────────────────────────────────────
 

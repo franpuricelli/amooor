@@ -8,6 +8,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "./wizard.css";
 import { useDraft } from "@/lib/use-draft";
+import RebillCheckout from "./RebillCheckout";
 import { PLAN_ORDER, PLANS, DOMAIN_UPSELL, type PlanId } from "@/lib/pricing";
 import {
   StepNames,
@@ -129,6 +130,12 @@ function ReviewStep({
   const [showPreview, setShowPreview] = useState(false);
   const [paying, setPaying] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [checkout, setCheckout] = useState<{
+    orderId: string;
+    name: string;
+    amountUsd: number;
+    currency: string;
+  } | null>(null);
   const plan: PlanId = d.meta.plan ?? "plus";
 
   const previewUrl = useMemo(
@@ -142,7 +149,7 @@ function ReviewStep({
     setPreviewKey((k) => k + 1);
   };
 
-  const pay = async () => {
+  const startCheckout = async () => {
     setErr(null);
     if (!d.meta.email) {
       setErr("Necesitamos tu email para mandarte el sitio.");
@@ -157,17 +164,17 @@ function ReviewStep({
         body: JSON.stringify({ draftToken: d.token, plan, email: d.meta.email }),
       });
       const json = await res.json();
-      if (!res.ok || !json.checkoutUrl) {
-        throw new Error(json.error || "No se pudo iniciar el pago.");
-      }
-      window.location.href = json.checkoutUrl;
+      if (!res.ok) throw new Error(json.error || "No se pudo iniciar el pago.");
+      setCheckout(json); // { orderId, name, amountUsd, currency } → monta el widget
     } catch (e) {
-      setErr(
-        (e as Error).message +
-          " · El pago con Rebill se está configurando; probá de nuevo en breve."
-      );
+      setErr((e as Error).message);
+    } finally {
       setPaying(false);
     }
+  };
+
+  const onPaid = () => {
+    window.location.href = `/comenzar/listo?draft=${d.token}`;
   };
 
   return (
@@ -224,15 +231,42 @@ function ReviewStep({
         <p style={{ color: "#c0244a", marginTop: "1rem", fontSize: "0.9rem" }}>{err}</p>
       )}
 
-      <nav className="wz-nav">
-        <button className="wz-btn ghost" onClick={() => goTo(STEPS.length - 2)}>
-          ← Atrás
-        </button>
-        <div className="spacer" />
-        <button className="wz-btn" onClick={pay} disabled={paying}>
-          {paying ? "Redirigiendo…" : `Generar y pagar · US$${PLANS[plan].priceUsd}`}
-        </button>
-      </nav>
+      {checkout ? (
+        <div style={{ marginTop: "1.6rem" }}>
+          <h3 className="wz-label" style={{ fontSize: "1rem" }}>
+            Pagá de forma segura
+          </h3>
+          <p className="wz-hint" style={{ marginBottom: "0.8rem" }}>
+            Plan {PLANS[plan].name} · US${PLANS[plan].priceUsd} · pago único, sin
+            suscripción
+          </p>
+          <RebillCheckout
+            name={checkout.name}
+            amountUsd={checkout.amountUsd}
+            currency={checkout.currency}
+            draftToken={d.token}
+            orderId={checkout.orderId}
+            email={d.meta.email}
+            onPaid={onPaid}
+          />
+          <p className="wz-hint" style={{ marginTop: "0.9rem" }}>
+            ¿Ya pagaste?{" "}
+            <a href={`/comenzar/listo?draft=${d.token}`} style={{ color: "var(--accent-strong)" }}>
+              Ver mi sitio →
+            </a>
+          </p>
+        </div>
+      ) : (
+        <nav className="wz-nav">
+          <button className="wz-btn ghost" onClick={() => goTo(STEPS.length - 2)}>
+            ← Atrás
+          </button>
+          <div className="spacer" />
+          <button className="wz-btn" onClick={startCheckout} disabled={paying}>
+            {paying ? "Cargando…" : `Ir a pagar · US$${PLANS[plan].priceUsd}`}
+          </button>
+        </nav>
+      )}
     </div>
   );
 }

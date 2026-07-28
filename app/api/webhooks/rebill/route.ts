@@ -76,21 +76,26 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ ok: true, reason: "evento ignorado" });
   }
 
-  const { providerId, draftToken, orderId } = event;
-
-  if (!providerId) {
-    console.warn("[webhook/rebill] pago exitoso sin providerId:", event.raw);
-    return NextResponse.json({ ok: false, reason: "sin providerId" });
-  }
+  const { providerId, draftToken } = event;
 
   try {
     const c = convex();
 
-    // ── Buscar la orden por providerId ────────────────────────────────────────
-    const order = await c.query(api.orders.getByProviderId, { providerId });
+    // ── Encontrar la orden ─────────────────────────────────────────────────────
+    // Con el checkout embebido (SDK de front) NO guardamos el providerId antes del
+    // pago, así que la vía principal es el draftToken de metadata. Fallback: por
+    // providerId (por si el evento lo trae y ya estaba asociado).
+    let order = null;
+    if (draftToken) {
+      const orders = await c.query(api.orders.getByDraft, { draftToken });
+      order = orders.find((o) => o.status !== "paid") ?? orders[0] ?? null;
+    }
+    if (!order && providerId) {
+      order = await c.query(api.orders.getByProviderId, { providerId });
+    }
     if (!order) {
       console.warn(
-        `[webhook/rebill] orden no encontrada para providerId=${providerId}; ignorando`
+        `[webhook/rebill] orden no encontrada (draft=${draftToken}, providerId=${providerId})`
       );
       return NextResponse.json({ ok: true, reason: "orden no encontrada" });
     }
@@ -99,7 +104,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const { alreadyPaid } = await c.mutation(api.orders.setStatus, {
       id: order._id,
       status: "paid",
-      providerId,
+      ...(providerId ? { providerId } : {}),
     });
 
     if (alreadyPaid) {
@@ -140,7 +145,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       // No propagamos: el pago ya quedó registrado; el admin puede re-generar.
     }
 
-    console.log(`[webhook/rebill] pago procesado OK: orderId=${orderId ?? order._id}, draft=${token}`);
+    console.log(`[webhook/rebill] pago procesado OK: orderId=${order._id}, draft=${token}`);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[webhook/rebill] error interno:", err);
