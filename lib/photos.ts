@@ -518,5 +518,15 @@ export const allPhotos: CatPhoto[] = Object.entries(photosByCategory).flatMap(
 export const totalPhotos = 468;
 
 export const photos = (cat: string): string[] => photosByCategory[cat] ?? [];
-export const thumb = (cat: string, slug: string) => `/thumbs/${cat}/${slug}.jpg`;
-export const full = (cat: string, slug: string) => `/photos/${cat}/${slug}.jpg`;
+
+// Las imágenes viven en Convex file storage y se sirven por convex/http.ts en el
+// dominio `.convex.site` (HTTP actions). Derivamos la base del deployment URL.
+const CONVEX_SITE = (process.env.NEXT_PUBLIC_CONVEX_URL ?? "").replace(
+  ".convex.cloud",
+  ".convex.site"
+);
+const img = (kind: "full" | "thumb", cat: string, slug: string) =>
+  `${CONVEX_SITE}/img/${kind}/${encodeURIComponent(cat)}/${encodeURIComponent(slug)}.jpg`;
+
+export const thumb = (cat: string, slug: string) => img("thumb", cat, slug);
+export const full = (cat: string, slug: string) => img("full", cat, slug);

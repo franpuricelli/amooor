@@ -73,4 +73,13 @@ export default defineSchema({
   })
     .index("by_site", ["siteId"])
     .index("by_site_category", ["siteId", "category"]),
+
+  // Imágenes en Convex file storage (interim antes de Cloudflare/WP-4). Se sirven
+  // por `convex/http.ts` en `/img/<kind>/<cat>/<slug>`. `kind` = "full" | "thumb".
+  assets: defineTable({
+    kind: v.string(),
+    cat: v.string(),
+    slug: v.string(),
+    storageId: v.id("_storage"),
+  }).index("by_key", ["kind", "cat", "slug"]),
 });
