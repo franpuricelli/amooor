@@ -5,7 +5,7 @@ import PhotoStrip from "@/components/PhotoStrip";
 import { useLightbox } from "@/components/Lightbox";
 import { fill } from "@/lib/content";
 import { useContent } from "@/lib/tenant";
-import { full, photos, thumb } from "@/lib/photos";
+import { usePhotos } from "@/lib/photos-context";
 
 /**
  * Each destination is a full-screen panel. Panels are sticky, so while you
@@ -14,6 +14,7 @@ import { full, photos, thumb } from "@/lib/photos";
 export default function Viajes({ id }: { id: string }) {
   const { open } = useLightbox();
   const { travel, ui } = useContent();
+  const { full, photos, thumb } = usePhotos();
 
   return (
     <section id={id}>

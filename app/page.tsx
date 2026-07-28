@@ -1,35 +1,44 @@
-"use client";
+// ─────────────────────────────────────────────────────────────────────────────
+//  app/page.tsx — el router por host (WP-2/WP-5).
+//    · Host = tenant (subdominio/dominio propio) → renderiza SU sitio (SiteApp).
+//    · Host = apex/desconocido (amooor.com, localhost) → la landing de marketing
+//      (WP-5) con el showcase de sitios de clientes.
+// ─────────────────────────────────────────────────────────────────────────────
 
-import SmoothScroll from "@/components/SmoothScroll";
-import RevealInit from "@/components/RevealInit";
-import LightboxProvider from "@/components/Lightbox";
-import HeartCursor from "@/components/HeartCursor";
-import Nav from "@/components/Nav";
-import Footer from "@/components/Footer";
-import { useContent } from "@/lib/tenant";
-import { SECTION_REGISTRY } from "@/components/sections/registry";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "@/convex/_generated/api";
+import { resolveSite } from "@/lib/site-server";
+import SiteApp from "@/components/SiteApp";
+import Landing from "@/components/marketing/Landing";
 
-export default function Home() {
-  const content = useContent();
+export const dynamic = "force-dynamic";
 
-  return (
-    <SmoothScroll>
-      <LightboxProvider>
-        <RevealInit />
-        <HeartCursor />
-        <Nav />
-        <main>
-          {/* Sections render in the order declared by content.layout — reorder,
-              enable or disable them by data, no code change. */}
-          {content.layout
-            .filter((s) => s.enabled)
-            .map((s) => {
-              const Section = SECTION_REGISTRY[s.type];
-              return <Section key={s.id} id={s.id} />;
-            })}
-        </main>
-        <Footer />
-      </LightboxProvider>
-    </SmoothScroll>
-  );
+interface ShowcaseCard {
+  subdomain: string;
+  couple: string;
+  palette: string;
+}
+
+async function loadShowcase(): Promise<ShowcaseCard[]> {
+  const url = process.env.NEXT_PUBLIC_CONVEX_URL;
+  if (!url) return [];
+  try {
+    const client = new ConvexHttpClient(url);
+    const sites = await client.query(api.sites.listShowcase, {});
+    return sites.map((s: any) => ({
+      subdomain: s.subdomain,
+      couple: s.content?.couple ?? s.subdomain,
+      palette: s.theme?.palette ?? "rosa",
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export default async function Home() {
+  const { found } = await resolveSite();
+  if (found) return <SiteApp />;
+
+  const showcase = await loadShowcase();
+  return <Landing showcase={showcase} />;
 }

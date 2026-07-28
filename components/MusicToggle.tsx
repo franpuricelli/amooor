@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useContent } from "@/lib/tenant";
-import { audio as audioUrl } from "@/lib/photos";
+import { usePhotos } from "@/lib/photos-context";
 
 /**
  * The "❤ Puri & Ivi" navbar pill doubles as the music control: the song starts
@@ -11,8 +11,13 @@ import { audio as audioUrl } from "@/lib/photos";
  * heart beats with the actual audio (Web Audio analyser on the bass bins).
  */
 export default function MusicToggle({ label }: { label: string }) {
-  const { music } = useContent();
-  const src = audioUrl(music.cat, music.slug);
+  const content = useContent();
+  const { music, media } = content;
+  const { audio: audioUrl } = usePhotos();
+  // Si el tenant subió su propia canción, la usamos; si no, el helper estático.
+  const src = media?.audioUrl && media.audioUrl.length > 0
+    ? media.audioUrl
+    : audioUrl(music.cat, music.slug);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const heartRef = useRef<HTMLSpanElement>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);

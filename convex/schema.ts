@@ -18,6 +18,28 @@ export const siteStatus = v.union(
   v.literal("live")
 );
 
+/** Planes de compra (pago único). El "pro" incluye edición con IA. Ver lib/pricing.ts. */
+export const planId = v.union(
+  v.literal("basic"), // US$50
+  v.literal("plus"), //  US$90
+  v.literal("pro") //   US$150 (edición IA)
+);
+
+/** Estado de un draft del wizard (WP-3), previo al pago. */
+export const draftStatus = v.union(
+  v.literal("editing"), //    el usuario está armando el sitio
+  v.literal("generating"), // se está generando el content (IA)
+  v.literal("ready"), //      generado, esperando pago
+  v.literal("paid") //        pagado → ya existe el `site`
+);
+
+/** Estado de un pago (Rebill, WP-4). */
+export const orderStatus = v.union(
+  v.literal("pending"),
+  v.literal("paid"),
+  v.literal("failed")
+);
+
 /** Theme de un tenant: id de paleta + overrides opcionales (ver lib/theme.ts). */
 export const themeValidator = v.object({
   palette: v.string(),
@@ -47,10 +69,16 @@ export default defineSchema({
   // Un sitio/tenant: la instancia que se renderiza en un host.
   sites: defineTable({
     ownerId: v.optional(v.id("users")),
+    ownerEmail: v.optional(v.string()), // comprador (sin cuenta) — para emails
     productSlug: v.optional(v.string()),
     templateSlug: v.string(), // qué renderer del registry usar
     subdomain: v.string(), // "<subdomain>.<APP_DOMAIN>" (siempre presente)
     domain: v.optional(v.string()), // dominio propio (.love) — upsell
+    domainStatus: v.optional(
+      v.union(v.literal("pending"), v.literal("verified"), v.literal("error"))
+    ),
+    plan: v.optional(planId), // plan comprado (pro = edición IA)
+    draftToken: v.optional(v.string()), // draft del que nació (WP-3)
     content: v.any(), // validado por el contentSchema del template (Zod)
     theme: themeValidator,
     status: siteStatus,
@@ -61,15 +89,74 @@ export default defineSchema({
     .index("by_subdomain", ["subdomain"])
     .index("by_domain", ["domain"])
     .index("by_owner", ["ownerId"])
+    .index("by_draft", ["draftToken"])
     .index("by_showcase", ["showcase"]),
 
+  // Draft del wizard (WP-3): el estado que arma el usuario ANTES de pagar.
+  // Anónimo por defecto (identidad = `token` generado en el cliente); `ownerId`
+  // se completa si hay login (Better Auth, opcional). Al pagar → se crea el `site`.
+  drafts: defineTable({
+    token: v.string(), // uuid del cliente (localStorage) — identidad del draft
+    ownerId: v.optional(v.id("users")),
+    email: v.optional(v.string()), // para re-activación + recibo (Resend, WP-4)
+    productSlug: v.string(),
+    templateSlug: v.string(),
+    answers: v.any(), // respuestas del wizard (lib/draft.ts → WizardState)
+    theme: themeValidator,
+    subdomain: v.optional(v.string()), // sugerido/elegido
+    domainWish: v.optional(v.string()), // idea de dominio .love (upsell)
+    plan: v.optional(planId),
+    content: v.optional(v.any()), // content generado (preview) — validado por el template
+    status: draftStatus,
+    lastStep: v.optional(v.number()), // para reanudar el wizard
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_token", ["token"])
+    .index("by_owner", ["ownerId"])
+    .index("by_email", ["email"]),
+
+  // Fotos subidas contra un draft (WP-3/WP-4). Al pagar se copian a `photos`
+  // (por siteId). `all` = bucket de no categorizadas (se recategoriza en el wizard).
+  draftPhotos: defineTable({
+    draftToken: v.string(),
+    category: v.string(),
+    cloudflareId: v.string(), // id de Cloudflare Images
+    thumbUrl: v.string(), // variante `thumb`
+    fullUrl: v.string(), // variante `full`
+    order: v.number(),
+    caption: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_draft", ["draftToken"])
+    .index("by_draft_category", ["draftToken", "category"]),
+
+  // Pagos (Rebill, WP-4). Un order por intento de compra de un draft.
+  orders: defineTable({
+    draftToken: v.string(),
+    email: v.optional(v.string()),
+    plan: planId,
+    amount: v.number(), // en centavos de USD
+    currency: v.string(), // "USD"
+    provider: v.string(), // "rebill"
+    providerId: v.optional(v.string()), // id del pago/checkout en Rebill
+    status: orderStatus,
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_draft", ["draftToken"])
+    .index("by_provider_id", ["providerId"]),
+
   // Fotos por tenant: refs a Cloudflare Images (WP-4). Categoría "all" = bucket
-  // de las no categorizadas.
+  // de las no categorizadas. Se copian desde `draftPhotos` al pagar.
   photos: defineTable({
     siteId: v.id("sites"),
     category: v.string(),
     cloudflareId: v.string(),
+    thumbUrl: v.string(),
+    fullUrl: v.string(),
     order: v.number(),
+    caption: v.optional(v.string()),
   })
     .index("by_site", ["siteId"])
     .index("by_site_category", ["siteId", "category"]),

@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { full, thumb } from "@/lib/photos";
 import { useLightbox } from "@/components/Lightbox";
+import { usePhotos } from "@/lib/photos-context";
 
 export interface GridPhoto {
   cat: string;
@@ -18,6 +18,7 @@ export default function PhotoGrid({
   caption?: string;
 }) {
   const { open } = useLightbox();
+  const { full, thumb } = usePhotos();
   const items = useMemo(
     () =>
       photos.map((p) => ({
@@ -25,7 +26,7 @@ export default function PhotoGrid({
         thumb: thumb(p.cat, p.slug),
         caption,
       })),
-    [photos, caption]
+    [photos, caption, full, thumb]
   );
 
   return (

@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import SectionHead from "@/components/SectionHead";
-import { allPhotos, full, thumb, totalPhotos } from "@/lib/photos";
 import { fill } from "@/lib/content";
 import { useContent } from "@/lib/tenant";
+import { usePhotos } from "@/lib/photos-context";
 import { useLightbox } from "@/components/Lightbox";
 import { useLenis } from "lenis/react";
 
@@ -19,10 +19,11 @@ export default function Galeria({ id }: { id: string }) {
   const lenis = useLenis();
   const [showAll, setShowAll] = useState(false);
   const { gallery, ui } = useContent();
+  const { allPhotos, full, thumb, totalPhotos } = usePhotos();
 
   const items = useMemo(
     () => allPhotos.map((p) => ({ src: full(p.cat, p.slug), thumb: thumb(p.cat, p.slug) })),
-    []
+    [allPhotos, full, thumb]
   );
   const columns = useMemo(() => {
     const cols = Array.from(
@@ -31,7 +32,7 @@ export default function Galeria({ id }: { id: string }) {
     );
     allPhotos.forEach((p, i) => cols[i % COLS].push({ ...p, i }));
     return cols;
-  }, []);
+  }, [allPhotos]);
 
   // lock page scroll while the full-screen overlay is open
   useEffect(() => {
