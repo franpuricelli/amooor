@@ -8,7 +8,7 @@ import "server-only";
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { cache } from "react";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 import { content as defaultContent, type Content } from "@/lib/content";
@@ -26,10 +26,13 @@ const DEFAULT_SITE: ResolvedSite = {
   found: false,
 };
 
-/** El host del request — normalizado por el middleware en `x-tenant-host`. */
+/** El host del request. En preview (sin dominio propio) la cookie `amooor_tenant`
+ *  fuerza un subdominio — la setea `/api/preview?tenant=<sub>`. */
 export async function currentHost(): Promise<string | null> {
+  const preview = (await cookies()).get("amooor_tenant")?.value;
+  if (preview) return preview;
   const h = await headers();
-  return h.get("x-tenant-host") ?? h.get("host");
+  return h.get("host");
 }
 
 /** Resuelve el tenant del request actual. Memoizado por request (`cache`), así

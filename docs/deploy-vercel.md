@@ -21,16 +21,18 @@ dominio wildcard).
 
 1. **Seed de prod** (una vez): `POST https://<deployment>.vercel.app/api/seed?secret=<SEED_SECRET>`
    → crea los tenants demo `puri-e-ivi` y `demo` en la deployment de prod.
-2. **Ver el multi-tenant** (sin dominio propio):
+2. **Ver el multi-tenant** (sin dominio propio, vía cookie de preview):
    - `https://<deployment>.vercel.app/` → default (Puri & Ivi, paleta rosa)
-   - `https://<deployment>.vercel.app/?tenant=puri-e-ivi` → Puri & Ivi (rosa)
-   - `https://<deployment>.vercel.app/?tenant=demo` → Mati & Sofi (lavanda)
+   - `https://<deployment>.vercel.app/api/preview?tenant=demo` → setea la cookie y
+     redirige a `/` → Mati & Sofi (lavanda)
+   - `https://<deployment>.vercel.app/api/preview?tenant=puri-e-ivi` → Puri & Ivi (rosa)
+   - `https://<deployment>.vercel.app/api/preview` (sin `tenant`) → limpia la cookie
 
 ## Con dominio propio (WP-4, cuando lo tengas)
 
 - Agregar `amooor.com` y **`*.amooor.com`** (wildcard) al proyecto en Vercel.
-- Ahí `<subdominio>.amooor.com` resuelve solo (el middleware ya lo maneja) y el
-  `?tenant=` deja de hacer falta.
+- Ahí `<subdominio>.amooor.com` resuelve solo (`resolveSite` lee el host) y la
+  cookie de preview deja de hacer falta.
 
 ## Estado actual
 

@@ -9,8 +9,10 @@
 - [x] Schema Convex (`convex/schema.ts`) — data model §1: `users`, `products`,
       `templates`, `sites`, `photos`. Deployado al deployment de dev.
 - [x] Funciones (`convex/sites.ts`): `getByHost`, `listShowcase`, `upsertBySubdomain`.
-- [x] Resolución de host: `middleware.ts` normaliza el Host → `x-tenant-host`;
-      `lib/site-server.ts` (`resolveSite`, memoizado con `cache`) trae el tenant.
+- [x] Resolución de host server-side en `lib/site-server.ts` (`resolveSite`,
+      memoizado con `cache`): lee `headers().host` (o la cookie de preview
+      `amooor_tenant`) → `sites.getByHost`. Sin Edge middleware (evita el
+      `__dirname` del runtime edge en Vercel).
 - [x] Render por tenant: `app/layout.tsx` aplica el theme del tenant como CSS vars
       y provee su `content` vía `TenantProvider` (`lib/tenant.tsx`); los componentes
       leen `useContent()` en vez de importar el módulo `content`.
@@ -25,8 +27,7 @@
 
 ```
 Request (Host: puri-e-ivi.amooor.com)
-  → middleware.ts        set x-tenant-host
-  → app/layout.tsx       resolveSite() → Convex sites.getByHost → { content, theme }
+  → app/layout.tsx       resolveSite() → headers().host → Convex sites.getByHost → { content, theme }
        ├─ <html style={paletteVars(resolvePalette(theme))}>   (re-tematiza por data)
        └─ <TenantProvider content={content}>
             → app/page.tsx  useContent() → renderiza content.layout vía SECTION_REGISTRY
