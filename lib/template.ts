@@ -164,7 +164,8 @@ export const contentSchema = z.object({
     from: z.string(),
   }),
   music: z.object({
-    src: z.string(),
+    cat: z.string(),
+    slug: z.string(),
     playLabel: z.string(),
     pauseLabel: z.string(),
   }),

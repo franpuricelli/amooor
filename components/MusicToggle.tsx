@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useContent } from "@/lib/tenant";
+import { audio as audioUrl } from "@/lib/photos";
 
 /**
  * The "❤ Puri & Ivi" navbar pill doubles as the music control: the song starts
@@ -9,13 +11,15 @@ import { useEffect, useRef, useState } from "react";
  * heart beats with the actual audio (Web Audio analyser on the bass bins).
  */
 export default function MusicToggle({ label }: { label: string }) {
+  const { music } = useContent();
+  const src = audioUrl(music.cat, music.slug);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const heartRef = useRef<HTMLSpanElement>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const [playing, setPlaying] = useState(false);
 
   useEffect(() => {
-    const audio = new Audio("/when-i-was-your-man.mp3");
+    const audio = new Audio(src);
     audio.loop = true;
     audio.volume = 0.55;
     audio.preload = "auto";
@@ -109,7 +113,7 @@ export default function MusicToggle({ label }: { label: string }) {
       audio.src = "";
       audioRef.current = null;
     };
-  }, []);
+  }, [src]);
 
   const toggle = () => {
     const a = audioRef.current;
@@ -128,8 +132,8 @@ export default function MusicToggle({ label }: { label: string }) {
     <button
       className={`nav-logo ${playing ? "playing" : ""}`}
       onClick={toggle}
-      aria-label={playing ? "Pausar la música" : "Reproducir la música"}
-      title={playing ? "Pausar" : "Música"}
+      aria-label={playing ? music.pauseLabel : music.playLabel}
+      title={playing ? music.pauseLabel : music.playLabel}
     >
       <span ref={heartRef} className="nav-heart" aria-hidden>
         ❤

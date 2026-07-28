@@ -356,8 +356,11 @@ export const content = {
   },
 
   // ── Música ────────────────────────────────────────────────────────────────
+  //  El mp3 vive en Convex storage (kind "audio"); MusicToggle arma la URL con
+  //  `audio(cat, slug)`.
   music: {
-    src: "/when-i-was-your-man.mp3",
+    cat: "music",
+    slug: "when-i-was-your-man",
     playLabel: "Reproducir la música",
     pauseLabel: "Pausar la música",
   },

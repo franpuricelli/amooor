@@ -530,3 +530,7 @@ const img = (kind: "full" | "thumb", cat: string, slug: string) =>
 
 export const thumb = (cat: string, slug: string) => img("thumb", cat, slug);
 export const full = (cat: string, slug: string) => img("full", cat, slug);
+
+/** URL de un audio en Convex storage (servido por convex/http.ts). */
+export const audio = (cat: string, slug: string) =>
+  `${CONVEX_SITE}/audio/${encodeURIComponent(cat)}/${encodeURIComponent(slug)}.mp3`;
