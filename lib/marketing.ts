@@ -92,7 +92,7 @@ export interface MarketingContent {
     title: string;
     paragraphs: string[];
     signature: string;
-    video: { url: string; videoId: string; caption: string; poster: string };
+    video: { url: string; videoId: string; caption: string };
   };
   pricingIntro: SectionIntro;
   plans: Record<PlanId, PlanDisplay>;
@@ -215,7 +215,6 @@ const marketing: MarketingContent = {
       url: "https://www.tiktok.com/@iviwang/video/7667705851221773575",
       videoId: "7667705851221773575",
       caption: "El video que hice para mostrar nuestro sitio.",
-      poster: "/about/tiktok-poster.jpg",
     },
   },
 

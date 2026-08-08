@@ -142,7 +142,6 @@ const marketingEn: MarketingContent = {
       url: "https://www.tiktok.com/@iviwang/video/7667705851221773575",
       videoId: "7667705851221773575",
       caption: "The video I made to show our site.",
-      poster: "/about/tiktok-poster.jpg",
     },
   },
 
