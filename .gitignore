@@ -24,6 +24,7 @@ tools/photo-dates.tsv
 tools/curated-slugs.txt
 tools/sheets/
 tools/shots/
+tools/landing-shots/
 tools/curation/
 
 # env: ignore all env files (secrets) but keep the committed template

@@ -24,32 +24,33 @@ export interface Plan {
 export const PLANS: Record<PlanId, Plan> = {
   basic: {
     id: "basic",
-    name: "Esencial",
+    name: "Cupido",
     priceUsd: 50,
     amount: 5000,
     currency: "USD",
-    tagline: "Tu sitio de aniversario, hecho.",
+    tagline: "El primer sitio de su historia.",
     features: [
       "Sitio completo con tu historia",
+      "Onboarding asistido",
+      "Secciones personalizables",
       "Subdominio incluido (nombre.amooor.com)",
       "Hasta 150 fotos",
       "Música y contador en vivo",
-      "5 paletas de color",
+      "Video propio",
     ],
     aiEditing: false,
   },
   plus: {
     id: "plus",
-    name: "Completo",
+    name: "Nuestra Historia",
     priceUsd: 90,
     amount: 9000,
     currency: "USD",
-    tagline: "Con video y todas tus fotos.",
+    tagline: "Con video y todas sus fotos.",
     features: [
-      "Todo lo de Esencial",
+      "Todo lo de Cupido",
       "Fotos ilimitadas",
-      "Video propio (reemplaza el TikTok)",
-      "Narrativa generada con IA",
+      "Hasta 3 cambios personalizables",
       "Soporte prioritario",
     ],
     aiEditing: false,
@@ -57,14 +58,15 @@ export const PLANS: Record<PlanId, Plan> = {
   },
   pro: {
     id: "pro",
-    name: "A medida",
+    name: "Para Siempre",
     priceUsd: 150,
     amount: 15000,
     currency: "USD",
-    tagline: "Editá cualquier cosa con IA, cuando quieras.",
+    tagline: "Creá y editá tu propio sitio.",
     features: [
-      "Todo lo de Completo",
-      "Edición con IA por prompt (cambios y secciones a medida)",
+      "Todo lo de Nuestra Historia",
+      "Cambios ilimitados",
+      "Editas lo que quieras, escribiendo",
       "Elementos ad-hoc generados a pedido",
       "Prioridad máxima",
     ],
@@ -78,7 +80,7 @@ export const PLAN_ORDER: PlanId[] = ["basic", "plus", "pro"];
 export const DOMAIN_UPSELL = {
   priceUsd: 20,
   currency: "USD" as const,
-  note: "Dominio .love propio — primer año incluido, renovación ~US$20/año a tu cargo.",
+  note: "Dominio .love propio: primer año incluido, renovación ~US$20/año a tu cargo.",
 };
 
 export const getPlan = (id: PlanId): Plan => PLANS[id];

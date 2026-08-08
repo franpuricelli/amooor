@@ -5,40 +5,48 @@
 //      (WP-5) con el showcase de sitios de clientes.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { ConvexHttpClient } from "convex/browser";
-import { api } from "@/convex/_generated/api";
+import type { Metadata } from "next";
 import { resolveSite } from "@/lib/site-server";
 import SiteApp from "@/components/SiteApp";
 import Landing from "@/components/marketing/Landing";
+import marketing from "@/lib/marketing";
 
 export const dynamic = "force-dynamic";
 
-interface ShowcaseCard {
-  subdomain: string;
-  couple: string;
-  palette: string;
-}
+// Metadata propia de la landing de marketing (apex/host desconocido). Cuando el
+// host resuelve a un tenant devolvemos {} y manda el generateMetadata del layout.
+export async function generateMetadata(): Promise<Metadata> {
+  const { found } = await resolveSite();
+  if (found) return {};
 
-async function loadShowcase(): Promise<ShowcaseCard[]> {
-  const url = process.env.NEXT_PUBLIC_CONVEX_URL;
-  if (!url) return [];
-  try {
-    const client = new ConvexHttpClient(url);
-    const sites = await client.query(api.sites.listShowcase, {});
-    return sites.map((s: any) => ({
-      subdomain: s.subdomain,
-      couple: s.content?.couple ?? s.subdomain,
-      palette: s.theme?.palette ?? "rosa",
-    }));
-  } catch {
-    return [];
-  }
+  const title = "amooor — Tu amooor, hecho sitio";
+  const description = marketing.hero.subtitle;
+  const image = "/demo/poster.jpg";
+
+  return {
+    title,
+    description,
+    alternates: { canonical: "/", languages: { es: "/", en: "/en" } },
+    openGraph: {
+      type: "website",
+      title,
+      description,
+      siteName: "amooor",
+      locale: "es_AR",
+      images: [{ url: image, width: 1663, height: 900, alt: "amooor" }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [image],
+    },
+  };
 }
 
 export default async function Home() {
   const { found } = await resolveSite();
   if (found) return <SiteApp />;
 
-  const showcase = await loadShowcase();
-  return <Landing showcase={showcase} />;
+  return <Landing content={marketing} />;
 }

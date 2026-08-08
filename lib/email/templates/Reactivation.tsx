@@ -70,7 +70,7 @@ export default function Reactivation({ name, resumeUrl }: ReactivationProps) {
 
           {/* Footer */}
           <Section style={footerStyle}>
-            <Text style={footerTextStyle}>amooor · hecho con amor</Text>
+            <Text style={footerTextStyle}>amooor · hecho con amooor</Text>
           </Section>
         </Container>
       </Body>

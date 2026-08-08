@@ -73,7 +73,7 @@ export default function AccessRecovery({ name, manageUrl }: AccessRecoveryProps)
 
           {/* Footer */}
           <Section style={footerStyle}>
-            <Text style={footerTextStyle}>amooor · hecho con amor</Text>
+            <Text style={footerTextStyle}>amooor · hecho con amooor</Text>
           </Section>
         </Container>
       </Body>

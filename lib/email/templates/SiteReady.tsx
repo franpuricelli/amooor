@@ -83,7 +83,7 @@ export default function SiteReady({ name, siteUrl, couple }: SiteReadyProps) {
 
           {/* Footer */}
           <Section style={footerStyle}>
-            <Text style={footerTextStyle}>amooor · hecho con amor</Text>
+            <Text style={footerTextStyle}>amooor · hecho con amooor</Text>
           </Section>
         </Container>
       </Body>

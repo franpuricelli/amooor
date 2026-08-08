@@ -1,46 +1,42 @@
 // ─────────────────────────────────────────────────────────────────────────────
-//  components/marketing/Landing.tsx — la landing pública de amooor (WP-5).
-//  Se renderiza desde app/page.tsx cuando no hay tenant activo.
-//  Prop `showcase`: array de tenants de ejemplo para la sección Ejemplos.
+//  components/marketing/Landing.tsx — la landing pública de amooor.
+//  Recibe el contenido del locale (es | en) y lo provee vía contexto.
+//  Rediseño editorial: paleta rosa de purivi + estructura tipo Wispr Flow.
 // ─────────────────────────────────────────────────────────────────────────────
 
 "use client";
 
 import "./marketing.css";
+import type { MarketingContent } from "@/lib/marketing";
+import { MarketingProvider } from "@/lib/marketing-context";
 import {
   MkNav,
   MkHero,
   MkHowItWorks,
   MkShowcase,
-  MkPricing,
-  MkTestimonials,
+  MkWall,
+  MkAbout,
   MkFaq,
+  MkPricing,
   MkFooter,
 } from "./sections";
 
-interface ShowcaseItem {
-  subdomain: string;
-  couple: string;
-  palette: string;
-}
-
-interface LandingProps {
-  showcase: ShowcaseItem[];
-}
-
-export default function Landing({ showcase }: LandingProps) {
+export default function Landing({ content }: { content: MarketingContent }) {
   return (
-    <div className="mk-root">
-      <MkNav />
-      <main>
-        <MkHero />
-        <MkHowItWorks />
-        <MkShowcase showcase={showcase} />
-        <MkPricing />
-        <MkTestimonials />
-        <MkFaq />
-      </main>
-      <MkFooter />
-    </div>
+    <MarketingProvider content={content}>
+      <div className="mk-root">
+        <MkNav />
+        <main>
+          <MkHero />
+          <MkHowItWorks />
+          <MkShowcase />
+          <MkWall />
+          <MkAbout />
+          <MkFaq />
+          <MkPricing />
+        </main>
+        <MkFooter />
+      </div>
+    </MarketingProvider>
   );
 }

@@ -1,76 +1,131 @@
 // ─────────────────────────────────────────────────────────────────────────────
-//  components/marketing/sections.tsx — sub-secciones de la landing pública
-//  (WP-5). Cada componente es autocontenido; los datos vienen de lib/marketing
-//  y lib/pricing. Sin dependencias externas nuevas.
+//  components/marketing/sections.tsx — sub-secciones de la landing pública.
+//  Rediseño editorial (estructura tipo Wispr Flow) con la paleta rosa de purivi.
+//  El contenido sale del locale activo (lib/marketing-context → es | en). Los
+//  montos de los planes salen de lib/pricing.ts.
 // ─────────────────────────────────────────────────────────────────────────────
 
 "use client";
 
-import { useState } from "react";
-import marketing from "@/lib/marketing";
-import { PLANS, PLAN_ORDER, DOMAIN_UPSELL } from "@/lib/pricing";
-import { palettes } from "@/lib/theme";
-import type { PaletteId } from "@/lib/theme";
+import { useRef, useState } from "react";
+import Script from "next/script";
+import { PLANS, PLAN_ORDER } from "@/lib/pricing";
+import type { PlanId } from "@/lib/pricing";
+import { useMarketing } from "@/lib/marketing-context";
 
-// APP_DOMAIN para los links del showcase
-const APP_DOMAIN =
-  typeof process !== "undefined"
-    ? (process.env.NEXT_PUBLIC_APP_DOMAIN ?? "amooor.com")
-    : "amooor.com";
+// Parte un título "línea 1\nlínea 2" en {lead, em} para el patrón serif itálico.
+function splitTitle(title: string): { lead: string; em: string } {
+  const [lead, ...rest] = title.split("\n");
+  return { lead, em: rest.join(" ") };
+}
+
+function Heading({ title, id }: { title: string; id?: string }) {
+  const { lead, em } = splitTitle(title);
+  return (
+    <h2 className="mk-h2" id={id}>
+      {lead}
+      {em && (
+        <>
+          <br />
+          <em>{em}</em>
+        </>
+      )}
+    </h2>
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MkNav
 // ─────────────────────────────────────────────────────────────────────────────
 export function MkNav() {
+  const m = useMarketing();
+  const [open, setOpen] = useState(false);
+  const innerRef = useRef<HTMLDivElement>(null);
+
+  // Glow difuminado que sigue al cursor dentro de la barra (spotlight local).
+  const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = innerRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty("--mk-mx", `${e.clientX - r.left}px`);
+    el.style.setProperty("--mk-my", `${e.clientY - r.top}px`);
+  };
+
   return (
-    <nav className="mk-nav" aria-label="Navegación principal">
-      <div className="mk-nav-inner">
-        <a href="/" className="mk-nav-brand">
-          <span className="mk-nav-heart">♥</span>
-          {marketing.brand}
+    <nav className="mk-nav" aria-label={m.ui.navAria}>
+      <div className="mk-nav-inner" ref={innerRef} onMouseMove={handleMove}>
+        <a href={m.home} className="mk-nav-brand">
+          {m.brand}
         </a>
 
         <ul className="mk-nav-links" role="list">
-          {marketing.navLinks.map((link) => (
+          {m.navLinks.map((link) => (
             <li key={link.href}>
               <a href={link.href}>{link.label}</a>
             </li>
           ))}
         </ul>
 
-        <a href="/comenzar" className="mk-nav-cta">
-          {marketing.hero.ctaLabel} →
-        </a>
+        <div className="mk-nav-right">
+          <a href={m.ui.langHref} className="mk-nav-lang" aria-label={m.ui.langLabel}>
+            {m.ui.langLabel}
+          </a>
+
+          <a href="/comenzar" className="mk-nav-cta">
+            {m.hero.ctaLabel}
+          </a>
+
+          <button
+            type="button"
+            className={`mk-nav-burger${open ? " mk-open" : ""}`}
+            aria-label={open ? m.ui.closeMenu : m.ui.openMenu}
+            aria-expanded={open}
+            aria-controls="mk-nav-mobile"
+            onClick={() => setOpen((v) => !v)}
+          >
+            <span aria-hidden="true" />
+            <span aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+
+      <div
+        id="mk-nav-mobile"
+        className={`mk-nav-mobile${open ? " mk-open" : ""}`}
+        hidden={!open}
+      >
+        <ul role="list">
+          {m.navLinks.map((link) => (
+            <li key={link.href}>
+              <a href={link.href} onClick={() => setOpen(false)}>
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
       </div>
     </nav>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MkHero
+// MkHero — titular editorial + video demo (el screen-recording de purivi.love)
 // ─────────────────────────────────────────────────────────────────────────────
 export function MkHero() {
-  const { eyebrow, title, subtitle, ctaLabel, secondaryCta } = marketing.hero;
-
-  // Resaltamos la palabra "amor" con gradiente si aparece en el título
-  const parts = title.split(",");
-  const titleFirst = parts[0] ?? title;
-  const titleRest = parts.slice(1).join(",");
+  const m = useMarketing();
+  const { eyebrow, title, subtitle, ctaLabel, secondaryCta } = m.hero;
+  const { lead, em } = splitTitle(title);
 
   return (
     <section className="mk-hero">
-      {/* Orbes decorativos */}
-      <span className="mk-hero-orb mk-hero-orb-a" aria-hidden="true" />
-      <span className="mk-hero-orb mk-hero-orb-b" aria-hidden="true" />
-      <span className="mk-hero-orb mk-hero-orb-c" aria-hidden="true" />
-
-      <span className="mk-eyebrow mk-animate-in">{eyebrow}</span>
+      <p className="mk-eyebrow mk-animate-in">{eyebrow}</p>
 
       <h1 className="mk-hero-title mk-animate-in">
-        {titleFirst}
-        {titleRest && (
+        {lead}
+        {em && (
           <>
-            ,<em>{titleRest}</em>
+            <br />
+            <em>{em}</em>
           </>
         )}
       </h1>
@@ -79,13 +134,48 @@ export function MkHero() {
 
       <div className="mk-hero-actions mk-animate-in">
         <a href="/comenzar" className="mk-btn-primary">
-          {ctaLabel} →
+          {ctaLabel}
         </a>
-        <a href="#ejemplos" className="mk-btn-secondary">
+        <a href="#ejemplos" className="mk-btn-text">
           {secondaryCta}
         </a>
       </div>
+
+      <div className="mk-hero-demo mk-animate-in">
+        <BrowserFrame url={m.showcaseCard.previewUrl} ariaLabel={m.ui.previewAria} />
+      </div>
     </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BrowserFrame — marco de navegador con el video demo autoreproducido en loop.
+// ─────────────────────────────────────────────────────────────────────────────
+function BrowserFrame({ url, ariaLabel }: { url: string; ariaLabel: string }) {
+  return (
+    <div className="mk-frame">
+      <div className="mk-frame-bar">
+        <span className="mk-frame-dots" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+        </span>
+        <span className="mk-frame-url">{url}</span>
+      </div>
+      <div className="mk-frame-screen">
+        <video
+          className="mk-frame-video"
+          src="/demo/demo.mp4"
+          poster="/demo/poster.jpg"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          aria-label={ariaLabel}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -93,28 +183,23 @@ export function MkHero() {
 // MkHowItWorks
 // ─────────────────────────────────────────────────────────────────────────────
 export function MkHowItWorks() {
+  const m = useMarketing();
   return (
     <section
       id="como-funciona"
-      className="mk-section mk-section-mid"
+      className="mk-section mk-section-alt"
       aria-labelledby="mk-how-title"
     >
       <div className="mk-wrap">
         <header className="mk-section-head">
-          <span className="mk-eyebrow">Cómo funciona</span>
-          <h2 className="mk-h2" id="mk-how-title">
-            De cero a sitio
-            {"\n"}en cuatro pasos.
-          </h2>
+          <p className="mk-eyebrow">{m.howIntro.eyebrow}</p>
+          <Heading title={m.howIntro.title} id="mk-how-title" />
         </header>
 
         <ol className="mk-steps" role="list">
-          {marketing.howItWorks.map((step, i) => (
+          {m.howItWorks.map((step, i) => (
             <li key={i} className="mk-step">
-              <span className="mk-step-num">Paso {i + 1}</span>
-              <span className="mk-step-icon" aria-hidden="true">
-                {step.icon}
-              </span>
+              <span className="mk-step-num">{String(i + 1).padStart(2, "0")}</span>
               <strong className="mk-step-title">{step.title}</strong>
               <p className="mk-step-text">{step.text}</p>
             </li>
@@ -126,172 +211,266 @@ export function MkHowItWorks() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MkShowcase
+// MkShowcase — un único sitio destacado (Puri e Ivi): preview en vivo + link.
 // ─────────────────────────────────────────────────────────────────────────────
-
-interface ShowcaseItem {
-  subdomain: string;
-  couple: string;
-  palette: string;
-}
-
-// Cards de demo cuando no hay tenants reales
-const DEMO_CARDS: ShowcaseItem[] = [
-  { subdomain: "puri-e-ivi", couple: "Puri & Ivi", palette: "rosa" },
-  { subdomain: "caro-y-lucas", couple: "Caro & Lucas", palette: "lavanda" },
-  { subdomain: "sofi-y-nacho", couple: "Sofi & Nacho", palette: "menta" },
-];
-
-export function MkShowcase({ showcase }: { showcase: ShowcaseItem[] }) {
-  const cards = showcase.length > 0 ? showcase : DEMO_CARDS;
+export function MkShowcase() {
+  const m = useMarketing();
+  const card = m.showcaseCard;
 
   return (
     <section
       id="ejemplos"
-      className="mk-section mk-section-dark"
+      className="mk-section"
       aria-labelledby="mk-showcase-title"
     >
       <div className="mk-wrap">
         <header className="mk-section-head">
-          <span className="mk-eyebrow">Ejemplos reales</span>
-          <h2 className="mk-h2" id="mk-showcase-title">
-            Sitios que ya
-            {"\n"}cuentan su historia.
-          </h2>
-          <p className="mk-subtitle">
-            Cada sitio es distinto — paleta, secciones y contenido a medida de
-            cada pareja.
-          </p>
+          <p className="mk-eyebrow">{m.showcaseIntro.eyebrow}</p>
+          <Heading title={m.showcaseIntro.title} id="mk-showcase-title" />
+          <p className="mk-subtitle">{m.showcaseIntro.subtitle}</p>
         </header>
 
-        <div className="mk-showcase-grid">
-          {cards.map((card) => {
-            const palette = palettes[card.palette as PaletteId] ?? palettes.rosa;
-            const swatchColor = palette.pink;
-            const href =
-              showcase.length > 0
-                ? `https://${card.subdomain}.${APP_DOMAIN}`
-                : `/api/preview?tenant=${card.subdomain}`;
+        <a
+          className="mk-showcase"
+          href={card.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={card.ariaView}
+        >
+          <div className="mk-showcase-preview">
+            <BrowserFrame url={card.previewUrl} ariaLabel={m.ui.previewAria} />
+          </div>
 
-            return (
-              <a
-                key={card.subdomain}
-                href={href}
-                className="mk-showcase-card"
-                target={showcase.length > 0 ? "_blank" : undefined}
-                rel={showcase.length > 0 ? "noopener noreferrer" : undefined}
-                aria-label={`Ver el sitio de ${card.couple}`}
+          <div className="mk-showcase-info">
+            <span className="mk-showcase-tag">{card.tag}</span>
+            <h3 className="mk-showcase-couple">{card.couple}</h3>
+            <p className="mk-showcase-desc">{card.description}</p>
+            <span className="mk-showcase-link">
+              {card.linkLabel}
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
               >
-                {/* orbe de color decorativo */}
-                <span
-                  className="mk-showcase-swatch-bg"
-                  style={{ background: swatchColor }}
-                  aria-hidden="true"
+                <path
+                  d="M7 17 17 7M17 7H9M17 7v8"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 />
-
-                <div className="mk-showcase-meta">
-                  <span
-                    className="mk-showcase-swatch"
-                    style={{ background: swatchColor }}
-                    aria-label={`Paleta ${card.palette}`}
-                  />
-                  <span className="mk-showcase-arrow" aria-hidden="true">
-                    ↗
-                  </span>
-                </div>
-
-                <span className="mk-showcase-couple">{card.couple}</span>
-                <span className="mk-showcase-link">
-                  {card.subdomain}.amooor.com
-                </span>
-              </a>
-            );
-          })}
-        </div>
+              </svg>
+            </span>
+          </div>
+        </a>
       </div>
     </section>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MkPricing
+// MkWall — muro social: stats + marquee de 3 filas, dirección alternada.
 // ─────────────────────────────────────────────────────────────────────────────
+const WALL_COUNT = 28;
+const WALL_IMAGES = Array.from(
+  { length: WALL_COUNT },
+  (_, i) => `/wall/${String(i + 1).padStart(2, "0")}.png`,
+);
+
+// Repartimos las imágenes en 3 filas.
+const WALL_ROWS: string[][] = [[], [], []];
+WALL_IMAGES.forEach((src, i) => WALL_ROWS[i % 3].push(src));
+
+function WallRow({
+  images,
+  reverse,
+  alt,
+}: {
+  images: string[];
+  reverse: boolean;
+  alt: string;
+}) {
+  // Duplicamos la fila para un loop continuo sin costuras.
+  const loop = [...images, ...images];
+  return (
+    <div className="mk-wall-row">
+      <div
+        className={`mk-wall-track${reverse ? " mk-wall-track-rev" : ""}`}
+        aria-hidden={reverse ? "true" : undefined}
+      >
+        {loop.map((src, i) => (
+          <figure key={i} className="mk-wall-card">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={src} alt={alt} loading="lazy" />
+          </figure>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function MkWall() {
+  const m = useMarketing();
+
+  return (
+    <section className="mk-section mk-section-alt" aria-labelledby="mk-wall-title">
+      <div className="mk-wrap">
+        <header className="mk-section-head">
+          <p className="mk-eyebrow">{m.wallIntro.eyebrow}</p>
+          <Heading title={m.wallIntro.title} id="mk-wall-title" />
+          <p className="mk-subtitle">{m.wallIntro.subtitle}</p>
+
+          <dl className="mk-wall-stats" aria-label={m.ui.statsAria}>
+            {m.wallStats.map((s) => (
+              <div key={s.label} className="mk-wall-stat">
+                <dt className="mk-wall-stat-value">{s.value}</dt>
+                <dd className="mk-wall-stat-label">{s.label}</dd>
+              </div>
+            ))}
+          </dl>
+        </header>
+      </div>
+
+      <div className="mk-wall" role="list" aria-label={m.ui.commentsAria}>
+        <WallRow images={WALL_ROWS[0]} reverse={false} alt={m.ui.wallImgAlt} />
+        <WallRow images={WALL_ROWS[1]} reverse={true} alt={m.ui.wallImgAlt} />
+        <WallRow images={WALL_ROWS[2]} reverse={false} alt={m.ui.wallImgAlt} />
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MkAbout — "Sobre nosotros": la historia de la pareja + el video de Ivi.
+// ─────────────────────────────────────────────────────────────────────────────
+export function MkAbout() {
+  const m = useMarketing();
+  const { eyebrow, title, paragraphs, signature, video } = m.about;
+
+  return (
+    <section
+      id="sobre-nosotros"
+      className="mk-section mk-about"
+      aria-labelledby="mk-about-title"
+    >
+      <div className="mk-wrap mk-about-inner">
+        <div className="mk-about-body">
+          <p className="mk-eyebrow">{eyebrow}</p>
+          <div className="mk-about-h2">
+            <Heading title={title} id="mk-about-title" />
+          </div>
+
+          {paragraphs.map((p, i) => (
+            <p key={i} className="mk-about-p">
+              {p}
+            </p>
+          ))}
+
+          <p className="mk-about-sign">{signature}</p>
+        </div>
+
+        <figure className="mk-about-media">
+          <blockquote
+            className="tiktok-embed"
+            cite={video.url}
+            data-video-id={video.videoId}
+            style={{ maxWidth: "340px", minWidth: "260px", margin: 0 }}
+          >
+            <section>
+              <a target="_blank" rel="noreferrer" href={video.url}>
+                {video.caption}
+              </a>
+            </section>
+          </blockquote>
+          <Script src="https://www.tiktok.com/embed.js" strategy="lazyOnload" />
+          <figcaption className="mk-about-cap">{video.caption}</figcaption>
+        </figure>
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MkPricing — tarjetas estilo Wispr Flow: pill de plan, precio serif, checks.
+// ─────────────────────────────────────────────────────────────────────────────
+const PLAN_PILL: Record<PlanId, string> = {
+  basic: "mk-pill-basic",
+  plus: "mk-pill-plus",
+  pro: "mk-pill-pro",
+};
+
 export function MkPricing() {
-  const { eyebrow, title, subtitle } = marketing.pricingIntro;
+  const m = useMarketing();
 
   return (
     <section
       id="precios"
-      className="mk-section mk-section-mid"
+      className="mk-section"
       aria-labelledby="mk-pricing-title"
     >
       <div className="mk-wrap">
         <header className="mk-section-head">
-          <span className="mk-eyebrow">{eyebrow}</span>
-          <h2 className="mk-h2" id="mk-pricing-title">
-            {title}
-          </h2>
-          <p className="mk-subtitle">{subtitle}</p>
+          <p className="mk-eyebrow">{m.pricingIntro.eyebrow}</p>
+          <Heading title={m.pricingIntro.title} id="mk-pricing-title" />
+          <p className="mk-subtitle">{m.pricingIntro.subtitle}</p>
         </header>
 
         <div className="mk-pricing-grid">
           {PLAN_ORDER.map((id) => {
             const plan = PLANS[id];
+            const disp = m.plans[id];
             return (
               <article
                 key={id}
-                className={`mk-pricing-card${plan.highlight ? " mk-highlight" : ""}`}
-                aria-label={`Plan ${plan.name}`}
+                className={`mk-plan${plan.highlight ? " mk-plan-hl" : ""}`}
+                aria-label={`${m.ui.planLabel} ${disp.name}`}
               >
-                {plan.highlight && (
-                  <span className="mk-pricing-badge" aria-label="Más popular">
-                    Más popular
+                <span className={`mk-plan-pill ${PLAN_PILL[id]}`}>
+                  {disp.name}
+                </span>
+
+                <p className="mk-plan-tagline">{disp.tagline}</p>
+
+                <div
+                  className="mk-plan-price"
+                  aria-label={`${m.ui.currency}${plan.priceUsd}, ${m.ui.once}`}
+                >
+                  <span className="mk-plan-amount">
+                    <span className="mk-plan-currency">{m.ui.currency}</span>
+                    {plan.priceUsd}
                   </span>
-                )}
-
-                <header>
-                  <h3 className="mk-plan-name">{plan.name}</h3>
-                  <p className="mk-plan-tagline">{plan.tagline}</p>
-                </header>
-
-                <div className="mk-plan-price" aria-label={`US$${plan.priceUsd} pago único`}>
-                  <span className="mk-plan-currency">US$</span>
-                  <span className="mk-plan-amount">{plan.priceUsd}</span>
-                  <span className="mk-plan-once">pago único</span>
+                  <span className="mk-plan-once">{m.ui.once}</span>
                 </div>
 
                 <ul className="mk-plan-features" role="list">
-                  {plan.features.map((feat) => (
-                    <li key={feat} className="mk-plan-feature">
-                      <span className="mk-plan-feature-check" aria-hidden="true">
-                        ✓
-                      </span>
-                      {feat}
-                    </li>
-                  ))}
+                  {disp.features.map((feat) => {
+                    const inherit = feat.startsWith(m.ui.inheritPrefix);
+                    return (
+                      <li key={feat} className="mk-plan-feature">
+                        <span
+                          className={`mk-plan-mark${inherit ? " mk-plan-mark-plus" : ""}`}
+                          aria-hidden="true"
+                        >
+                          {inherit ? "+" : "✓"}
+                        </span>
+                        {feat}
+                      </li>
+                    );
+                  })}
                 </ul>
 
                 <a
                   href={`/comenzar?plan=${id}`}
-                  className="mk-pricing-cta"
-                  aria-label={`Comenzar con el plan ${plan.name}`}
+                  className="mk-plan-cta"
+                  aria-label={`${m.ui.startWith} ${disp.name}`}
                 >
-                  Comenzar con {plan.name}
+                  {m.hero.ctaLabel}
                 </a>
               </article>
             );
           })}
-        </div>
-
-        {/* Upsell dominio .love */}
-        <div className="mk-domain-upsell" role="note" aria-label="Upsell dominio .love">
-          <span className="mk-domain-upsell-icon" aria-hidden="true">
-            🌐
-          </span>
-          <p className="mk-domain-upsell-text">
-            <strong>¿Querés tu propio dominio .love?</strong>{" "}
-            {DOMAIN_UPSELL.note}
-          </p>
         </div>
       </div>
     </section>
@@ -302,7 +481,8 @@ export function MkPricing() {
 // MkFaq
 // ─────────────────────────────────────────────────────────────────────────────
 export function MkFaq() {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const m = useMarketing();
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   const toggle = (i: number) =>
     setOpenIndex((prev) => (prev === i ? null : i));
@@ -310,26 +490,20 @@ export function MkFaq() {
   return (
     <section
       id="faq"
-      className="mk-section mk-section-dark"
+      className="mk-section mk-section-alt"
       aria-labelledby="mk-faq-title"
     >
       <div className="mk-wrap">
         <header className="mk-section-head">
-          <span className="mk-eyebrow">Preguntas frecuentes</span>
-          <h2 className="mk-h2" id="mk-faq-title">
-            Todo lo que
-            {"\n"}necesitás saber.
-          </h2>
+          <p className="mk-eyebrow">{m.faqIntro.eyebrow}</p>
+          <Heading title={m.faqIntro.title} id="mk-faq-title" />
         </header>
 
         <dl className="mk-faq-list">
-          {marketing.faq.map((item, i) => {
+          {m.faq.map((item, i) => {
             const isOpen = openIndex === i;
             return (
-              <div
-                key={i}
-                className={`mk-faq-item${isOpen ? " mk-open" : ""}`}
-              >
+              <div key={i} className={`mk-faq-item${isOpen ? " mk-open" : ""}`}>
                 <dt>
                   <button
                     className="mk-faq-q"
@@ -357,66 +531,48 @@ export function MkFaq() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MkTestimonials (componente auxiliar, no exportado en la spec pero útil)
-// ─────────────────────────────────────────────────────────────────────────────
-export function MkTestimonials() {
-  return (
-    <section
-      className="mk-section mk-section-mid"
-      aria-labelledby="mk-testimonials-title"
-    >
-      <div className="mk-wrap">
-        <header className="mk-section-head">
-          <span className="mk-eyebrow">Lo que dicen</span>
-          <h2 className="mk-h2" id="mk-testimonials-title">
-            Parejas que ya
-            {"\n"}tienen su sitio.
-          </h2>
-        </header>
-
-        <div className="mk-testimonials">
-          {marketing.testimonials.map((t, i) => (
-            <blockquote key={i} className="mk-testimonial">
-              <p className="mk-testimonial-stars" aria-label="5 estrellas">
-                ★★★★★
-              </p>
-              <p className="mk-testimonial-quote">"{t.quote}"</p>
-              <footer className="mk-testimonial-author">— {t.author}</footer>
-            </blockquote>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // MkFooter
 // ─────────────────────────────────────────────────────────────────────────────
 export function MkFooter() {
+  const m = useMarketing();
+  const { lead, em } = splitTitle(m.footerCta.title);
+
   return (
     <footer className="mk-footer" role="contentinfo">
-      <div className="mk-footer-brand">
-        <a href="/" className="mk-footer-logo">
-          <span aria-hidden="true">♥</span>
-          {marketing.brand}
+      <div className="mk-footer-cta">
+        <h2 className="mk-footer-title">
+          {lead}
+          {em && (
+            <>
+              {" "}
+              <em>{em}</em>
+            </>
+          )}
+        </h2>
+        <a href="/comenzar" className="mk-btn-primary">
+          {m.hero.ctaLabel}
         </a>
-        <p className="mk-footer-tagline">{marketing.footer.tagline}</p>
       </div>
 
-      <nav aria-label="Footer">
-        <ul className="mk-footer-links" role="list">
-          {marketing.footer.links.map((link) => (
-            <li key={link.href}>
-              <a href={link.href}>{link.label}</a>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      <div className="mk-footer-bar">
+        <a href={m.home} className="mk-footer-logo">
+          {m.brand}
+        </a>
 
-      <p className="mk-footer-copy">
-        © 2026 {marketing.brand}. Todos los derechos reservados.
-      </p>
+        <nav aria-label={m.ui.footerAria}>
+          <ul className="mk-footer-links" role="list">
+            {m.footer.links.map((link) => (
+              <li key={link.href}>
+                <a href={link.href}>{link.label}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <p className="mk-footer-copy">
+          © 2026 {m.brand}. {m.footer.tagline}
+        </p>
+      </div>
     </footer>
   );
 }
