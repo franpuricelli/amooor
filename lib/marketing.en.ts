@@ -142,6 +142,7 @@ const marketingEn: MarketingContent = {
       url: "https://www.tiktok.com/@iviwang/video/7667705851221773575",
       videoId: "7667705851221773575",
       caption: "The video I made to show our site.",
+      poster: "/about/tiktok-poster.jpg",
     },
   },
 
@@ -214,6 +215,7 @@ const marketingEn: MarketingContent = {
     previewAria: "Preview of Puri and Ivi's site",
     wallImgAlt: "A person's comment about amooor",
     readMore: "Read more",
+    playVideo: "Play the TikTok video",
     langHref: "/",
     langLabel: "ES",
   },

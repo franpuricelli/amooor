@@ -352,6 +352,7 @@ export function MkAbout() {
   const m = useMarketing();
   const { eyebrow, title, paragraphs, signature, video } = m.about;
   const [expanded, setExpanded] = useState(false);
+  const [playing, setPlaying] = useState(false);
 
   const lead = paragraphs.slice(0, ABOUT_LEAD_PARAGRAPHS);
   const rest = paragraphs.slice(ABOUT_LEAD_PARAGRAPHS);
@@ -400,19 +401,50 @@ export function MkAbout() {
         </div>
 
         <figure className="mk-about-media">
-          <blockquote
-            className="tiktok-embed"
-            cite={video.url}
-            data-video-id={video.videoId}
-            style={{ maxWidth: "340px", minWidth: "260px", margin: 0 }}
-          >
-            <section>
-              <a target="_blank" rel="noreferrer" href={video.url}>
-                {video.caption}
-              </a>
-            </section>
-          </blockquote>
-          <Script src="https://www.tiktok.com/embed.js" strategy="lazyOnload" />
+          {playing ? (
+            // El embed real (iframe pesado) solo se monta tras el click; embed.js
+            // baja recién acá, no en la carga inicial de la página.
+            <>
+              <blockquote
+                className="tiktok-embed"
+                cite={video.url}
+                data-video-id={video.videoId}
+                style={{ maxWidth: "340px", minWidth: "260px", margin: 0 }}
+              >
+                <section>
+                  <a target="_blank" rel="noreferrer" href={video.url}>
+                    {video.caption}
+                  </a>
+                </section>
+              </blockquote>
+              <Script
+                src="https://www.tiktok.com/embed.js"
+                strategy="afterInteractive"
+              />
+            </>
+          ) : (
+            // Facade liviano: poster local + botón de play. Carga instantánea.
+            <button
+              type="button"
+              className="mk-about-facade"
+              onClick={() => setPlaying(true)}
+              aria-label={m.ui.playVideo}
+            >
+              <img
+                src={video.poster}
+                alt=""
+                className="mk-about-facade-img"
+                width={340}
+                height={604}
+                loading="lazy"
+              />
+              <span className="mk-about-facade-play" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="26" height="26">
+                  <path d="M8 5v14l11-7z" fill="currentColor" />
+                </svg>
+              </span>
+            </button>
+          )}
           <figcaption className="mk-about-cap">{video.caption}</figcaption>
         </figure>
       </div>
