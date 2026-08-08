@@ -215,7 +215,6 @@ const marketingEn: MarketingContent = {
     previewAria: "Preview of Puri and Ivi's site",
     wallImgAlt: "A person's comment about amooor",
     readMore: "Read more",
-    playVideo: "Play the TikTok video",
     langHref: "/",
     langLabel: "ES",
   },

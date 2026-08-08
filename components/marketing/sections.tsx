@@ -7,8 +7,7 @@
 
 "use client";
 
-import { useRef, useState } from "react";
-import Script from "next/script";
+import { useEffect, useRef, useState } from "react";
 import { PLANS, PLAN_ORDER } from "@/lib/pricing";
 import type { PlanId } from "@/lib/pricing";
 import { useMarketing } from "@/lib/marketing-context";
@@ -352,7 +351,37 @@ export function MkAbout() {
   const m = useMarketing();
   const { eyebrow, title, paragraphs, signature, video } = m.about;
   const [expanded, setExpanded] = useState(false);
-  const [playing, setPlaying] = useState(false);
+
+  // El player de TikTok se monta recién cuando la sección se acerca al viewport
+  // (no pesa en la carga inicial, que está muy arriba). Autoplay muted salvo que
+  // el usuario prefiera menos movimiento.
+  const mediaRef = useRef<HTMLElement>(null);
+  const [inView, setInView] = useState(false);
+  const [reduced, setReduced] = useState(false);
+
+  useEffect(() => {
+    const el = mediaRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setReduced(
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+          );
+          setInView(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: "400px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  const playerSrc =
+    `https://www.tiktok.com/player/v1/${video.videoId}` +
+    `?autoplay=${reduced ? 0 : 1}&muted=1&loop=1&controls=1` +
+    `&rel=0&description=0&music_info=0`;
 
   const lead = paragraphs.slice(0, ABOUT_LEAD_PARAGRAPHS);
   const rest = paragraphs.slice(ABOUT_LEAD_PARAGRAPHS);
@@ -400,51 +429,26 @@ export function MkAbout() {
           )}
         </div>
 
-        <figure className="mk-about-media">
-          {playing ? (
-            // El embed real (iframe pesado) solo se monta tras el click; embed.js
-            // baja recién acá, no en la carga inicial de la página.
-            <>
-              <blockquote
-                className="tiktok-embed"
-                cite={video.url}
-                data-video-id={video.videoId}
-                style={{ maxWidth: "340px", minWidth: "260px", margin: 0 }}
-              >
-                <section>
-                  <a target="_blank" rel="noreferrer" href={video.url}>
-                    {video.caption}
-                  </a>
-                </section>
-              </blockquote>
-              <Script
-                src="https://www.tiktok.com/embed.js"
-                strategy="afterInteractive"
-              />
-            </>
-          ) : (
-            // Facade liviano: poster local + botón de play. Carga instantánea.
-            <button
-              type="button"
-              className="mk-about-facade"
-              onClick={() => setPlaying(true)}
-              aria-label={m.ui.playVideo}
-            >
-              <img
-                src={video.poster}
-                alt=""
-                className="mk-about-facade-img"
-                width={340}
-                height={604}
+        <figure className="mk-about-media" ref={mediaRef}>
+          <div className="mk-about-video">
+            {/* Poster local como placeholder instantáneo; el iframe lo tapa al cargar. */}
+            <img
+              src={video.poster}
+              alt=""
+              className="mk-about-video-poster"
+              width={340}
+              height={604}
+            />
+            {inView && (
+              <iframe
+                className="mk-about-video-frame"
+                src={playerSrc}
+                title={video.caption}
                 loading="lazy"
+                allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
               />
-              <span className="mk-about-facade-play" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="26" height="26">
-                  <path d="M8 5v14l11-7z" fill="currentColor" />
-                </svg>
-              </span>
-            </button>
-          )}
+            )}
+          </div>
           <figcaption className="mk-about-cap">{video.caption}</figcaption>
         </figure>
       </div>

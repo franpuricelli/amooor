@@ -70,7 +70,6 @@ export interface UiStrings {
   previewAria: string;
   wallImgAlt: string;
   readMore: string; // toggle "leer más" del bloque "sobre nosotros"
-  playVideo: string; // aria del facade que carga el embed de TikTok
   langHref: string; // link al otro locale
   langLabel: string; // etiqueta del switch (ej. "EN")
 }
@@ -289,7 +288,6 @@ const marketing: MarketingContent = {
     previewAria: "Vista previa del sitio de Puri e Ivi",
     wallImgAlt: "Comentario de una persona sobre amooor",
     readMore: "Leer más",
-    playVideo: "Reproducir el video de TikTok",
     langHref: "/en",
     langLabel: "EN",
   },
