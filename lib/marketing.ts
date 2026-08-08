@@ -69,6 +69,7 @@ export interface UiStrings {
   statsAria: string;
   previewAria: string;
   wallImgAlt: string;
+  readMore: string; // toggle "leer más" del bloque "sobre nosotros"
   langHref: string; // link al otro locale
   langLabel: string; // etiqueta del switch (ej. "EN")
 }
@@ -285,6 +286,7 @@ const marketing: MarketingContent = {
     statsAria: "Repercusión del video",
     previewAria: "Vista previa del sitio de Puri e Ivi",
     wallImgAlt: "Comentario de una persona sobre amooor",
+    readMore: "Leer más",
     langHref: "/en",
     langLabel: "EN",
   },

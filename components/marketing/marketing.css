@@ -875,6 +875,32 @@
   line-height: 1;
 }
 
+.mk-about-more {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0.1rem 0 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--mk-rose-text);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  transition: text-decoration-thickness 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.mk-about-more:hover {
+  text-decoration-thickness: 2px;
+}
+
+.mk-about-more:focus-visible {
+  outline: 2px solid var(--mk-rose);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
 .mk-about-media {
   display: flex;
   flex-direction: column;

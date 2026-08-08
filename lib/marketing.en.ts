@@ -213,6 +213,7 @@ const marketingEn: MarketingContent = {
     statsAria: "Video reach",
     previewAria: "Preview of Puri and Ivi's site",
     wallImgAlt: "A person's comment about amooor",
+    readMore: "Read more",
     langHref: "/",
     langLabel: "ES",
   },

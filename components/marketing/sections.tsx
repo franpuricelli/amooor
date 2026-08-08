@@ -345,9 +345,17 @@ export function MkWall() {
 // ─────────────────────────────────────────────────────────────────────────────
 // MkAbout — "Sobre nosotros": la historia de la pareja + el video de Ivi.
 // ─────────────────────────────────────────────────────────────────────────────
+// Párrafos siempre visibles; del 3ro en adelante quedan tras "leer más".
+const ABOUT_LEAD_PARAGRAPHS = 2;
+
 export function MkAbout() {
   const m = useMarketing();
   const { eyebrow, title, paragraphs, signature, video } = m.about;
+  const [expanded, setExpanded] = useState(false);
+
+  const lead = paragraphs.slice(0, ABOUT_LEAD_PARAGRAPHS);
+  const rest = paragraphs.slice(ABOUT_LEAD_PARAGRAPHS);
+  const collapsible = rest.length > 0;
 
   return (
     <section
@@ -362,13 +370,33 @@ export function MkAbout() {
             <Heading title={title} id="mk-about-title" />
           </div>
 
-          {paragraphs.map((p, i) => (
+          {lead.map((p, i) => (
             <p key={i} className="mk-about-p">
               {p}
             </p>
           ))}
 
-          <p className="mk-about-sign">{signature}</p>
+          {collapsible && !expanded && (
+            <button
+              type="button"
+              className="mk-about-more"
+              onClick={() => setExpanded(true)}
+              aria-expanded={false}
+            >
+              {m.ui.readMore}
+            </button>
+          )}
+
+          {(!collapsible || expanded) && (
+            <>
+              {rest.map((p, i) => (
+                <p key={ABOUT_LEAD_PARAGRAPHS + i} className="mk-about-p">
+                  {p}
+                </p>
+              ))}
+              <p className="mk-about-sign">{signature}</p>
+            </>
+          )}
         </div>
 
         <figure className="mk-about-media">
