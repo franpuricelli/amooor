@@ -3,7 +3,7 @@ import LegalPage, { type LegalContent } from "@/components/marketing/LegalPage";
 import marketing from "@/lib/marketing";
 
 export const metadata: Metadata = {
-  title: "Términos — amooor",
+  title: "Términos · amooor",
   description: "Los términos y condiciones del servicio de amooor.",
 };
 

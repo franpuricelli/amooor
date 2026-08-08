@@ -3,7 +3,7 @@ import LegalPage, { type LegalContent } from "@/components/marketing/LegalPage";
 import marketing from "@/lib/marketing";
 
 export const metadata: Metadata = {
-  title: "Privacidad — amooor",
+  title: "Privacidad · amooor",
   description: "Cómo amooor cuida tus datos y los de tu pareja.",
 };
 
@@ -16,7 +16,7 @@ const content: LegalContent = {
     {
       heading: "Qué datos recopilamos",
       body: [
-        "Datos que nos das en el wizard: nombres, fechas, textos sobre su historia y las fotos o videos que subís para armar el sitio.",
+        "Datos que nos das en el asistente: nombres, fechas, textos sobre su historia y las fotos o videos que subís para armar el sitio.",
         "Datos de cuenta y pago: tu email y la información mínima necesaria para procesar el pago único. El pago lo procesa nuestro proveedor; no guardamos los datos completos de tu tarjeta.",
         "Datos técnicos básicos: información del navegador y del uso del sitio para que todo funcione y podamos mejorarlo.",
       ],

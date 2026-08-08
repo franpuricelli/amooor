@@ -950,7 +950,7 @@
 }
 
 .mk-pill-plus {
-  background: var(--mk-rose);
+  background: var(--mk-rose-btn);
   color: #fff;
 }
 
@@ -1299,5 +1299,9 @@
   .mk-animate-in {
     animation: none;
     opacity: 1;
+  }
+
+  .mk-nav-mobile {
+    animation: none;
   }
 }

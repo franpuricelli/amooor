@@ -3,7 +3,7 @@ import LegalPage, { type LegalContent } from "@/components/marketing/LegalPage";
 import marketingEn from "@/lib/marketing.en";
 
 export const metadata: Metadata = {
-  title: "Privacy — amooor",
+  title: "Privacy · amooor",
   description: "How amooor protects your data and your partner's.",
 };
 

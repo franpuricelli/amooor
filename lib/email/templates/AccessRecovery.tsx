@@ -34,7 +34,7 @@ export default function AccessRecovery({ name, manageUrl }: AccessRecoveryProps)
   return (
     <Html lang="es">
       <Head />
-      <Preview>Tu enlace de acceso a amooor — válido por 24 horas.</Preview>
+      <Preview>Tu enlace de acceso a amooor, válido por 24 horas.</Preview>
       <Body style={bodyStyle}>
         <Container style={containerStyle}>
           {/* Encabezado */}

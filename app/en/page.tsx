@@ -10,7 +10,7 @@ import marketingEn from "@/lib/marketing.en";
 export const dynamic = "force-dynamic";
 
 export function generateMetadata(): Metadata {
-  const title = "amooor — Your love, made a site";
+  const title = "amooor: Your love, made a site";
   const description = marketingEn.hero.subtitle;
   const image = "/demo/poster.jpg";
 

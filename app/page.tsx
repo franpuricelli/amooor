@@ -19,7 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const { found } = await resolveSite();
   if (found) return {};
 
-  const title = "amooor — Tu amooor, hecho sitio";
+  const title = "amooor: Tu amooor, hecho sitio";
   const description = marketing.hero.subtitle;
   const image = "/demo/poster.jpg";
 

@@ -66,7 +66,7 @@ export const PLANS: Record<PlanId, Plan> = {
     features: [
       "Todo lo de Nuestra Historia",
       "Cambios ilimitados",
-      "Editas lo que quieras, escribiendo",
+      "Editás lo que quieras, escribiendo",
       "Elementos ad-hoc generados a pedido",
       "Prioridad máxima",
     ],
