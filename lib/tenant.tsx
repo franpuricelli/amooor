@@ -9,6 +9,7 @@
 
 import { createContext, useContext, type ReactNode } from "react";
 import { content as defaultContent, type Content } from "@/lib/content";
+import { PhotoProvider } from "@/lib/photos-context";
 
 const ContentContext = createContext<Content>(defaultContent);
 
@@ -19,7 +20,13 @@ export function TenantProvider({
   content: Content;
   children: ReactNode;
 }) {
-  return <ContentContext.Provider value={content}>{children}</ContentContext.Provider>;
+  // El content y las fotos del tenant viajan juntos: los componentes leen el copy
+  // con useContent() y las fotos con usePhotos() (ambos por request/host).
+  return (
+    <ContentContext.Provider value={content}>
+      <PhotoProvider media={content.media}>{children}</PhotoProvider>
+    </ContentContext.Provider>
+  );
 }
 
 /** El `content` del tenant activo (o el default fuera de un provider). */

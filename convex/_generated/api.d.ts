@@ -9,7 +9,11 @@
  */
 
 import type * as assets from "../assets.js";
+import type * as drafts from "../drafts.js";
+import type * as generate from "../generate.js";
 import type * as http from "../http.js";
+import type * as orders from "../orders.js";
+import type * as photos from "../photos.js";
 import type * as sites from "../sites.js";
 
 import type {
@@ -20,7 +24,11 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   assets: typeof assets;
+  drafts: typeof drafts;
+  generate: typeof generate;
   http: typeof http;
+  orders: typeof orders;
+  photos: typeof photos;
   sites: typeof sites;
 }>;
 

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Caveat } from "next/font/google";
+import { Inter, Caveat, Fraunces } from "next/font/google";
 import "./globals.css";
 import { resolvePalette, paletteVars } from "@/lib/theme";
 import { TenantProvider } from "@/lib/tenant";
@@ -15,6 +15,15 @@ const caveat = Caveat({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-caveat",
+});
+
+// Fraunces — the editorial serif that carries the display headings and the
+// italic emphasis (Wispr Flow-style typography) on the marketing landing.
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-fraunces",
+  axes: ["opsz", "SOFT"],
 });
 
 // Metadata + viewport are per-tenant: they read the same (request-cached) site
@@ -53,7 +62,7 @@ export default async function RootLayout({
   return (
     <html
       lang={content.site.locale}
-      className={`${inter.variable} ${caveat.variable}`}
+      className={`${inter.variable} ${caveat.variable} ${fraunces.variable}`}
       style={paletteStyle}
     >
       <body>

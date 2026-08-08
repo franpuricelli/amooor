@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { full, thumb } from "@/lib/photos";
 import { useLightbox } from "@/components/Lightbox";
+import { usePhotos } from "@/lib/photos-context";
 
 /** Horizontal scroll-snap row of photos; click opens the lightbox slideshow. */
 export default function PhotoStrip({
@@ -15,9 +15,10 @@ export default function PhotoStrip({
   caption?: string;
 }) {
   const { open } = useLightbox();
+  const { full, thumb } = usePhotos();
   const items = useMemo(
     () => slugs.map((s) => ({ src: full(cat, s), thumb: thumb(cat, s), caption })),
-    [cat, slugs, caption]
+    [cat, slugs, caption, full, thumb]
   );
 
   return (
