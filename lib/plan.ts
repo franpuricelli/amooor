@@ -10,10 +10,13 @@
 import { z } from "zod";
 
 /**
- * Tipos de sección que el template de aniversario sabe renderizar. FUENTE DE
- * VERDAD: lib/content.ts (SectionType, líneas 15-22) — mantener en sync con
- * lib/template.ts, lib/draft.ts. El plan del intake se piensa SOBRE este
- * repertorio fijo (adaptamos el template, no inventamos secciones nuevas).
+ * Tipos de sección que el template de aniversario sabe renderizar. Los primeros 7
+ * son las secciones de `layout` (FUENTE DE VERDAD: lib/content.ts SectionType,
+ * líneas 15-22 — en sync con lib/template.ts, lib/draft.ts). `closing` es el
+ * CIERRE del sitio (componente Footer + DrawingFlip): va SIEMPRE al final, con un
+ * dibujo/imagen customizable por pareja que se da vuelta y revela un mensaje, más
+ * el saludo de aniversario y el contador de años. El plan del intake se piensa
+ * SOBRE este repertorio fijo (adaptamos el template, no inventamos secciones).
  */
 export const SECTION_KINDS = [
   "hero",
@@ -23,6 +26,7 @@ export const SECTION_KINDS = [
   "watch",
   "stats",
   "gallery",
+  "closing",
 ] as const;
 export type SectionKind = (typeof SECTION_KINDS)[number];
 export const zSectionKind = z.enum(SECTION_KINDS);
@@ -36,6 +40,7 @@ export const SECTION_KIND_LABELS: Record<SectionKind, string> = {
   watch: "Pelis y series",
   stats: "Contador",
   gallery: "Galería",
+  closing: "Cierre",
 };
 
 /** Una sección propuesta del sitio: mapeada a un bloque del template. */

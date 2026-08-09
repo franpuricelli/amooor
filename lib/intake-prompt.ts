@@ -117,8 +117,13 @@ tipos (adaptás el template a la historia, NO inventás secciones nuevas):
 - travel: viajes o escapadas (destinos que marcaron la relación).
 - moments: grilla de momentos cortos (rituales, cosas chiquitas del día a día).
 - watch: las pelis y series que los definen (más un video destacado).
-- stats: el contador de tiempo juntos (desde qué fecha). Suele ir al cierre.
-- gallery: la galería con todas las fotos. Suele ir al final.
+- stats: el contador de tiempo juntos (desde qué fecha).
+- gallery: la galería con todas las fotos. Suele ir cerca del final.
+- closing: el CIERRE del sitio. Va SIEMPRE última y una sola vez: un dibujo o
+  imagen customizable por la pareja que se da vuelta y revela un mensaje personal
+  ("Te amo", de quien lo hizo), más el saludo de aniversario y el contador de
+  años. Incluila SIEMPRE, aunque no haya material específico (el dibujo/imagen y
+  el mensaje los completa después la pareja).
 
 Basándote SOLO en lo que contó la persona (no inventes hechos), producí un plan
 con la voz de esa pareja y que refleje la **personalidad de cada uno**. El plan:
@@ -133,9 +138,10 @@ con la voz de esa pareja y que refleje la **personalidad de cada uno**. El plan:
     - "title": el nombre editorial con la voz de la pareja (p.ej. "De la facu al
       living", no "Historia").
     - "intent": 1 o 2 frases sobre qué mostrará y por qué.
-  EMPEZÁ siempre con un "hero". Ordenálas como un recorrido emocional y cerrá con
-  "stats" y/o "gallery" cuando tenga sentido. Sólo incluí secciones para las que
-  hay material real en la charla (no rellenes con tipos vacíos).
+  EMPEZÁ siempre con un "hero" y TERMINÁ siempre con un "closing". Ordenálas como
+  un recorrido emocional. Sólo incluí las secciones del medio para las que hay
+  material real en la charla (no rellenes con tipos vacíos), pero el "hero" y el
+  "closing" van siempre.
 - assumptions: cosas que asumiste porque no quedaron claras, cada una como
   "Asumí que…". Si no asumiste nada, devolvé [].
 

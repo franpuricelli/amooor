@@ -61,6 +61,13 @@ function AskIcon() {
     </svg>
   );
 }
+function TrashIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M10 11v6M14 11v6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
 
 function SectionComment({
   title,
@@ -318,6 +325,7 @@ export default function PlanCard({
   onRefine,
   onAskMore,
   onCorrectAssumption,
+  onRemoveSection,
   collapsed = false,
 }: {
   plan: Plan;
@@ -329,6 +337,8 @@ export default function PlanCard({
   onAskMore: (sectionTitle: string) => void;
   /** corregir un supuesto: lo saca del plan al instante (sin re-sintetizar). */
   onCorrectAssumption: (oldText: string, newText: string) => void;
+  /** eliminar una sección: la saca del plan al instante. */
+  onRemoveSection: (index: number) => void;
   /** durante un refinamiento el plan anterior queda colapsado como "historial". */
   collapsed?: boolean;
 }) {
@@ -446,6 +456,15 @@ export default function PlanCard({
                   onRefine={onRefine}
                   onAskMore={onAskMore}
                 />
+                <button
+                  type="button"
+                  className="ch-sec-delete"
+                  aria-label={`Eliminar la sección "${s.title}"`}
+                  title="Eliminar sección"
+                  onClick={() => onRemoveSection(i)}
+                >
+                  <TrashIcon />
+                </button>
               </div>
             </li>
           );

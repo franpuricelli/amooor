@@ -61,7 +61,13 @@ export const PURIVI_PLAN: Plan = {
       kind: "gallery",
       title: "Todas las fotos",
       intent:
-        "El cierre visual: la galería completa para perderse entre las fotos de estos años, más allá de las que ya aparecieron en cada sección.",
+        "La galería completa para perderse entre las fotos de estos años, más allá de las que ya aparecieron en cada sección.",
+    },
+    {
+      kind: "closing",
+      title: "Feliz aniversario, mi amor",
+      intent:
+        "El cierre: un dibujo (o imagen) customizable de ellos dos que al tocarlo se da vuelta y revela un mensaje personal, más el saludo de aniversario y el contador de años juntos.",
     },
   ],
   assumptions: [

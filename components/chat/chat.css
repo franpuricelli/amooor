@@ -772,13 +772,36 @@
   color: var(--mk-rose-text);
 }
 .ch-plan-sec-detail {
+  position: relative;
   max-height: 0;
   overflow: hidden;
   transition: max-height 0.3s ease, padding 0.3s ease;
 }
 .ch-plan-sec.open .ch-plan-sec-detail {
   max-height: 420px;
-  padding: 0 0 0.9rem 2.55rem;
+  /* canal a la derecha para el tachito de eliminar */
+  padding: 0 2.4rem 0.9rem 2.55rem;
+}
+/* eliminar sección: tachito en la esquina inferior derecha */
+.ch-sec-delete {
+  position: absolute;
+  right: 0.35rem;
+  bottom: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--mk-ink-3);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.ch-sec-delete:hover {
+  background: #fdecec; /* rojo cremita */
+  color: #d63a52;
 }
 .ch-plan-sec-detail p,
 .ch-plan-sec-intent {

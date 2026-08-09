@@ -116,6 +116,24 @@ export default function Chat() {
     [convo]
   );
 
+  // Eliminar una sección = edición LOCAL e instantánea (la saca del plan) + nota
+  // para que el agente no la vuelva a incluir en el próximo refine.
+  const removeSection = useCallback(
+    (index: number) => {
+      if (!convo.plan) return;
+      const gone = convo.plan.sections[index];
+      if (!gone) return;
+      convo.setPlan({
+        ...convo.plan,
+        sections: convo.plan.sections.filter((_, i) => i !== index),
+      });
+      correctionsRef.current.push(
+        `El usuario eliminó la sección "${gone.title}" (${gone.kind}): no la incluyas en el plan.`
+      );
+    },
+    [convo]
+  );
+
   const scrollToBottom = useCallback((smooth = true) => {
     const el = mainRef.current;
     if (!el) return;
@@ -444,6 +462,7 @@ export default function Chat() {
                     onRefine={(instruction) => send(instruction)}
                     onAskMore={() => {}}
                     onCorrectAssumption={correctAssumption}
+                    onRemoveSection={removeSection}
                     collapsed
                   />
                   <ChatMessages
@@ -476,6 +495,7 @@ export default function Chat() {
                         )
                       }
                       onCorrectAssumption={correctAssumption}
+                      onRemoveSection={removeSection}
                     />
                   )}
                 </>
