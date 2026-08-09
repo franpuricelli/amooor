@@ -462,7 +462,7 @@ export async function shouldDropPlan(
  */
 export async function synthesizePlan(
   messages: ChatMessage[],
-  opts: { forced?: boolean; previousPlan?: Plan | null } = {},
+  opts: { forced?: boolean; previousPlan?: Plan | null; fast?: boolean } = {},
   signal?: AbortSignal
 ): Promise<Plan | null> {
   const p = provider();
@@ -474,18 +474,18 @@ export async function synthesizePlan(
     opts.previousPlan
       ? `El usuario ya vio este plan y pidió refinarlo. Plan anterior:\n${JSON.stringify(
           opts.previousPlan
-        )}\nAplicá lo que pidió en los últimos mensajes y devolvé el plan revisado completo.`
+        )}\nAplicá SÓLO lo que pidió en los últimos mensajes y devolvé el plan revisado completo. Mantené el resto igual. Si el usuario confirmó/corrigió un dato, tratalo como HECHO y NO lo vuelvas a listar como supuesto.`
       : "",
   ]
     .filter(Boolean)
     .join("\n\n");
 
-  const body = buildBody(
-    p,
-    [{ role: "system", content: system }, ...messages],
-    "deep",
-    false
-  );
+  // Refinar un plan existente NO necesita razonamiento profundo: usamos modo
+  // instant (sin thinking) → respuesta mucho más rápida para cambios chicos. La
+  // síntesis inicial sí usa deep (calidad de la primera pasada).
+  const body = opts.fast
+    ? buildBody(p, [{ role: "system", content: system }, ...messages], "instant", false, 3500)
+    : buildBody(p, [{ role: "system", content: system }, ...messages], "deep", false);
 
   const res = await fetch(p.url, {
     method: "POST",

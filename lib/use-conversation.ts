@@ -10,7 +10,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/convex/_generated/api";
-import { convexClient } from "@/lib/convex-browser";
+import { convexClient, isConvexConfigured } from "@/lib/convex-browser";
 import { parsePlan, type Plan } from "@/lib/plan";
 import type { Activity, Attachment } from "@/lib/chat-format";
 import type { Swatch } from "@/lib/palette-gen";
@@ -103,6 +103,12 @@ export function useConversation(): UseConversation {
     setToken(t);
     tokenRef.current = t;
     setCustomPalettes(loadCustomPalettes());
+    // Sin backend Convex configurado: el chat funciona igual (token en
+    // localStorage), sólo no persiste. No tiramos error ni ensuciamos la consola.
+    if (!isConvexConfigured()) {
+      setReady(true);
+      return;
+    }
     (async () => {
       try {
         const draft = await convexClient().query(api.drafts.get, { token: t });
@@ -131,7 +137,7 @@ export function useConversation(): UseConversation {
 
   const persist = useCallback(async () => {
     const t = tokenRef.current;
-    if (!t) return;
+    if (!t || !isConvexConfigured()) return;
     setSaving(true);
     try {
       await convexClient().mutation(api.drafts.save, {

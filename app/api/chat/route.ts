@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
           planActivity("running");
           const plan = await synthesizePlan(
             messages,
-            { previousPlan: parsePlan(body.previousPlan) },
+            { previousPlan: parsePlan(body.previousPlan), fast: true },
             req.signal
           );
           planActivity("done");

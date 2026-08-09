@@ -106,10 +106,19 @@ estructura editorial que vamos a construir.
 
 ${VOICE}
 
-El sitio usa el **template de aniversario de amooor**, que sabe renderizar estas
-clases de sección: portada, historia (relato con hitos), viajes, momentos y
-galería de fotos, pelis y series, contador de tiempo juntos. Proponé secciones
-que encajen en esas capacidades (adaptás el template, no inventás uno nuevo).
+El sitio usa el **template de aniversario de amooor**, que tiene un repertorio
+FIJO de tipos de sección. CADA sección del plan tiene que ser de uno de estos
+tipos (adaptás el template a la historia, NO inventás secciones nuevas):
+- hero: la portada (nombres, foto principal, una frase). Va SIEMPRE primera y una
+  sola vez.
+- story: un tramo narrativo de la historia (texto + fotos). Es el bloque FLEXIBLE:
+  usalo VARIAS veces para los capítulos (cómo se conocieron, la vida diaria, un
+  capítulo temático, etc.).
+- travel: viajes o escapadas (destinos que marcaron la relación).
+- moments: grilla de momentos cortos (rituales, cosas chiquitas del día a día).
+- watch: las pelis y series que los definen (más un video destacado).
+- stats: el contador de tiempo juntos (desde qué fecha). Suele ir al cierre.
+- gallery: la galería con todas las fotos. Suele ir al final.
 
 Basándote SOLO en lo que contó la persona (no inventes hechos), producí un plan
 con la voz de esa pareja y que refleje la **personalidad de cada uno**. El plan:
@@ -118,14 +127,21 @@ con la voz de esa pareja y que refleje la **personalidad de cada uno**. El plan:
 - title: un título/ángulo editorial corto y con alma para el sitio.
 - angle: 1 a 2 frases sobre de qué va este sitio (el hilo narrativo).
 - tone: el tono/vibe emocional en una frase.
-- sections: lista ORDENADA de secciones. Cada una { "title", "intent" } donde
-  intent explica en 1 o 2 frases qué mostrará y por qué. Ordenálas como un
-  recorrido emocional (portada, historia, momentos, cierre).
+- sections: lista ORDENADA de secciones. Cada una es
+  { "kind", "title", "intent" }:
+    - "kind": UNO de hero, story, travel, moments, watch, stats, gallery.
+    - "title": el nombre editorial con la voz de la pareja (p.ej. "De la facu al
+      living", no "Historia").
+    - "intent": 1 o 2 frases sobre qué mostrará y por qué.
+  EMPEZÁ siempre con un "hero". Ordenálas como un recorrido emocional y cerrá con
+  "stats" y/o "gallery" cuando tenga sentido. Sólo incluí secciones para las que
+  hay material real en la charla (no rellenes con tipos vacíos).
 - assumptions: cosas que asumiste porque no quedaron claras, cada una como
   "Asumí que…". Si no asumiste nada, devolvé [].
 
 Devolvé SOLO un objeto JSON válido con exactamente esas claves
-(names, title, angle, tone, sections, assumptions), sin markdown ni texto extra.`;
+(names, title, angle, tone, sections[{kind, title, intent}], assumptions), sin
+markdown ni texto extra.`;
 
 /**
  * Instrucción extra para el pass de síntesis cuando se fuerza por límite de turnos

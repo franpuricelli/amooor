@@ -12,7 +12,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useEffect, useRef, useState } from "react";
-import type { Plan } from "@/lib/plan";
+import { SECTION_KIND_LABELS, type Plan } from "@/lib/plan";
 import type { Swatch } from "@/lib/palette-gen";
 import PalettePicker from "./PalettePicker";
 
@@ -45,10 +45,11 @@ function Chevron() {
   );
 }
 
-function CommentIcon() {
+function ReplyIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M20 12a7 7 0 0 1-9.7 6.5L5 20l1.5-4.3A7 7 0 1 1 20 12z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M9 14L4 9l5-5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 9h9a7 7 0 0 1 7 7v3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -63,10 +64,12 @@ function AskIcon() {
 
 function SectionComment({
   title,
+  intent,
   onRefine,
   onAskMore,
 }: {
   title: string;
+  intent: string;
   onRefine: (instruction: string) => void;
   onAskMore: (sectionTitle: string) => void;
 }) {
@@ -80,17 +83,22 @@ function SectionComment({
     setCommenting(false);
   };
   return (
-    <div className="ch-sec-tools">
-      {!commenting ? (
-        <div className="ch-sec-actions">
-          <button type="button" className="ch-sec-act" onClick={() => setCommenting(true)}>
-            <CommentIcon /> Comentar
-          </button>
-          <button type="button" className="ch-sec-act" onClick={() => onAskMore(title)}>
-            <AskIcon /> Dar más detalle
-          </button>
-        </div>
-      ) : (
+    <>
+      {/* la intención + los botones fluyen en la misma línea (inline, al lado del texto) */}
+      <p className="ch-plan-sec-intent">
+        {intent}
+        {!commenting && (
+          <span className="ch-sec-inline">
+            <button type="button" className="ch-sec-act" onClick={() => setCommenting(true)}>
+              <ReplyIcon /> Responder
+            </button>
+            <button type="button" className="ch-sec-act" onClick={() => onAskMore(title)}>
+              <AskIcon /> Dar más detalle
+            </button>
+          </span>
+        )}
+      </p>
+      {commenting && (
         <div className="ch-sec-comment">
           <textarea
             className="ch-sec-input"
@@ -116,23 +124,24 @@ function SectionComment({
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
 function Assumption({
   text,
-  onRefine,
+  onCorrect,
 }: {
   text: string;
-  onRefine: (instruction: string) => void;
+  /** (viejoSupuesto, textoCorregido) → lo saca de la lista y avisa al agente */
+  onCorrect: (oldText: string, newText: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState(text);
+  const [value, setValue] = useState("");
   const save = () => {
     const v = value.trim();
     setEditing(false);
-    if (v && v !== text) onRefine(`Corregí este supuesto: en vez de "${text}", ${v}.`);
+    if (v) onCorrect(text, v); // corregido → sale de la lista + avisa
   };
   if (!editing)
     return (
@@ -142,7 +151,7 @@ function Assumption({
           type="button"
           className="ch-assum-edit"
           onClick={() => {
-            setValue(text);
+            setValue("");
             setEditing(true);
           }}
         >
@@ -156,8 +165,12 @@ function Assumption({
         className="ch-sec-input"
         autoFocus
         value={value}
+        placeholder={text}
         onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && save()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") save();
+          if (e.key === "Escape") setEditing(false);
+        }}
       />
       <div className="ch-sec-comment-cta">
         <button type="button" className="ch-btn ghost sm" onClick={() => setEditing(false)}>
@@ -171,6 +184,131 @@ function Assumption({
   );
 }
 
+function ToneXIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// Tono como keywords: clic aplica, doble clic edita, la X quita, "+ Agregar" suma.
+// Cada cambio en el tono activo dispara un refinamiento.
+function ToneEditor({ onRefine }: { onRefine: (instruction: string) => void }) {
+  const [words, setWords] = useState<string[]>(() => [...TONE_PRESETS]);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState("");
+
+  const apply = (w: string) => {
+    setSelected(w);
+    onRefine(`Ajustá el tono del sitio a algo más ${w.toLowerCase()}.`);
+  };
+  const remove = (i: number) => {
+    setWords((prev) => prev.filter((_, x) => x !== i));
+    if (words[i] === selected) setSelected(null);
+  };
+  const startEdit = (i: number) => {
+    setAdding(false);
+    setDraft(words[i]);
+    setEditingIdx(i);
+  };
+  const saveEdit = () => {
+    if (editingIdx === null) return;
+    const v = draft.trim();
+    const old = words[editingIdx];
+    if (v && v !== old && !words.includes(v)) {
+      setWords((prev) => prev.map((w, x) => (x === editingIdx ? v : w)));
+      if (old === selected) apply(v); // reflejar el cambio del tono activo
+    }
+    setEditingIdx(null);
+    setDraft("");
+  };
+  const addWord = () => {
+    const v = draft.trim();
+    if (v && !words.includes(v)) setWords((prev) => [...prev, v]);
+    setAdding(false);
+    setDraft("");
+  };
+
+  return (
+    <div className="ch-tone">
+      <span className="ch-tone-label">Tono</span>
+      <div className="ch-tone-opts">
+        {words.map((w, i) =>
+          editingIdx === i ? (
+            <input
+              key={`edit-${i}`}
+              className="ch-tone-edit"
+              autoFocus
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") saveEdit();
+                if (e.key === "Escape") {
+                  setEditingIdx(null);
+                  setDraft("");
+                }
+              }}
+              onBlur={saveEdit}
+            />
+          ) : (
+            <span key={w} className={`ch-tone-opt ${selected === w ? "on" : ""}`}>
+              <button
+                type="button"
+                className="ch-tone-word"
+                onClick={() => apply(w)}
+                onDoubleClick={() => startEdit(i)}
+                title="Clic para aplicar · doble clic para editar"
+              >
+                {w}
+              </button>
+              <button
+                type="button"
+                className="ch-tone-x"
+                aria-label={`Quitar ${w}`}
+                onClick={() => remove(i)}
+              >
+                <ToneXIcon />
+              </button>
+            </span>
+          )
+        )}
+
+        {adding ? (
+          <input
+            className="ch-tone-edit"
+            autoFocus
+            placeholder="Nueva palabra"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") addWord();
+              if (e.key === "Escape") {
+                setAdding(false);
+                setDraft("");
+              }
+            }}
+            onBlur={addWord}
+          />
+        ) : (
+          <button
+            type="button"
+            className="ch-tone-add"
+            onClick={() => {
+              setDraft("");
+              setAdding(true);
+            }}
+          >
+            + Agregar
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function PlanCard({
   plan,
   palette,
@@ -179,6 +317,7 @@ export default function PlanCard({
   onCreatePalette,
   onRefine,
   onAskMore,
+  onCorrectAssumption,
   collapsed = false,
 }: {
   plan: Plan;
@@ -188,40 +327,17 @@ export default function PlanCard({
   onCreatePalette: (sw: Swatch) => void;
   onRefine: (instruction: string) => void;
   onAskMore: (sectionTitle: string) => void;
+  /** corregir un supuesto: lo saca del plan al instante (sin re-sintetizar). */
+  onCorrectAssumption: (oldText: string, newText: string) => void;
   /** durante un refinamiento el plan anterior queda colapsado como "historial". */
   collapsed?: boolean;
 }) {
   const [open, setOpen] = useState<Set<number>>(new Set());
   const [revealed, setRevealed] = useState<Set<number>>(new Set());
-  const [toneOpen, setToneOpen] = useState(false);
   const [assumOpen, setAssumOpen] = useState(false);
   const cardRef = useRef<HTMLDivElement | null>(null);
 
   const couple = coupleLine(plan.names ?? []);
-
-  // Colapsado: sólo una tira con el título del plan anterior + "actualizando…".
-  if (collapsed) {
-    return (
-      <div className="ch-plan collapsed" aria-label="Plan anterior (actualizando)">
-        <div className="ch-plan-collapsed">
-          <div className="ch-plan-collapsed-txt">
-            <p className="ch-plan-kicker">
-              {couple ? `Plan para ${couple}` : "Plan de tu sitio"}
-            </p>
-            <h2 className="ch-plan-collapsed-title">{plan.title}</h2>
-          </div>
-          <span className="ch-plan-updating">
-            <span className="ch-typing" aria-hidden>
-              <span />
-              <span />
-              <span />
-            </span>
-            Actualizando…
-          </span>
-        </div>
-      </div>
-    );
-  }
 
   const toggle = (i: number) =>
     setOpen((prev) => {
@@ -257,6 +373,32 @@ export default function PlanCard({
     return () => io.disconnect();
   }, [plan]);
 
+  // Colapsado (durante un refinamiento): sólo una tira con el título del plan
+  // anterior + "actualizando…". Va DESPUÉS de todos los hooks para no romper el
+  // orden de hooks de React ("Rendered fewer hooks than expected").
+  if (collapsed) {
+    return (
+      <div className="ch-plan collapsed" aria-label="Plan anterior (actualizando)">
+        <div className="ch-plan-collapsed">
+          <div className="ch-plan-collapsed-txt">
+            <p className="ch-plan-kicker">
+              {couple ? `Plan para ${couple}` : "Plan de tu sitio"}
+            </p>
+            <h2 className="ch-plan-collapsed-title">{plan.title}</h2>
+          </div>
+          <span className="ch-plan-updating">
+            <span className="ch-typing" aria-hidden>
+              <span />
+              <span />
+              <span />
+            </span>
+            Actualizando…
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="ch-plan" ref={cardRef}>
       <p className="ch-plan-kicker">
@@ -265,32 +407,8 @@ export default function PlanCard({
       <h2 className="ch-plan-title">{plan.title}</h2>
       <p className="ch-plan-angle">{plan.angle}</p>
 
-      {/* tono customizable — mismo formato de label que la paleta */}
-      <div className="ch-tone">
-        <p className="ch-plan-tone">
-          <span className="ch-tone-label">Tono</span> {plan.tone}
-          <button type="button" className="ch-tone-change" onClick={() => setToneOpen((v) => !v)}>
-            {toneOpen ? "cerrar" : "cambiar"}
-          </button>
-        </p>
-        {toneOpen && (
-          <div className="ch-tone-opts">
-            {TONE_PRESETS.map((t) => (
-              <button
-                key={t}
-                type="button"
-                className="ch-tone-opt"
-                onClick={() => {
-                  onRefine(`Ajustá el tono del sitio a algo más ${t.toLowerCase()}.`);
-                  setToneOpen(false);
-                }}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* tono como keywords editables (quitar / editar / agregar) */}
+      <ToneEditor onRefine={onRefine} />
 
       <PalettePicker
         value={palette}
@@ -316,13 +434,18 @@ export default function PlanCard({
               >
                 <span className="ch-plan-sec-num">{String(i + 1).padStart(2, "0")}</span>
                 <span className="ch-plan-sec-title">{s.title}</span>
+                <span className="ch-plan-sec-kind">{SECTION_KIND_LABELS[s.kind]}</span>
                 <span className={`ch-plan-sec-chev ${isOpen ? "open" : ""}`}>
                   <Chevron />
                 </span>
               </button>
               <div className="ch-plan-sec-detail">
-                <p>{s.intent}</p>
-                <SectionComment title={s.title} onRefine={onRefine} onAskMore={onAskMore} />
+                <SectionComment
+                  title={s.title}
+                  intent={s.intent}
+                  onRefine={onRefine}
+                  onAskMore={onAskMore}
+                />
               </div>
             </li>
           );
@@ -345,8 +468,8 @@ export default function PlanCard({
           </button>
           {assumOpen && (
             <ul>
-              {plan.assumptions.map((a, i) => (
-                <Assumption key={i} text={a} onRefine={onRefine} />
+              {plan.assumptions.map((a) => (
+                <Assumption key={a} text={a} onCorrect={onCorrectAssumption} />
               ))}
             </ul>
           )}

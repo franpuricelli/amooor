@@ -9,8 +9,39 @@
 
 import { z } from "zod";
 
-/** Una sección propuesta del sitio: título + intención en una línea. */
+/**
+ * Tipos de sección que el template de aniversario sabe renderizar. FUENTE DE
+ * VERDAD: lib/content.ts (SectionType, líneas 15-22) — mantener en sync con
+ * lib/template.ts, lib/draft.ts. El plan del intake se piensa SOBRE este
+ * repertorio fijo (adaptamos el template, no inventamos secciones nuevas).
+ */
+export const SECTION_KINDS = [
+  "hero",
+  "story",
+  "travel",
+  "moments",
+  "watch",
+  "stats",
+  "gallery",
+] as const;
+export type SectionKind = (typeof SECTION_KINDS)[number];
+export const zSectionKind = z.enum(SECTION_KINDS);
+
+/** Etiqueta legible (ES) por tipo de sección — la muestra la tarjeta del plan. */
+export const SECTION_KIND_LABELS: Record<SectionKind, string> = {
+  hero: "Portada",
+  story: "Historia",
+  travel: "Viajes",
+  moments: "Momentos",
+  watch: "Pelis y series",
+  stats: "Contador",
+  gallery: "Galería",
+};
+
+/** Una sección propuesta del sitio: mapeada a un bloque del template. */
 export const zPlanSection = z.object({
+  /** tipo de bloque del template al que se adapta esta sección */
+  kind: zSectionKind.default("story").catch("story"),
   title: z.string().min(1),
   intent: z.string().min(1),
 });

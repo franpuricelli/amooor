@@ -522,6 +522,7 @@
 }
 .ch-palette-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   align-items: center;
 }
@@ -703,7 +704,9 @@
   border-top: 1px solid var(--mk-line-soft);
   opacity: 0;
   transform: translateY(8px);
-  transition: opacity 0.5s ease, transform 0.5s ease;
+  border-radius: 12px;
+  transition: opacity 0.5s ease, transform 0.5s ease, background 0.18s ease,
+    box-shadow 0.18s ease;
 }
 .ch-plan-sec.in {
   opacity: 1;
@@ -711,6 +714,15 @@
 }
 .ch-plan-sec:first-child {
   border-top: 0;
+}
+/* detalle: al pasar por encima la sección se resalta suavemente */
+.ch-plan-sec:hover {
+  background: color-mix(in srgb, var(--mk-rose-soft) 45%, transparent);
+}
+.ch-plan-sec:hover .ch-plan-sec-num,
+.ch-plan-sec:hover .ch-plan-sec-title,
+.ch-plan-sec:hover .ch-plan-sec-chev {
+  color: var(--mk-rose-text);
 }
 .ch-plan-sec-head {
   display: flex;
@@ -738,6 +750,18 @@
   font-weight: 650;
   font-size: 0.98rem;
 }
+/* badge del tipo de bloque del template al que se adapta la sección */
+.ch-plan-sec-kind {
+  flex-shrink: 0;
+  font-size: 0.66rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mk-rose-text);
+  background: var(--mk-rose-soft);
+  padding: 0.16rem 0.5rem;
+  border-radius: 999px;
+}
 .ch-plan-sec-chev {
   color: var(--mk-ink-3);
   display: inline-flex;
@@ -756,36 +780,41 @@
   max-height: 420px;
   padding: 0 0 0.9rem 2.55rem;
 }
-.ch-plan-sec-detail p {
+.ch-plan-sec-detail p,
+.ch-plan-sec-intent {
   margin: 0;
   font-size: 0.9rem;
   color: var(--mk-ink-2);
-  line-height: 1.55;
+  line-height: 1.7;
 }
 
-/* herramientas por sección: comentar / dar más detalle */
-.ch-sec-tools {
-  margin-top: 0.6rem;
-}
-.ch-sec-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
+/* herramientas por sección: responder / dar más detalle, INLINE tras el texto */
+.ch-sec-inline {
+  display: inline-flex;
+  gap: 0.35rem;
+  vertical-align: middle;
+  margin-left: 0.45rem;
 }
 .ch-sec-act {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.3rem;
+  vertical-align: middle;
   border: 1px solid var(--mk-line);
   background: var(--mk-bg);
   color: var(--mk-ink-2);
   font: inherit;
-  font-size: 0.82rem;
+  font-size: 0.76rem;
   font-weight: 550;
-  padding: 0.35rem 0.7rem;
+  padding: 0.26rem 0.6rem;
   border-radius: 999px;
   cursor: pointer;
+  white-space: nowrap;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.ch-sec-act svg {
+  width: 13px;
+  height: 13px;
 }
 .ch-sec-act:hover {
   background: var(--mk-rose-soft);
@@ -899,47 +928,95 @@
   text-decoration: underline;
 }
 
-/* tono customizable */
+/* tono como keywords rosas (no un párrafo) */
 .ch-tone {
-  margin: 0 0 0.4rem;
+  margin: 0 0 0.9rem;
 }
-.ch-tone-change {
-  margin-left: 0.5rem;
-  border: 0;
-  background: transparent;
-  color: var(--mk-rose-text);
-  font: inherit;
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0;
-}
-.ch-tone-change:hover {
-  text-decoration: underline;
+.ch-tone .ch-tone-label {
+  display: block;
+  margin-bottom: 0.5rem;
 }
 .ch-tone-opts {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.4rem;
-  margin: 0.5rem 0 0.2rem;
-  animation: ch-fade 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-/* keywords con el mismo formato de pill que "Comentar": rosa suave */
+/* pill de keyword (rosa suave) con palabra + botón de quitar */
 .ch-tone-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.05rem;
   border: 1px solid transparent;
   background: var(--mk-rose-soft);
+  color: var(--mk-rose-text);
+  border-radius: 999px;
+  padding: 0 0.28rem 0 0.15rem;
+  transition: background 0.15s, color 0.15s;
+}
+.ch-tone-opt.on {
+  background: var(--mk-rose-btn);
+  color: #fff;
+}
+.ch-tone-word {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  padding: 0.4rem 0.35rem 0.4rem 0.65rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.ch-tone-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  transition: opacity 0.12s, background 0.12s;
+}
+.ch-tone-x:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.1);
+}
+.ch-tone-opt.on .ch-tone-x:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+.ch-tone-add {
+  border: 1px dashed var(--mk-rose);
+  background: transparent;
   color: var(--mk-rose-text);
   font: inherit;
   font-size: 0.84rem;
   font-weight: 600;
-  padding: 0.4rem 0.85rem;
+  padding: 0.4rem 0.8rem;
   border-radius: 999px;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition: background 0.15s;
 }
-.ch-tone-opt:hover {
-  background: var(--mk-rose);
-  color: var(--mk-card);
+.ch-tone-add:hover {
+  background: var(--mk-rose-soft);
+}
+.ch-tone-edit {
+  width: 8.5rem;
+  border: 1px solid var(--mk-rose);
+  background: var(--mk-card);
+  color: var(--mk-ink);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  outline: none;
 }
 
 /* ── botones ─────────────────────────────────────────────────────────────── */
@@ -1522,6 +1599,25 @@
   .ch-profile-btn {
     padding: 0.3rem;
   }
+  /* header: dejamos lugar al botón de perfil (fixed, top-right) para que
+     "Guardar" no quede tapado ni cortado, y ajustamos la barra de progreso. */
+  .ch-top {
+    gap: 0.5rem;
+    padding: 0.65rem 0.9rem;
+    padding-right: 3.4rem;
+  }
+  .ch-progress {
+    max-width: none;
+    margin: 0;
+  }
+  .ch-save-btn {
+    padding: 0.34rem 0.66rem;
+    font-size: 0.76rem;
+    white-space: nowrap;
+  }
+  .ch-brand {
+    font-size: 1rem;
+  }
 }
 
 @media (max-width: 520px) {
@@ -1985,12 +2081,23 @@
   .ch-shared {
     top: 66px;
     right: 8px;
-    padding: 0.45rem;
-    gap: 0.45rem;
+    width: 52px;
+    padding: 0.4rem;
+    gap: 0.4rem;
     max-height: calc(100dvh - 150px);
   }
   .ch-shared.open {
     width: min(240px, calc(100vw - 20px));
+  }
+  .ch-shared .ch-shared-ic {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+  }
+  /* reservamos un canal a la derecha para que el panel de Contexto no tape los
+     controles del plan / los mensajes (sólo cuando el panel existe). */
+  .ch-root:has(.ch-shared) .ch-inner {
+    padding-right: 3.6rem;
   }
 }
 

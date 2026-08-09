@@ -391,7 +391,6 @@ export default function ChatComposer({
             <MicIcon />
           </button>
         </div>
-        <div className="ch-rec">Escuchando… tocá el micrófono para enviar</div>
         {err && <div className="ch-error">{err}</div>}
       </div>
     );

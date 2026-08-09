@@ -77,6 +77,8 @@ export default function Chat() {
   const insertRef = useRef<((t: string) => void) | null>(null);
   const quoteRef = useRef<((t: string) => void) | null>(null);
   const openProfileRef = useRef<(() => void) | null>(null);
+  // correcciones de supuestos pendientes de avisarle al agente en el próximo refine
+  const correctionsRef = useRef<string[]>([]);
 
   const hasPlan = !!convo.plan && !approved;
 
@@ -96,6 +98,23 @@ export default function Chat() {
       return next;
     });
   }, []);
+
+  // Corregir un supuesto = edición LOCAL e instantánea: lo sacamos del plan (no
+  // re-sintetizamos, así no vuelve a aparecer ni hay que esperar) y guardamos el
+  // dato para avisarle al agente en el próximo refine real.
+  const correctAssumption = useCallback(
+    (oldText: string, newText: string) => {
+      if (!convo.plan) return;
+      convo.setPlan({
+        ...convo.plan,
+        assumptions: convo.plan.assumptions.filter((a) => a !== oldText),
+      });
+      correctionsRef.current.push(
+        `En vez de "${oldText}" → ${newText}. Es un hecho confirmado, no lo listes como supuesto.`
+      );
+    },
+    [convo]
+  );
 
   const scrollToBottom = useCallback((smooth = true) => {
     const el = mainRef.current;
@@ -188,6 +207,15 @@ export default function Chat() {
           }
         }
       }
+
+      // Un turno que sólo produjo plan (sin tokens) deja el mensaje del asistente
+      // vacío → Kimi rechaza el próximo request ("assistant must not be empty").
+      // Le damos un texto mínimo de confirmación.
+      if (assistantStarted) {
+        updateLast((m) =>
+          m.content.trim() ? m : { ...m, content: "Listo, actualicé el plan." }
+        );
+      }
     },
     [convo]
   );
@@ -221,8 +249,11 @@ export default function Chat() {
       const converse = opts?.converse ?? false;
       const refine = !converse && hasPlan; // plan a la vista → cada mensaje refina
       setError(null);
-      // al refinar, colapsamos el plan anterior hasta que se arme el nuevo
-      if (refine) setRefining(true);
+      // Con un plan a la vista (refine o converse), lo colapsamos y la nueva
+      // conversación va DEBAJO — así el usuario ve lo que escribe el agente y el
+      // plan no ocupa toda la pantalla. Se re-expande al terminar / al llegar el
+      // plan nuevo.
+      if (hasPlan) setRefining(true);
 
       const userMsg: Message = {
         role: "user",
@@ -239,13 +270,28 @@ export default function Chat() {
       setAtBottom(true);
       requestAnimationFrame(() => scrollToBottom(true));
 
+      // Nunca mandamos mensajes vacíos (Kimi los rechaza).
+      const outMessages = base.map((m) => ({
+        role: m.role,
+        content: m.content?.trim() ? m.content : "Listo, actualicé el plan.",
+      }));
+      // Al refinar, sumamos las correcciones de supuestos acumuladas como contexto.
+      if (refine && correctionsRef.current.length && outMessages.length) {
+        const note =
+          "\n\nAclaraciones del usuario (tratá como hechos confirmados, no como supuestos):\n" +
+          correctionsRef.current.map((c) => `- ${c}`).join("\n");
+        const last = outMessages[outMessages.length - 1];
+        outMessages[outMessages.length - 1] = { ...last, content: last.content + note };
+        correctionsRef.current = [];
+      }
+
       try {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
             token: convo.token,
-            messages: base.map((m) => ({ role: m.role, content: m.content })),
+            messages: outMessages,
             refine,
             converse,
             previousPlan: refine ? convo.plan : undefined,
@@ -397,6 +443,7 @@ export default function Chat() {
                     onCreatePalette={convo.addCustomPalette}
                     onRefine={(instruction) => send(instruction)}
                     onAskMore={() => {}}
+                    onCorrectAssumption={correctAssumption}
                     collapsed
                   />
                   <ChatMessages
@@ -428,6 +475,7 @@ export default function Chat() {
                           { converse: true }
                         )
                       }
+                      onCorrectAssumption={correctAssumption}
                     />
                   )}
                 </>
