@@ -33,6 +33,10 @@ export const save = mutation({
     email: v.optional(v.string()),
     plan: v.optional(planId),
     content: v.optional(v.any()),
+    // Intake conversacional (chat-first). El patch parcial ya ignora `undefined`,
+    // así que estos conviven con el flujo del wizard sin pisarse.
+    conversation: v.optional(v.any()),
+    intakePlan: v.optional(v.any()),
     status: v.optional(draftStatus),
     lastStep: v.optional(v.number()),
   },

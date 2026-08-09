@@ -107,6 +107,13 @@ export default defineSchema({
     domainWish: v.optional(v.string()), // idea de dominio .love (upsell)
     plan: v.optional(planId),
     content: v.optional(v.any()), // content generado (preview) — validado por el template
+    // Intake conversacional (chat-first, reemplaza al wizard). Aditivo: no rompe
+    // drafts viejos. `conversation` = mensajes [{ role, content }] del chat;
+    // `intakePlan` = el plan de ejecución que dropea el agente (lib/plan.ts).
+    // OJO: `plan` (arriba) es el plan de PAGO (pricing). El plan del intake va en
+    // `intakePlan` para no colisionar con ese campo.
+    conversation: v.optional(v.any()),
+    intakePlan: v.optional(v.any()),
     status: draftStatus,
     lastStep: v.optional(v.number()), // para reanudar el wizard
     createdAt: v.number(),
