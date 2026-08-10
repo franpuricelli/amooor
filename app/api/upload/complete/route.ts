@@ -25,6 +25,7 @@ interface CompleteBody {
   category?: unknown;
   id?: unknown;
   caption?: unknown;
+  filename?: unknown;
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const { draftToken, category, id, caption } = body;
+  const { draftToken, category, id, caption, filename } = body;
 
   if (!draftToken || typeof draftToken !== "string") {
     return NextResponse.json(
@@ -61,6 +62,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
   const captionStr =
     caption && typeof caption === "string" ? caption : undefined;
+  const filenameStr =
+    filename && typeof filename === "string" ? filename : undefined;
 
   // Resolver URLs de entrega desde Cloudflare
   let cloudflareId: string;
@@ -106,6 +109,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       thumbUrl,
       fullUrl,
       caption: captionStr,
+      filename: filenameStr,
     });
   } catch (err) {
     const message =

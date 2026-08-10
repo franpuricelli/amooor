@@ -22,6 +22,7 @@ import ProfileMenu from "./ProfileMenu";
 import SharedPanel from "./SharedPanel";
 import SelectionReply from "./SelectionReply";
 import PostApprove from "./postapprove/PostApprove";
+import StatusDot, { type DotStatus } from "./postapprove/StatusDot";
 
 function StarterIcon({ name }: { name: string }) {
   const p: Record<string, React.ReactNode> = {
@@ -71,6 +72,10 @@ export default function Chat() {
   const [atBottom, setAtBottom] = useState(true);
   const [loginHint, setLoginHint] = useState(false);
   const [publishHint, setPublishHint] = useState(false);
+  // estado de publicación (burbuja del botón): idle=gris (sin publicar),
+  // busy=amarillo (en curso), ready=verde (publicado). El backend de pago/publish
+  // todavía es un stub, así que arranca en "idle".
+  const [publishStatus] = useState<DotStatus>("idle");
   const [serverProgress, setServerProgress] = useState(0);
   const [refining, setRefining] = useState(false);
   const [refLabels, setRefLabels] = useState<Record<string, string>>({});
@@ -382,7 +387,7 @@ export default function Chat() {
   const progress = approved || hasPlan ? 1 : serverProgress;
 
   return (
-    <div className="ch-root mk-root">
+    <div className={`ch-root mk-root ${approved ? "ch-editing" : ""}`}>
       <header className="ch-top">
         <a className="ch-brand" href="/">
           amooor
@@ -410,8 +415,15 @@ export default function Chat() {
             onClick={() => {
               setPublishHint(true);
             }}
-            title="Publicá tu sitio"
+            title={
+              publishStatus === "ready"
+                ? "Tu sitio está publicado"
+                : publishStatus === "busy"
+                  ? "Publicando…"
+                  : "Todavía sin publicar"
+            }
           >
+            <StatusDot status={publishStatus} />
             Publicar
           </button>
         ) : (

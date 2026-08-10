@@ -32,7 +32,7 @@ export async function uploadImage(
     const res = await fetch("/api/upload/complete", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ draftToken, category, id }),
+      body: JSON.stringify({ draftToken, category, id, filename: file.name }),
     });
     if (res.ok) return;
     const data = await res.json().catch(() => ({}));

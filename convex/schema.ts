@@ -133,6 +133,7 @@ export default defineSchema({
     fullUrl: v.string(), // variante `full`
     order: v.number(),
     caption: v.optional(v.string()),
+    filename: v.optional(v.string()), // nombre original del archivo subido
     createdAt: v.number(),
   })
     .index("by_draft", ["draftToken"])

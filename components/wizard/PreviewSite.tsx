@@ -31,7 +31,10 @@ export default function PreviewSite({
 
   const tree = (
     <TenantProvider content={content}>
-      <SmoothScroll>
+      {/* En el editor (edit presente) el preview vive en un contenedor con scroll
+          propio (.pa-frame-body): desactivamos Lenis y usamos el scroll nativo,
+          si no el trackpad sobre el preview rompe el scroll. */}
+      <SmoothScroll enabled={!edit}>
         <LightboxProvider>
           <RevealInit />
           <main>

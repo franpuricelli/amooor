@@ -28,32 +28,47 @@ function PersonCard({
   person,
   side,
   active,
+  onReveal,
 }: {
   person: Person;
   side: Side;
   active: boolean;
+  /** mantener la tarjeta abierta al pasar el mouse por encima (para editarla) */
+  onReveal: () => void;
 }) {
   const content = useContent();
   return (
     <aside
       className={`person-card glass-card ${side} ${active ? "on" : ""}`}
       aria-hidden={!active}
+      onMouseEnter={onReveal}
     >
       <div className="person-head">
-        <span className="person-name">{person.name}</span>
-        <span className="person-tag">{person.tagline}</span>
+        <EditableText
+          as="span"
+          className="person-name"
+          path={`people.${side}.name`}
+          value={person.name}
+        />
+        <EditableText
+          as="span"
+          className="person-tag"
+          path={`people.${side}.tagline`}
+          value={person.tagline}
+        />
       </div>
       <div className="person-traits">
-        {person.traits.map((t) => (
-          <span className="chip" key={t.label}>
-            <span aria-hidden>{t.icon}</span> {t.label}
+        {person.traits.map((t, i) => (
+          <span className="chip" key={i}>
+            <span aria-hidden>{t.icon}</span>{" "}
+            <EditableText as="span" path={`people.${side}.traits.${i}.label`} value={t.label} />
           </span>
         ))}
       </div>
       <div className="person-artists">
         <span className="person-artists-label">{content.people.artistsLabel}</span>
-        {person.artists.map((a) => (
-          <span className="artist-row" key={a.name}>
+        {person.artists.map((a, i) => (
+          <span className="artist-row" key={i}>
             {a.img ? (
               <img className="artist-avatar" src={a.img} alt="" loading="lazy" />
             ) : (
@@ -61,7 +76,7 @@ function PersonCard({
                 {a.name.trim().charAt(0).toUpperCase()}
               </span>
             )}
-            {a.name}
+            <EditableText as="span" path={`people.${side}.artists.${i}.name`} value={a.name} />
           </span>
         ))}
       </div>
@@ -82,7 +97,19 @@ export default function Hero({ id }: { id: string }) {
   const [src, setSrc] = useState<string>(hero.pixelSrc ?? realSrc);
 
   return (
-    <section id={id} className="hero" onMouseLeave={() => setActive(null)}>
+    <section
+      id={id}
+      className={`hero ${edit?.editing ? "pa-hero-editing" : ""}`}
+      onMouseLeave={() => {
+        // en edición: no cerrar la tarjeta si estás editando un campo adentro
+        if (
+          edit?.editing &&
+          (document.activeElement as HTMLElement | null)?.closest?.(".person-card")
+        )
+          return;
+        setActive(null);
+      }}
+    >
       {/* full-screen backdrop */}
       <img
         src={src}
@@ -165,8 +192,18 @@ export default function Hero({ id }: { id: string }) {
         {right.name}
       </span>
 
-      <PersonCard person={left} side="left" active={active === "left"} />
-      <PersonCard person={right} side="right" active={active === "right"} />
+      <PersonCard
+        person={left}
+        side="left"
+        active={active === "left"}
+        onReveal={() => setActive("left")}
+      />
+      <PersonCard
+        person={right}
+        side="right"
+        active={active === "right"}
+        onReveal={() => setActive("right")}
+      />
     </section>
   );
 }

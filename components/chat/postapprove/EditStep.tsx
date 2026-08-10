@@ -67,6 +67,39 @@ function MediaGlyph() {
     </svg>
   );
 }
+function ChevronGlyph() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function PlusGlyph() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+function GripGlyph() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <circle cx="9" cy="6" r="1.6" />
+      <circle cx="15" cy="6" r="1.6" />
+      <circle cx="9" cy="12" r="1.6" />
+      <circle cx="15" cy="12" r="1.6" />
+      <circle cx="9" cy="18" r="1.6" />
+      <circle cx="15" cy="18" r="1.6" />
+    </svg>
+  );
+}
+function TrashGlyph() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
 
 export default function EditStep({
   convo,
@@ -158,6 +191,7 @@ export default function EditStep({
         custom={convo.customPalettes}
         onSelect={onPalette}
         onCreate={convo.addCustomPalette}
+        compact
       />
     </div>
   );
@@ -181,24 +215,32 @@ export default function EditStep({
           <button
             type="button"
             className={`pa-sidebar-btn ${tool === "chat" ? "on" : ""}`}
+            aria-pressed={tool === "chat"}
+            aria-label="Chat"
             onClick={() => {
               setTool("chat");
               setMobilePane("flow");
             }}
           >
-            <ChatGlyph />
-            <span>Chat</span>
+            <span className="pa-sidebar-ic">
+              <ChatGlyph />
+            </span>
+            <span className="pa-sidebar-lbl">Chat</span>
           </button>
           <button
             type="button"
             className={`pa-sidebar-btn ${tool === "media" ? "on" : ""}`}
+            aria-pressed={tool === "media"}
+            aria-label="Multimedia"
             onClick={() => {
               setTool("media");
               setMobilePane("flow");
             }}
           >
-            <MediaGlyph />
-            <span>Multimedia</span>
+            <span className="pa-sidebar-ic">
+              <MediaGlyph />
+            </span>
+            <span className="pa-sidebar-lbl">Multimedia</span>
           </button>
         </nav>
 
@@ -363,7 +405,7 @@ function ChatFlow({
   );
 }
 
-// ── flujo MULTIMEDIA (reordenar / agregar / cambiar imágenes) ───────────────────
+// ── flujo MULTIMEDIA (drawer de sección + lista reordenable con preview) ─────────
 function MediaFlow({
   convo,
   focus,
@@ -376,13 +418,26 @@ function MediaFlow({
   const token = convo.token;
   const sections = (convo.plan ? planSectionSlugs(convo.plan) : [])
     .filter((s) => s.section.kind !== "stats")
-    .map((s) => ({ category: s.category, title: s.section.title, single: s.section.kind === "hero" || s.section.kind === "closing" }));
+    .map((s) => ({
+      category: s.category,
+      title: s.section.title,
+      single: s.section.kind === "hero" || s.section.kind === "closing",
+    }));
 
   const [rows, setRows] = useState<Doc<"draftPhotos">[]>([]);
   const [active, setActive] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [drawer, setDrawer] = useState(false);
+  // orden LOCAL de la sección activa: se reordena en vivo mientras arrastrás
+  // (el componente se ve moviéndose), y se persiste al soltar.
+  const [localPhotos, setLocalPhotos] = useState<Doc<"draftPhotos">[]>([]);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  // preview flotante (fixed) al hacer hover sobre una miniatura
+  const [zoom, setZoom] = useState<{ url: string; x: number; y: number } | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const drawerRef = useRef<HTMLDivElement | null>(null);
   const dragFrom = useRef<number | null>(null);
+  const orderRef = useRef<Doc<"draftPhotos">[] | null>(null);
 
   const refresh = useCallback(async () => {
     if (!token || !isConvexConfigured()) return;
@@ -405,9 +460,34 @@ function MediaFlow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focus]);
 
+  // cerrar el drawer al tocar afuera
+  useEffect(() => {
+    if (!drawer) return;
+    const onDoc = (e: MouseEvent) => {
+      if (drawerRef.current && !drawerRef.current.contains(e.target as Node)) setDrawer(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setDrawer(false);
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [drawer]);
+
+  // sincronizar el orden local con la sección activa (fuera de un drag)
+  useEffect(() => {
+    const cat = sections[active]?.category;
+    setLocalPhotos(
+      rows.filter((r) => r.category === cat).sort((a, b) => a.order - b.order)
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, active]);
+
   if (!sections.length) return <div className="pa-empty">No hay secciones.</div>;
   const s = sections[active];
   const photos = rows.filter((r) => r.category === s.category).sort((a, b) => a.order - b.order);
+  const countFor = (cat: string) => rows.filter((r) => r.category === cat).length;
 
   const change = async (fn: () => Promise<void>) => {
     setBusy(true);
@@ -439,32 +519,89 @@ function MediaFlow({
       await convexClient().mutation(api.photos.deleteDraftPhoto, { id });
     });
 
-  const reorder = (from: number, to: number) =>
+  // mover en vivo dentro del orden local (se ve moverse mientras arrastrás)
+  const moveLocal = (from: number, to: number) =>
+    setLocalPhotos((arr) => {
+      const next = [...arr];
+      const [m] = next.splice(from, 1);
+      next.splice(to, 0, m);
+      orderRef.current = next;
+      return next;
+    });
+
+  const persistOrder = (arr: Doc<"draftPhotos">[]) =>
     change(async () => {
-      const arr = [...photos];
-      const [m] = arr.splice(from, 1);
-      arr.splice(to, 0, m);
       await convexClient().mutation(api.photos.reorderDraftPhotos, { ids: arr.map((p) => p._id) });
     });
 
+  const pick = () => fileRef.current?.click();
+
+  // lista a mostrar: durante un drag, el orden local (en vivo); si no, el persistido
+  const listPhotos = dragIdx !== null ? localPhotos : photos;
+
+  // posición del preview flotante (clampeada al viewport)
+  const zoomStyle: React.CSSProperties | undefined = zoom
+    ? (() => {
+        const W = 260;
+        const H = 260;
+        const vw = typeof window !== "undefined" ? window.innerWidth : 1200;
+        const vh = typeof window !== "undefined" ? window.innerHeight : 800;
+        let left = zoom.x + 22;
+        if (left + W > vw - 8) left = zoom.x - W - 22;
+        let top = zoom.y - H / 2;
+        top = Math.max(8, Math.min(top, vh - H - 8));
+        return { left, top, width: W };
+      })()
+    : undefined;
+
   return (
     <div className="pa-media">
-      <div className="pa-media-tabs">
-        {sections.map((sec, i) => (
+      <div className="pa-media-head">
+        {/* drawer de sección (una sola opción visible; se despliega al tocar) */}
+        <div className="pa-media-drawer" ref={drawerRef}>
           <button
-            key={sec.category}
             type="button"
-            className={`pa-media-tab ${i === active ? "on" : ""}`}
-            onClick={() => setActive(i)}
+            className={`pa-media-drawer-btn ${drawer ? "open" : ""}`}
+            aria-haspopup="listbox"
+            aria-expanded={drawer}
+            onClick={() => setDrawer((v) => !v)}
           >
-            {sec.title}
+            <span className="pa-media-drawer-title">{s.title}</span>
+            <ChevronGlyph />
           </button>
-        ))}
-      </div>
+          {drawer && (
+            <ul className="pa-media-drawer-menu" role="listbox">
+              {sections.map((sec, i) => (
+                <li key={sec.category}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={i === active}
+                    className={`pa-media-drawer-item ${i === active ? "on" : ""}`}
+                    onClick={() => {
+                      setActive(i);
+                      setDrawer(false);
+                    }}
+                  >
+                    <span className="pa-media-drawer-item-title">{sec.title}</span>
+                    <span className="pa-media-drawer-item-n">{countFor(sec.category)}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
 
-      <div className="pa-media-body">
-        <button type="button" className="pa-drop" onClick={() => fileRef.current?.click()} disabled={busy}>
-          {busy ? "Trabajando…" : s.single ? "＋ Cambiar imagen o video" : "＋ Agregar fotos o video"}
+        {/* agregar: botón chico al lado del drawer (no un panel enorme) */}
+        <button
+          type="button"
+          className="pa-media-add"
+          onClick={pick}
+          disabled={busy}
+          title={s.single ? "Cambiar imagen o video" : "Agregar fotos o video"}
+        >
+          {busy ? <span className="ch-typing pa-load-dots" aria-hidden /> : <PlusGlyph />}
+          <span>{s.single ? "Cambiar" : "Agregar"}</span>
         </button>
         <input
           ref={fileRef}
@@ -477,33 +614,98 @@ function MediaFlow({
             e.target.value = "";
           }}
         />
+      </div>
 
-        {photos.length > 0 && (
-          <div className="pa-grid">
-            {photos.map((p, i) => (
-              <div
+      <div className="pa-media-body">
+        {photos.length === 0 ? (
+          <div className="pa-media-empty">
+            <p>
+              Todavía no hay {s.single ? "imagen" : "fotos"} en <b>{s.title}</b>.
+            </p>
+            <button type="button" className="pa-media-empty-add" onClick={pick} disabled={busy}>
+              {s.single ? "Elegir imagen o video" : "Agregar fotos o video"}
+            </button>
+          </div>
+        ) : (
+          <ul className="pa-medialist" onMouseLeave={() => setZoom(null)}>
+            {listPhotos.map((p, i) => (
+              <li
                 key={p._id}
-                className={`pa-thumb ${focus?.slug && p.cloudflareId === focus.slug ? "focused" : ""}`}
-                draggable
-                onDragStart={() => (dragFrom.current = i)}
+                className={`pa-mediarow ${
+                  focus?.slug && p.cloudflareId === focus.slug ? "focused" : ""
+                } ${dragIdx === i ? "dragging" : ""}`}
+                draggable={!s.single}
+                onDragStart={(e) => {
+                  dragFrom.current = i;
+                  orderRef.current = photos;
+                  setLocalPhotos(photos);
+                  setDragIdx(i);
+                  setZoom(null);
+                  e.dataTransfer.effectAllowed = "move";
+                }}
+                onDragEnter={() => {
+                  // reordenar en vivo: el ítem arrastrado se mueve a esta posición
+                  if (dragFrom.current != null && dragFrom.current !== i) {
+                    moveLocal(dragFrom.current, i);
+                    dragFrom.current = i;
+                    setDragIdx(i);
+                  }
+                }}
                 onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  if (dragFrom.current != null) reorder(dragFrom.current, i);
+                onDrop={(e) => e.preventDefault()}
+                onDragEnd={() => {
+                  const finalOrder = orderRef.current;
+                  const changed =
+                    finalOrder &&
+                    finalOrder.some((row, idx) => row._id !== photos[idx]?._id);
                   dragFrom.current = null;
+                  orderRef.current = null;
+                  setDragIdx(null);
+                  if (changed && finalOrder) persistOrder(finalOrder);
                 }}
               >
-                <span className="pa-thumb-num">{i + 1}</span>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.thumbUrl} alt="" loading="lazy" draggable={false} />
-                <button type="button" className="pa-thumb-x" aria-label="Quitar" onClick={() => del(p._id)}>
-                  ✕
-                </button>
-              </div>
+                {!s.single && (
+                  <span className="pa-mediarow-grip" aria-hidden>
+                    <GripGlyph />
+                    <em>{i + 1}</em>
+                  </span>
+                )}
+                <span
+                  className="pa-mediarow-thumb"
+                  onMouseEnter={(e) => setZoom({ url: p.fullUrl, x: e.clientX, y: e.clientY })}
+                  onMouseMove={(e) => setZoom({ url: p.fullUrl, x: e.clientX, y: e.clientY })}
+                  onMouseLeave={() => setZoom(null)}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.thumbUrl} alt="" loading="lazy" draggable={false} />
+                </span>
+                <span className="pa-mediarow-name" title={p.filename || undefined}>
+                  {p.filename || p.caption || `Imagen ${i + 1}`}
+                </span>
+                <span className="pa-mediarow-actions">
+                  <button
+                    type="button"
+                    className="pa-mediarow-del"
+                    aria-label="Quitar"
+                    onClick={() => del(p._id)}
+                    disabled={busy}
+                  >
+                    <TrashGlyph />
+                  </button>
+                </span>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </div>
+
+      {/* preview grande flotante (fixed → no lo recorta el scroll del panel) */}
+      {zoom && (
+        <div className="pa-media-zoom" style={zoomStyle} aria-hidden>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={zoom.url} alt="" />
+        </div>
+      )}
     </div>
   );
 }

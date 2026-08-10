@@ -17,6 +17,7 @@ export const recordDraftPhoto = mutation({
     thumbUrl: v.string(),
     fullUrl: v.string(),
     caption: v.optional(v.string()),
+    filename: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db
@@ -30,6 +31,7 @@ export const recordDraftPhoto = mutation({
         thumbUrl: args.thumbUrl,
         fullUrl: args.fullUrl,
         caption: args.caption,
+        filename: args.filename,
       });
       return dup._id;
     }
@@ -40,6 +42,7 @@ export const recordDraftPhoto = mutation({
       thumbUrl: args.thumbUrl,
       fullUrl: args.fullUrl,
       caption: args.caption,
+      filename: args.filename,
       order: existing.length,
       createdAt: Date.now(),
     });
