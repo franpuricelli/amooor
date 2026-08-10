@@ -11,6 +11,7 @@ import RevealInit from "@/components/RevealInit";
 import LightboxProvider from "@/components/Lightbox";
 import Footer from "@/components/Footer";
 import { TenantProvider } from "@/lib/tenant";
+import { EditProvider, type EditAPI } from "@/lib/edit-context";
 import { SECTION_REGISTRY } from "@/components/sections/registry";
 import { resolvePalette, paletteVars } from "@/lib/theme";
 import type { Content } from "@/lib/content";
@@ -19,30 +20,37 @@ import type { Theme } from "@/lib/template";
 export default function PreviewSite({
   content,
   theme,
+  edit,
 }: {
   content: Content;
   theme: Theme;
+  /** si viene, el sitio se renderiza en modo edición (copy editable + click imagen) */
+  edit?: EditAPI;
 }) {
   const paletteStyle = paletteVars(resolvePalette(theme)) as React.CSSProperties;
 
+  const tree = (
+    <TenantProvider content={content}>
+      <SmoothScroll>
+        <LightboxProvider>
+          <RevealInit />
+          <main>
+            {content.layout
+              .filter((s) => s.enabled)
+              .map((s) => {
+                const Section = SECTION_REGISTRY[s.type];
+                return Section ? <Section key={s.id} id={s.id} /> : null;
+              })}
+          </main>
+          <Footer />
+        </LightboxProvider>
+      </SmoothScroll>
+    </TenantProvider>
+  );
+
   return (
     <div style={paletteStyle}>
-      <TenantProvider content={content}>
-        <SmoothScroll>
-          <LightboxProvider>
-            <RevealInit />
-            <main>
-              {content.layout
-                .filter((s) => s.enabled)
-                .map((s) => {
-                  const Section = SECTION_REGISTRY[s.type];
-                  return Section ? <Section key={s.id} id={s.id} /> : null;
-                })}
-            </main>
-            <Footer />
-          </LightboxProvider>
-        </SmoothScroll>
-      </TenantProvider>
+      {edit ? <EditProvider value={edit}>{tree}</EditProvider> : tree}
     </div>
   );
 }

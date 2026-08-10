@@ -21,6 +21,7 @@ import PlanCard from "./PlanCard";
 import ProfileMenu from "./ProfileMenu";
 import SharedPanel from "./SharedPanel";
 import SelectionReply from "./SelectionReply";
+import PostApprove from "./postapprove/PostApprove";
 
 function StarterIcon({ name }: { name: string }) {
   const p: Record<string, React.ReactNode> = {
@@ -69,6 +70,7 @@ export default function Chat() {
   const [approved, setApproved] = useState(false);
   const [atBottom, setAtBottom] = useState(true);
   const [loginHint, setLoginHint] = useState(false);
+  const [publishHint, setPublishHint] = useState(false);
   const [serverProgress, setServerProgress] = useState(0);
   const [refining, setRefining] = useState(false);
   const [refLabels, setRefLabels] = useState<Record<string, string>>({});
@@ -401,21 +403,38 @@ export default function Chat() {
             />
           </div>
         )}
-        {convo.messages.length > 0 && (
+        {approved ? (
           <button
             type="button"
-            className="ch-save-btn"
+            className="ch-save-btn pa-publish-btn"
             onClick={() => {
-              setLoginHint(true);
-              openProfileRef.current?.();
+              setPublishHint(true);
             }}
-            title="Guardá tu historia iniciando sesión"
+            title="Publicá tu sitio"
           >
-            {convo.saving ? "Guardando…" : "Guardar"}
+            Publicar
           </button>
+        ) : (
+          convo.messages.length > 0 && (
+            <button
+              type="button"
+              className="ch-save-btn"
+              onClick={() => {
+                setLoginHint(true);
+                openProfileRef.current?.();
+              }}
+              title="Guardá tu historia iniciando sesión"
+            >
+              {convo.saving ? "Guardando…" : "Guardar"}
+            </button>
+          )
         )}
       </header>
 
+      {approved ? (
+        <PostApprove convo={convo} />
+      ) : (
+      <>
       <div className="ch-main" ref={mainRef} onScroll={onScroll}>
         <div className="ch-inner">
           {!convo.ready ? (
@@ -500,7 +519,6 @@ export default function Chat() {
                   )}
                 </>
               )}
-              {approved && <ApprovedStub />}
               {error && <div className="ch-error">{error}</div>}
             </>
           )}
@@ -535,6 +553,8 @@ export default function Chat() {
 
       {/* seleccionar texto del agente → "Responder" flotante (cita en el composer) */}
       {!empty && !approved && <SelectionReply onReply={(t) => quoteRef.current?.(t)} />}
+      </>
+      )}
 
       {loginHint && (
         <div className="ch-toast" role="status" onAnimationEnd={() => setLoginHint(false)}>
@@ -542,21 +562,13 @@ export default function Chat() {
         </div>
       )}
 
-      <ProfileMenu registerOpen={(fn) => (openProfileRef.current = fn)} />
-    </div>
-  );
-}
+      {publishHint && (
+        <div className="ch-toast" role="status" onAnimationEnd={() => setPublishHint(false)}>
+          El pago y la publicación llegan muy pronto.
+        </div>
+      )}
 
-// ── stub del paywall (Aprobar) — FUERA DE ALCANCE v0 ─────────────────────────
-function ApprovedStub() {
-  return (
-    <div className="ch-approved">
-      <h2 className="ch-approved-title">Aprobaste el plan.</h2>
-      <p>
-        Guardamos tu historia, el plan y la paleta. El próximo paso, crear tu sitio con
-        tus fotos y tu música, y publicarlo, llega muy pronto.
-      </p>
-      <p className="ch-hint">Próximamente: pago y creación del sitio. (v0: hasta acá llega el flujo.)</p>
+      <ProfileMenu registerOpen={(fn) => (openProfileRef.current = fn)} />
     </div>
   );
 }

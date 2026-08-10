@@ -3,6 +3,7 @@
 import StoryRow from "@/components/StoryRow";
 import { useContent } from "@/lib/tenant";
 import { usePhotos } from "@/lib/photos-context";
+import { EditableText } from "@/lib/edit-context";
 
 /**
  * A "story" section: a stack of narrative beats (text + tilted photo collage).
@@ -26,10 +27,10 @@ export default function StorySection({ id }: { id: string }) {
       {section.beats.map((beat, i) => (
         <StoryRow
           key={i}
-          kicker={beat.kicker}
-          title={beat.title}
+          kicker={<EditableText path={`story.${id}.beats.${i}.kicker`} value={beat.kicker} />}
+          title={<EditableText path={`story.${id}.beats.${i}.title`} value={beat.title} />}
           titleHeart={beat.titleHeart}
-          text={beat.text}
+          text={<EditableText as="span" path={`story.${id}.beats.${i}.text`} value={beat.text} />}
           cats={beat.cats}
           picks={resolve(beat.picks)}
           flip={beat.flip}

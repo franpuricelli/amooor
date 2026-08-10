@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Person } from "@/lib/content";
 import { useContent } from "@/lib/tenant";
 import { usePhotos } from "@/lib/photos-context";
+import { useEdit, EditableText } from "@/lib/edit-context";
 import Hearts, { PixelHeart } from "@/components/Hearts";
 
 // Little hearts popping above their heads in the 8-bit art. Deterministic
@@ -71,6 +72,7 @@ function PersonCard({
 export default function Hero({ id }: { id: string }) {
   const content = useContent();
   const { full } = usePhotos();
+  const edit = useEdit();
   const [active, setActive] = useState<Side | null>(null);
   const { left, right } = content.people;
   const { hero } = content;
@@ -85,11 +87,12 @@ export default function Hero({ id }: { id: string }) {
       <img
         src={src}
         alt={hero.bgAlt}
-        className="hero-bg"
+        className={`hero-bg ${edit?.editing ? "pa-img-editable" : ""}`}
         fetchPriority="high"
         onError={() => {
           if (src !== realSrc) setSrc(realSrc);
         }}
+        onClick={edit?.editing ? () => edit.onPickImage(hero.cat, hero.slug) : undefined}
       />
       <span className="hero-scrim" aria-hidden />
       <Hearts />
@@ -117,15 +120,25 @@ export default function Hero({ id }: { id: string }) {
       </div>
 
       <div className="hero-content">
-        <span className="eyebrow hero-in" style={{ animationDelay: "0.05s" }}>
-          {hero.eyebrow}
-        </span>
+        <EditableText
+          as="span"
+          className="eyebrow hero-in"
+          style={{ animationDelay: "0.05s" }}
+          path="hero.eyebrow"
+          value={hero.eyebrow}
+        />
         <h1 className="display hero-in" style={{ animationDelay: "0.15s" }}>
-          {hero.nameStart} <span className="hero-amp">&</span> {hero.nameEnd}
+          <EditableText as="span" path="hero.nameStart" value={hero.nameStart} />{" "}
+          <span className="hero-amp">&</span>{" "}
+          <EditableText as="span" path="hero.nameEnd" value={hero.nameEnd} />
         </h1>
-        <p className="lede hero-in" style={{ animationDelay: "0.25s" }}>
-          {hero.lede}
-        </p>
+        <EditableText
+          as="p"
+          className="lede hero-in"
+          style={{ animationDelay: "0.25s" }}
+          path="hero.lede"
+          value={hero.lede}
+        />
       </div>
 
       {/* hover zones: left person on the left, right person on the right */}

@@ -6,6 +6,7 @@ import { useLightbox } from "@/components/Lightbox";
 import { fill } from "@/lib/content";
 import { useContent } from "@/lib/tenant";
 import { usePhotos } from "@/lib/photos-context";
+import { EditableText } from "@/lib/edit-context";
 
 /**
  * Each destination is a full-screen panel. Panels are sticky, so while you
@@ -19,11 +20,15 @@ export default function Viajes({ id }: { id: string }) {
   return (
     <section id={id}>
       <div className="section-pad" style={{ paddingBottom: "clamp(2rem, 5vh, 3rem)" }}>
-        <SectionHead kicker={travel.kicker} title={travel.title} lede={travel.lede} />
+        <SectionHead
+          kicker={<EditableText path="travel.kicker" value={travel.kicker} />}
+          title={<EditableText path="travel.title" value={travel.title} />}
+          lede={<EditableText as="span" path="travel.lede" value={travel.lede} />}
+        />
       </div>
 
       <div className="paises">
-        {travel.destinations.map((v) => {
+        {travel.destinations.map((v, di) => {
           const slugs = photos(v.cat);
           if (!slugs.length) return null;
           const items = slugs.map((s) => ({
@@ -42,8 +47,12 @@ export default function Viajes({ id }: { id: string }) {
                       {v.emoji ?? "📍"}
                     </span>
                   )}
-                  <h3 className="h2">{v.title}</h3>
-                  <span className="destino-place">{v.place}</span>
+                  <h3 className="h2">
+                    <EditableText path={`travel.destinations.${di}.title`} value={v.title} />
+                  </h3>
+                  <span className="destino-place">
+                    <EditableText path={`travel.destinations.${di}.place`} value={v.place} />
+                  </span>
                   <button
                     className="chip chip-ink chip-btn"
                     onClick={() => open(items, 0)}

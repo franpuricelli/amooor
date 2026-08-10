@@ -44,8 +44,52 @@ const serveAudio = httpAction(async (ctx, req) => {
   return serve(ctx, "audio", cat, decodeURIComponent(slug), "audio/mpeg");
 });
 
+// Video subido de un draft (sección watch): GET /video/<slug>.mp4 → video/mp4.
+// Soporta el header Range (206 Partial Content) para que el <video> pueda buscar.
+const serveVideo = httpAction(async (ctx, req) => {
+  const m = new URL(req.url).pathname.match(/^\/video\/(.+?)(?:\.mp4)?$/);
+  if (!m) return new Response("Not found", { status: 404 });
+  const slug = decodeURIComponent(m[1]);
+  const row = await ctx.runQuery(api.videos.getBySlug, { slug });
+  if (!row) return new Response("Not found", { status: 404 });
+  const blob = await ctx.storage.get(row.storageId);
+  if (!blob) return new Response("Not found", { status: 404 });
+
+  const size = blob.size;
+  const common: Record<string, string> = {
+    "Content-Type": "video/mp4",
+    "Accept-Ranges": "bytes",
+    "Cache-Control": "public, max-age=31536000, immutable",
+  };
+
+  const range = req.headers.get("Range") ?? req.headers.get("range");
+  const rm = range && /bytes=(\d*)-(\d*)/.exec(range);
+  if (rm) {
+    let start = rm[1] ? parseInt(rm[1], 10) : 0;
+    let end = rm[2] ? parseInt(rm[2], 10) : size - 1;
+    if (!Number.isFinite(start) || start < 0) start = 0;
+    if (!Number.isFinite(end) || end >= size) end = size - 1;
+    if (start > end) start = 0;
+    const chunk = blob.slice(start, end + 1, "video/mp4");
+    return new Response(chunk, {
+      status: 206,
+      headers: {
+        ...common,
+        "Content-Range": `bytes ${start}-${end}/${size}`,
+        "Content-Length": String(end - start + 1),
+      },
+    });
+  }
+
+  return new Response(blob, {
+    status: 200,
+    headers: { ...common, "Content-Length": String(size) },
+  });
+});
+
 const http = httpRouter();
 http.route({ pathPrefix: "/img/", method: "GET", handler: serveImage });
 http.route({ pathPrefix: "/audio/", method: "GET", handler: serveAudio });
+http.route({ pathPrefix: "/video/", method: "GET", handler: serveVideo });
 
 export default http;

@@ -4,6 +4,7 @@ import SectionHead from "@/components/SectionHead";
 import TikTokEmbed from "@/components/TikTokEmbed";
 import { fill } from "@/lib/content";
 import { useContent } from "@/lib/tenant";
+import { EditableText } from "@/lib/edit-context";
 
 export default function Pelis({ id }: { id: string }) {
   const { watch } = useContent();
@@ -15,8 +16,8 @@ export default function Pelis({ id }: { id: string }) {
     <section id={id} className="section-pad section-dark sheet-top">
       <SectionHead
         kicker={fill(watch.kicker, { count: list.length })}
-        title={watch.title}
-        lede={watch.lede}
+        title={<EditableText path="watch.title" value={watch.title} />}
+        lede={<EditableText as="span" path="watch.lede" value={watch.lede} />}
       />
 
       <div className="wrap">

@@ -138,6 +138,23 @@ export default defineSchema({
     .index("by_draft", ["draftToken"])
     .index("by_draft_category", ["draftToken", "category"]),
 
+  // Videos subidos contra un draft (post-aprobación, sección "watch"). A
+  // diferencia de las fotos (Cloudflare Images), el video vive en Convex file
+  // storage (`_storage`) y se sirve por `convex/http.ts` en `/video/<slug>.mp4`.
+  // `slug` = id estable en la URL; `src` = URL de entrega ya resuelta (.convex.site).
+  draftVideos: defineTable({
+    draftToken: v.string(),
+    slug: v.string(),
+    storageId: v.id("_storage"),
+    src: v.string(),
+    category: v.string(), // categoría de la sección watch (para el binding)
+    poster: v.optional(v.string()),
+    caption: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_draft", ["draftToken"])
+    .index("by_slug", ["slug"]),
+
   // Pagos (Rebill, WP-4). Un order por intento de compra de un draft.
   orders: defineTable({
     draftToken: v.string(),

@@ -73,3 +73,17 @@ export const deleteDraftPhoto = mutation({
     await ctx.db.delete(id);
   },
 });
+
+/**
+ * Reordena un lote de fotos: setea `order` = posición en el array recibido
+ * (spec §Phase 1). Se usa con la lista ORDENADA de ids de UNA categoría (el
+ * uploader drag-to-reorder); la primera pasa a ser la primera del site. El
+ * generador ya respeta `order` (mediaFromPhotos ordena por `order`; firstPicks
+ * toma las primeras), así que no hace falta tocar nada más. No existía hasta hoy.
+ */
+export const reorderDraftPhotos = mutation({
+  args: { ids: v.array(v.id("draftPhotos")) },
+  handler: async (ctx, { ids }) => {
+    await Promise.all(ids.map((id, i) => ctx.db.patch(id, { order: i })));
+  },
+});

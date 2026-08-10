@@ -1,7 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
-import { parseWizardState } from "@/lib/draft";
+import { parseWizardState, type WizardState } from "@/lib/draft";
+import { parsePlan } from "@/lib/plan";
+import { planToWizardState, planSectionSlugs } from "@/lib/plan-to-state";
 import { generateContent, mediaFromPhotos } from "@/lib/generate";
 import { enhanceNarrative } from "@/lib/ai";
 import { parseContent, type Theme } from "@/lib/template";
@@ -65,12 +67,50 @@ export async function POST(req: NextRequest) {
   }
 
   // Genera el content (determinista + mejora IA opcional).
-  const state = parseWizardState(draft.answers);
   const rows = await c.query(api.photos.listDraftPhotos, { draftToken });
   const media = rows.length ? mediaFromPhotos(rows) : undefined;
 
+  // Rama chat-first: si el draft tiene `intakePlan` aprobado y NO tiene answers
+  // del wizard viejo, generamos desde el plan (Plan → WizardState). Si no, se
+  // mantiene intacto el flujo del wizard (parseWizardState(answers)).
+  const intakePlan = draft.intakePlan ? parsePlan(draft.intakePlan) : null;
+  const hasWizardAnswers =
+    draft.answers && Object.keys(draft.answers).length > 0;
+  let state: WizardState;
+  let closingCategory: string | null = null;
+  if (intakePlan && !hasWizardAnswers) {
+    state = planToWizardState(intakePlan, draft.theme?.palette);
+    closingCategory =
+      planSectionSlugs(intakePlan).find((s) => s.section.kind === "closing")
+        ?.category ?? null;
+  } else {
+    state = parseWizardState(draft.answers);
+  }
+
+  // Video subido (sección watch) → state.video (antes de generar el content).
+  const videos = await c.query(api.videos.listDraftVideos, { draftToken });
+  const vid = videos[0];
+  if (vid) {
+    state.video = {
+      mode: "upload",
+      src: vid.src,
+      poster: vid.poster,
+      caption: vid.caption ?? "",
+    };
+  }
+
   let content = generateContent({ state, media });
   content = await enhanceNarrative(content, state);
+
+  // Imagen del cierre (el "dibujo" que se da vuelta) → content.drawing.src.
+  if (closingCategory) {
+    const closingPhoto = rows
+      .filter((r) => r.category === closingCategory)
+      .sort((a, b) => a.order - b.order)[0];
+    if (closingPhoto) {
+      content.drawing = { ...content.drawing, src: closingPhoto.fullUrl };
+    }
+  }
 
   // Valida contra el contentSchema del template (nunca persistir algo roto).
   try {
