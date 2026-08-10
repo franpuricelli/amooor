@@ -1,0 +1,9 @@
+/* Ejemplo de sección (iframe): las fotos de purivi.love no están en este
+   deployment; en vez de íconos rotos, cada imagen cae a un placeholder suave. */
+.pa-example-page img {
+  background: linear-gradient(135deg, #ffe4ee 0%, #f3e7e4 100%);
+  color: transparent; /* oculta el alt de las imágenes rotas */
+}
+.pa-example-page {
+  cursor: default;
+}

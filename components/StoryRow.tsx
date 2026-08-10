@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { fill } from "@/lib/content";
 import { useContent } from "@/lib/tenant";
 import { usePhotos } from "@/lib/photos-context";
@@ -24,10 +24,10 @@ export default function StoryRow({
   picks,
   flip = false,
 }: {
-  kicker: string;
-  title: string;
+  kicker: ReactNode;
+  title: ReactNode;
   titleHeart?: boolean;
-  text: string;
+  text: ReactNode;
   cats: string[]; // categories that make up this beat's full album
   picks: StoryPhoto[]; // the 2–4 photos shown in the collage
   flip?: boolean;

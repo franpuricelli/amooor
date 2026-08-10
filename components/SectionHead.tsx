@@ -6,8 +6,8 @@ export default function SectionHead({
   title,
   lede,
 }: {
-  eyebrow?: string;
-  kicker?: string;
+  eyebrow?: ReactNode;
+  kicker?: ReactNode;
   title: ReactNode;
   lede?: ReactNode;
 }) {

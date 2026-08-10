@@ -230,6 +230,48 @@ export function generateContent({ state, media }: GenerateInput): Content {
   return c;
 }
 
+/**
+ * Re-ata SOLO los campos que referencian fotos de un `Content` ya generado, con el
+ * `MediaSet` actual del draft — sin tocar NINGÚN texto/copy (spec §Phase 2).
+ *
+ * `generateContent` corre UNA sola vez (primer build). Cualquier cambio posterior
+ * de fotos (agregar / reordenar / reemplazar / borrar) llama a esto: recalcula
+ *   - `content.media`               (las fotos crudas),
+ *   - `hero.cat` / `hero.slug`      (primera foto de la categoría del hero),
+ *   - `story[id].beats[].picks`     (las primeras fotos del collage de cada beat),
+ * preservando todo el copy editado. Reordenar para poner otra foto primero cambia
+ * el hero/first-pick sin pisar los textos del usuario.
+ */
+export function rebindMedia(content: Content, media: MediaSet): Content {
+  const c = clone(content);
+  const countPerCat = (cat: string) => media.photos?.[cat]?.length ?? 0;
+
+  c.media = media;
+
+  // ── hero: primera foto de su categoría (con fallback si quedó sin fotos) ──────
+  const heroCat =
+    countPerCat(c.hero.cat) > 0
+      ? c.hero.cat
+      : Object.keys(media.photos ?? {}).find(
+          (cat) => cat !== "all" && countPerCat(cat) > 0
+        ) ?? c.hero.cat;
+  const heroSlug = media.photos?.[heroCat]?.[0]?.slug;
+  c.hero = { ...c.hero, cat: heroCat, slug: heroSlug ?? c.hero.slug };
+
+  // ── story: recomputar los picks del collage de cada beat (mismas cats) ───────
+  for (const id of Object.keys(c.story)) {
+    const beats = c.story[id]?.beats ?? [];
+    c.story[id] = {
+      beats: beats.map((b) => ({
+        ...b,
+        picks: firstPicks(b.cats, countPerCat, 3),
+      })),
+    };
+  }
+
+  return c;
+}
+
 /** Deriva el `MediaSet` a partir de las fotos de un draft (draftPhotos de Convex).
  *  El `cloudflareId` hace de slug estable dentro de la categoría. */
 export function mediaFromPhotos(

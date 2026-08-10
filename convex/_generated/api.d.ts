@@ -15,6 +15,7 @@ import type * as http from "../http.js";
 import type * as orders from "../orders.js";
 import type * as photos from "../photos.js";
 import type * as sites from "../sites.js";
+import type * as videos from "../videos.js";
 
 import type {
   ApiFromModules,
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   orders: typeof orders;
   photos: typeof photos;
   sites: typeof sites;
+  videos: typeof videos;
 }>;
 
 /**

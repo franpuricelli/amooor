@@ -7,6 +7,7 @@ import { useContent } from "@/lib/tenant";
 import { usePhotos } from "@/lib/photos-context";
 import { useLightbox } from "@/components/Lightbox";
 import { useLenis } from "lenis/react";
+import { EditableText } from "@/lib/edit-context";
 
 const COLS = 8;
 
@@ -61,8 +62,8 @@ export default function Galeria({ id }: { id: string }) {
     <section id={id} className="section-pad section-dark">
       <SectionHead
         eyebrow={fill(gallery.eyebrow, { count: totalPhotos })}
-        title={gallery.title}
-        lede={gallery.lede}
+        title={<EditableText path="gallery.title" value={gallery.title} />}
+        lede={<EditableText as="span" path="gallery.lede" value={gallery.lede} />}
       />
 
       <div className="wrap">

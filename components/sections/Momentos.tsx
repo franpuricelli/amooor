@@ -5,6 +5,7 @@ import { fill } from "@/lib/content";
 import { useContent } from "@/lib/tenant";
 import { usePhotos } from "@/lib/photos-context";
 import { useLightbox } from "@/components/Lightbox";
+import { EditableText } from "@/lib/edit-context";
 
 export default function Momentos({ id }: { id: string }) {
   const { open } = useLightbox();
@@ -13,7 +14,11 @@ export default function Momentos({ id }: { id: string }) {
 
   return (
     <section id={id} className="section-pad">
-      <SectionHead kicker={moments.kicker} title={moments.title} lede={moments.lede} />
+      <SectionHead
+        kicker={<EditableText path="moments.kicker" value={moments.kicker} />}
+        title={<EditableText path="moments.title" value={moments.title} />}
+        lede={<EditableText as="span" path="moments.lede" value={moments.lede} />}
+      />
       <div className="wrap bento">
         {moments.cards.map((m, i) => {
           const slugs = photos(m.cat);
@@ -42,7 +47,8 @@ export default function Momentos({ id }: { id: string }) {
               <span className="moment-meta">
                 <span className="moment-title">
                   {m.flag ? <img className="flag" src={m.flag} alt="" /> : null}
-                  {m.emoji ? <span aria-hidden>{m.emoji}</span> : null} {m.title}
+                  {m.emoji ? <span aria-hidden>{m.emoji}</span> : null}{" "}
+                  <EditableText path={`moments.cards.${i}.title`} value={m.title} />
                 </span>
                 <span className="chip">{fill(ui.photosCount, { count: slugs.length })}</span>
               </span>

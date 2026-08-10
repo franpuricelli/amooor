@@ -22,6 +22,7 @@ import {
   PLAN_FORCED_HINT,
   HIDDEN_CHECKLIST,
 } from "./intake-prompt";
+import { SITE_AGENT_SYSTEM } from "./site-agent-prompt";
 import { parsePlan, type Plan } from "./plan";
 import type { Activity } from "./chat-format";
 
@@ -500,4 +501,46 @@ export async function synthesizePlan(
   const text = data?.choices?.[0]?.message?.content;
   if (typeof text !== "string") return null;
   return parsePlan(extractJSON(text));
+}
+
+// ── editor del sitio (Phase 3): instrucción → PATCH parcial de Content ─────────
+/**
+ * Corre el agente de EDICIÓN del sitio (instant mode): recibe el `Content` actual
+ * + la instrucción del usuario y devuelve un PATCH PARCIAL de Content (objeto JSON)
+ * que la ruta mergea (deep-merge) y valida con `contentSchema`. Devuelve null si el
+ * modelo no produjo un JSON. Ver lib/site-agent-prompt.ts para el contrato.
+ */
+export async function editSiteContent(
+  messages: ChatMessage[],
+  currentContent: unknown,
+  signal?: AbortSignal
+): Promise<Record<string, unknown> | null> {
+  const p = provider();
+  if (!p) throw new Error("KIMI_API_KEY no configurado");
+
+  const system = `${SITE_AGENT_SYSTEM}\n\nCONTENT ACTUAL del sitio (JSON):\n${JSON.stringify(
+    currentContent
+  )}`;
+  const body = buildBody(
+    p,
+    [{ role: "system", content: system }, ...messages],
+    "instant",
+    false,
+    3500
+  );
+
+  const res = await fetch(p.url, {
+    method: "POST",
+    headers: p.headers,
+    body: JSON.stringify(body),
+    signal,
+  });
+  if (!res.ok) {
+    throw new Error(`Kimi site ${res.status}: ${await res.text().catch(() => "")}`);
+  }
+  const data = await res.json();
+  const text = data?.choices?.[0]?.message?.content;
+  if (typeof text !== "string") return null;
+  const patch = extractJSON(text);
+  return patch && typeof patch === "object" ? (patch as Record<string, unknown>) : null;
 }

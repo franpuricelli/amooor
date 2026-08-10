@@ -10,11 +10,24 @@ if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger);
 /**
  * Lenis smooth scrolling, driven by GSAP's ticker so ScrollTrigger and Lenis
  * stay perfectly in sync (no jitter on pinned/scrubbed sections).
+ *
+ * `enabled=false` renderiza el árbol SIN Lenis: usado por el preview del editor,
+ * que vive dentro de un contenedor con `overflow` propio. Lenis con `root` toma
+ * el scroll del documento y pelea con ese contenedor anidado (el trackpad rompe
+ * el scroll); ahí queremos el scroll nativo del `.pa-frame-body`. `useLenis()` en
+ * las secciones devuelve undefined sin provider y ya usan `?.`, así que es seguro.
  */
-export default function SmoothScroll({ children }: { children: ReactNode }) {
+export default function SmoothScroll({
+  children,
+  enabled = true,
+}: {
+  children: ReactNode;
+  enabled?: boolean;
+}) {
   const lenisRef = useRef<LenisRef>(null);
 
   useEffect(() => {
+    if (!enabled) return;
     function update(time: number) {
       lenisRef.current?.lenis?.raf(time * 1000);
     }
@@ -32,7 +45,9 @@ export default function SmoothScroll({ children }: { children: ReactNode }) {
       lenis?.off("scroll", ScrollTrigger.update);
       clearTimeout(t);
     };
-  }, []);
+  }, [enabled]);
+
+  if (!enabled) return <>{children}</>;
 
   return (
     <ReactLenis

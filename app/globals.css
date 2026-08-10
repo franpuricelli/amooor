@@ -658,6 +658,16 @@ section {
   animation: fadeUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
+/* ── modo edición (editor): el título/lede del hero y las tarjetas de persona son
+   editables. Sin esto, las zonas de hover invisibles se comen los clics del copy
+   ("no puedo editar el hero"). Sólo aplica dentro del editor (clase .pa-hero-editing). */
+.pa-hero-editing .hero-content > * {
+  pointer-events: auto;
+}
+.pa-hero-editing .person-card.on {
+  pointer-events: auto;
+}
+
 /* floating hearts (behind the hero content) */
 .hearts {
   position: absolute;

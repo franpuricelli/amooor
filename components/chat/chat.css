@@ -1288,29 +1288,6 @@
   text-align: center;
 }
 
-/* ── stub del paywall (Aprobar) ──────────────────────────────────────────── */
-.ch-approved {
-  margin-top: 1.4rem;
-  background: var(--mk-card);
-  border: 1px solid var(--mk-line);
-  border-radius: var(--mk-r-xl);
-  padding: clamp(1.3rem, 4vw, 1.8rem);
-  text-align: center;
-}
-.ch-approved-title {
-  font-family: var(--mk-serif);
-  font-style: italic;
-  font-weight: 500;
-  font-size: clamp(1.5rem, 4.5vw, 2rem);
-  color: var(--mk-ink);
-  margin: 0 0 0.6rem;
-}
-.ch-approved p {
-  color: var(--mk-ink-2);
-  line-height: 1.6;
-  margin: 0 auto 0.6rem;
-  max-width: 46ch;
-}
 .ch-hint {
   max-width: 720px;
   margin: 0.5rem auto 0;
@@ -1595,6 +1572,41 @@
   font-size: 0.78rem;
   color: var(--mk-ink-3);
   line-height: 1.4;
+}
+
+/* En el editor (post-aprobación) el perfil queda sobre el rail de íconos de la
+   izquierda. Como pill con borde se veía "enmarcado dentro del sidebar": acá lo
+   dejamos como avatar solo (sin marco), centrado sobre el ancho del rail, para
+   que se lea como el pie del rail y no como una caja anidada. */
+@media (min-width: 1041px) {
+  .ch-editing .ch-profile {
+    left: 0;
+    bottom: 0.7rem;
+    width: 74px;
+    display: flex;
+    justify-content: center;
+  }
+  .ch-editing .ch-profile-btn {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .ch-editing .ch-profile-btn:hover {
+    transform: translateY(-1px);
+  }
+  .ch-editing .ch-profile-btn-label {
+    display: none;
+  }
+  .ch-editing .ch-profile-avatar.sm {
+    width: 38px;
+    height: 38px;
+    box-shadow: 0 10px 24px -14px rgba(42, 10, 24, 0.55);
+  }
+  .ch-editing .ch-profile-menu {
+    left: 0.5rem;
+    bottom: calc(100% + 0.4rem);
+  }
 }
 
 @media (max-width: 1040px) {
@@ -2139,4 +2151,1347 @@
     opacity: 1;
     transform: none;
   }
+}
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   POST-APROBACIÓN (.pa-*) — máquina de pasos upload → build → edit. Ocupa el área
+   debajo del header del chat; reusa tokens --mk-* y los botones .ch-btn.
+   ═════════════════════════════════════════════════════════════════════════════ */
+.pa-root {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--mk-bg);
+}
+.pa-empty {
+  margin: auto;
+  color: var(--mk-ink-3);
+  font-size: 0.95rem;
+}
+
+/* ── puntito de estado (gris / amarillo pulsante / verde) ─────────────────── */
+.pa-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--mk-line);
+  box-shadow: 0 0 0 1px var(--mk-line-soft);
+}
+.pa-dot.busy {
+  background: #f2b529;
+  animation: pa-pulse 1s ease-in-out infinite;
+}
+.pa-dot.ready {
+  background: #2ec27e;
+}
+@keyframes pa-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+/* ═══ Phase 1 — Upload ═══════════════════════════════════════════════════════ */
+.pa-up {
+  flex-direction: row;
+}
+.pa-rail {
+  flex: 0 0 240px;
+  overflow-y: auto;
+  padding: clamp(1rem, 3vw, 1.6rem) 0.8rem;
+  border-right: 1px solid var(--mk-line-soft);
+}
+.pa-rail-title {
+  font-size: 0.74rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mk-ink-3);
+  margin: 0 0.4rem 0.7rem;
+}
+.pa-rail-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.pa-rail-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--mk-ink);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 550;
+  text-align: left;
+  padding: 0.6rem 0.7rem;
+  border-radius: var(--mk-r-md);
+  cursor: pointer;
+  transition: background 0.13s, color 0.13s;
+}
+.pa-rail-row:hover {
+  background: var(--mk-rose-soft);
+}
+.pa-rail-row.on {
+  background: var(--mk-rose-soft);
+  color: var(--mk-rose-text);
+  font-weight: 650;
+}
+.pa-rail-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pa-badge {
+  flex-shrink: 0;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--mk-bg-alt);
+  color: var(--mk-ink-2);
+  font-size: 0.7rem;
+  font-weight: 650;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.pa-rail-check {
+  flex-shrink: 0;
+  color: #2ec27e;
+  display: inline-flex;
+}
+
+.pa-panel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.pa-panel-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: clamp(1rem, 4vw, 2rem);
+}
+.pa-cta {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem clamp(1rem, 4vw, 2rem);
+  border-top: 1px solid var(--mk-line-soft);
+  background: var(--mk-bg);
+}
+.pa-cta-progress {
+  font-size: 0.86rem;
+  color: var(--mk-ink-2);
+}
+
+.pa-uploader {
+  max-width: 640px;
+}
+.pa-uploader-head {
+  margin-bottom: 1rem;
+}
+.pa-uploader-title {
+  font-family: var(--mk-serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.4rem, 4vw, 1.8rem);
+  color: var(--mk-ink);
+  margin: 0 0 0.3rem;
+}
+.pa-uploader-sub {
+  color: var(--mk-ink-2);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  margin: 0;
+}
+.pa-drop {
+  width: 100%;
+  border: 1.5px dashed var(--mk-line);
+  background: var(--mk-card);
+  color: var(--mk-ink-2);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 550;
+  padding: 1.4rem 1rem;
+  border-radius: var(--mk-r-lg);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.pa-drop:hover:not(:disabled) {
+  border-color: var(--mk-rose);
+  color: var(--mk-rose-text);
+  background: var(--mk-rose-soft);
+}
+.pa-drop:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.pa-drop-hero {
+  min-height: 220px;
+  font-size: 1rem;
+}
+.pa-hint {
+  margin: 0.7rem 0 0;
+  font-size: 0.82rem;
+  color: var(--mk-ink-3);
+}
+
+.pa-hero-slot,
+.pa-video-slot {
+  position: relative;
+  border-radius: var(--mk-r-lg);
+  overflow: hidden;
+  background: var(--mk-card);
+  border: 1px solid var(--mk-line);
+}
+.pa-hero-img {
+  display: block;
+  width: 100%;
+  max-height: 360px;
+  object-fit: cover;
+}
+.pa-video {
+  display: block;
+  width: 100%;
+  max-height: 360px;
+  background: #000;
+}
+.pa-slot-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.6rem;
+  justify-content: flex-end;
+}
+
+.pa-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+.pa-thumb {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--mk-r-md);
+  overflow: hidden;
+  background: var(--mk-bg-alt);
+  cursor: grab;
+}
+.pa-thumb:active {
+  cursor: grabbing;
+}
+.pa-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+.pa-thumb-x {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 0.8rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.13s, background 0.13s;
+}
+.pa-thumb:hover .pa-thumb-x,
+.pa-hero-slot .pa-thumb-x {
+  opacity: 1;
+}
+.pa-thumb-x:hover {
+  background: #d63a52;
+}
+
+/* ═══ Phase 2 — Build ════════════════════════════════════════════════════════ */
+.pa-build {
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.pa-build-card {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.1rem;
+  padding: 2rem;
+  max-width: 560px;
+}
+.pa-build-title {
+  font-family: var(--mk-serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  color: var(--mk-ink);
+  margin: 0;
+}
+.pa-build-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  align-items: flex-start;
+}
+.pa-build-steps li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1rem;
+  color: var(--mk-ink-3);
+  opacity: 0.45;
+  transition: opacity 0.3s, color 0.3s;
+}
+.pa-build-steps li.on {
+  opacity: 1;
+  color: var(--mk-rose-text);
+}
+.pa-build-steps li.done {
+  opacity: 0.85;
+  color: var(--mk-ink-2);
+}
+.pa-stage-ic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--mk-bg-alt);
+  color: inherit;
+}
+.pa-build-steps li.on .pa-stage-ic {
+  background: var(--mk-rose-soft);
+}
+.pa-build-steps li.done .pa-stage-ic {
+  color: #2ec27e;
+}
+.pa-stage-label {
+  white-space: nowrap;
+}
+.pa-load-dots {
+  padding: 0;
+}
+.pa-quote {
+  margin: 0.4rem 0 0;
+  max-width: 44ch;
+}
+.pa-quote blockquote {
+  margin: 0;
+  font-family: var(--mk-serif);
+  font-style: italic;
+  font-size: 1.05rem;
+  line-height: 1.5;
+  color: var(--mk-ink-2);
+}
+.pa-quote figcaption {
+  margin-top: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--mk-rose-text);
+}
+.pa-build-err {
+  color: #c0244a;
+  margin: 0.2rem 0 0.6rem;
+}
+
+/* corazoncitos + avioncitos flotando de fondo */
+.pa-floaters {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.pa-floater {
+  position: absolute;
+  bottom: -40px;
+  color: var(--mk-rose);
+  opacity: 0;
+  animation-name: pa-float;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.pa-floater.plane {
+  color: var(--mk-rose-deep);
+}
+@keyframes pa-float {
+  0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+  12% { opacity: 0.7; }
+  50% { transform: translateY(-52vh) translateX(24px) rotate(14deg); opacity: 0.55; }
+  88% { opacity: 0.4; }
+  100% { transform: translateY(-104vh) translateX(-14px) rotate(-8deg); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pa-floater { display: none; }
+}
+
+/* ═══ Phase 3 — Edit ═════════════════════════════════════════════════════════ */
+.pa-edit {
+  flex-direction: column;
+}
+.pa-mobilebar {
+  display: none;
+}
+.pa-viewtabs {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.5rem clamp(0.8rem, 3vw, 1.4rem);
+  border-bottom: 1px solid var(--mk-line-soft);
+  background: var(--mk-bg);
+}
+.pa-viewtabs > button {
+  border: 1px solid var(--mk-line);
+  background: var(--mk-card);
+  color: var(--mk-ink-2);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.13s, color 0.13s, border-color 0.13s;
+}
+.pa-viewtabs > button.on {
+  background: var(--mk-ink);
+  color: var(--mk-card);
+  border-color: transparent;
+}
+.pa-viewtabs > .pa-addmore {
+  margin-left: auto;
+  border-style: dashed;
+  border-color: var(--mk-rose);
+  color: var(--mk-rose-text);
+  background: transparent;
+}
+.pa-viewtabs > .pa-addmore:hover {
+  background: var(--mk-rose-soft);
+}
+
+.pa-panes {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.pa-pane-left {
+  flex: 0 0 40%;
+  max-width: 480px;
+  min-width: 0;
+  border-right: 1px solid var(--mk-line-soft);
+  display: flex;
+  min-height: 0;
+}
+.pa-pane-right {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  min-height: 0;
+  padding: clamp(0.6rem, 2vw, 1rem);
+}
+
+/* chat / web-agent (izquierda) */
+.pa-chat {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.pa-chat-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: clamp(0.8rem, 3vw, 1.4rem);
+}
+.pa-chat-hint {
+  color: var(--mk-ink-2);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+.pa-chat-hint p {
+  margin: 0 0 0.7rem;
+}
+.pa-chat-egs {
+  font-size: 0.86rem;
+  color: var(--mk-ink-3);
+}
+.pa-chat-footer {
+  flex-shrink: 0;
+  background: var(--mk-bg);
+}
+
+/* chrome de navegador + preview (derecha) */
+.pa-frame {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--mk-card);
+  border: 1px solid var(--mk-line);
+  border-radius: var(--mk-r-lg);
+  overflow: hidden;
+  box-shadow: 0 30px 70px -40px rgba(42, 10, 24, 0.35);
+}
+.pa-frame-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.55rem 0.8rem;
+  background: var(--mk-bg-alt);
+  border-bottom: 1px solid var(--mk-line-soft);
+}
+.pa-dots {
+  display: inline-flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.pa-dots i {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--mk-line);
+}
+.pa-dots i:nth-child(1) { background: #ff5f57; }
+.pa-dots i:nth-child(2) { background: #febc2e; }
+.pa-dots i:nth-child(3) { background: #28c840; }
+.pa-urlbar {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--mk-ink-2);
+  background: var(--mk-card);
+  border-radius: 999px;
+  padding: 0.3rem 0.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-shadow: inset 0 0 0 1px var(--mk-line-soft);
+}
+.pa-frame-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+.pa-tool-palette {
+  display: flex;
+  align-items: center;
+}
+/* dentro del toolbar la paleta va compacta (sin el label ni el borde inferior) */
+.pa-tool-palette .ch-palette {
+  padding: 0;
+  border: 0;
+  margin: 0;
+  gap: 0.4rem;
+}
+.pa-tool-palette .ch-palette-label {
+  display: none;
+}
+/* paleta compacta (editor): se ve UN solo swatch (el color ya elegido); al tocarlo
+   se abre la paleta completa para cambiarlo o editarlo. */
+.ch-palette.compact {
+  position: relative;
+  display: inline-flex;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+.ch-palette-trigger {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 2px solid var(--mk-card);
+  box-shadow: 0 0 0 1px var(--mk-line);
+}
+.ch-palette-trigger:hover {
+  transform: scale(1.08);
+}
+.ch-palette-trigger.on {
+  box-shadow: 0 0 0 2px var(--mk-ink);
+}
+.ch-palette-pop {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 8px);
+  right: 0;
+  padding: 0.6rem 0.65rem;
+  background: var(--mk-card);
+  border: 1px solid var(--mk-line);
+  border-radius: var(--mk-r-md);
+  box-shadow: 0 26px 60px -26px rgba(42, 10, 24, 0.5);
+  animation: ch-fade 0.16s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.ch-palette-pop-name {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--mk-ink-3);
+  margin-bottom: 0.5rem;
+}
+.ch-palette-pop .ch-palette-row {
+  gap: 0.5rem;
+  max-width: 220px;
+}
+.pa-frame-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--mk-bg);
+}
+
+/* editor de textos (panel "Textos") */
+.pa-copy {
+  padding: clamp(0.9rem, 3vw, 1.6rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+.pa-copy-sec {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.pa-copy-sec h3 {
+  font-size: 0.74rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mk-rose-text);
+  margin: 0;
+}
+.pa-copy-beat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.7rem;
+  border: 1px solid var(--mk-line-soft);
+  border-radius: var(--mk-r-md);
+  background: var(--mk-card);
+}
+.pa-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.pa-field-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--mk-ink-3);
+}
+.pa-field-input {
+  width: 100%;
+  border: 1px solid var(--mk-line);
+  border-radius: var(--mk-r-md);
+  background: var(--mk-card);
+  color: var(--mk-ink);
+  font: inherit;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  padding: 0.5rem 0.65rem;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.pa-field-input:focus {
+  border-color: var(--mk-rose);
+}
+
+/* ── mobile: un panel a la vez, toggle "Previsualizar" ─────────────────────── */
+@media (max-width: 860px) {
+  .pa-up {
+    flex-direction: column;
+  }
+  .pa-rail {
+    flex: 0 0 auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--mk-line-soft);
+    padding: 0.7rem;
+  }
+  .pa-rail-title {
+    display: none;
+  }
+  .pa-rail-list {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 0.4rem;
+  }
+  .pa-rail-row {
+    flex: 0 0 auto;
+    width: auto;
+    border: 1px solid var(--mk-line);
+    border-radius: 999px;
+    padding: 0.5rem 0.8rem;
+  }
+
+  .pa-mobilebar {
+    display: flex;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--mk-line-soft);
+  }
+  .pa-preview-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid var(--mk-line);
+    background: var(--mk-card);
+    color: var(--mk-ink);
+    font: inherit;
+    font-size: 0.86rem;
+    font-weight: 600;
+    padding: 0.45rem 1rem;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .pa-pane-left,
+  .pa-pane-right {
+    flex: 1;
+    max-width: none;
+    border-right: 0;
+    display: none;
+  }
+  .pa-pane-left.show,
+  .pa-pane-right.show {
+    display: flex;
+  }
+  .pa-pane-right {
+    padding: 0.5rem;
+  }
+}
+
+/* ── Phase 1 extras: número de orden, drag states, loading, recomendación ───── */
+.pa-thumb-num {
+  position: absolute;
+  bottom: 5px;
+  left: 5px;
+  z-index: 2;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.pa-thumb.drop-target {
+  outline: 2px solid var(--mk-rose);
+  outline-offset: 2px;
+}
+.pa-thumb[draggable="true"] {
+  cursor: grab;
+}
+.pa-drop.over {
+  border-color: var(--mk-rose);
+  background: var(--mk-rose-soft);
+  color: var(--mk-rose-text);
+}
+.pa-drop-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--mk-rose-text);
+}
+.pa-load-dots {
+  padding: 0;
+  flex-shrink: 0;
+}
+.pa-reco {
+  margin: 0.5rem 0 0;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--mk-rose-text);
+}
+.pa-video-inline {
+  margin-top: 1rem;
+}
+
+/* ═══ Phase 3 — Edit (rework: sidebar Chat|Multimedia + preview fijo) ═════════ */
+.pa-edit-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+/* sidebar de íconos — rail editorial: tile redondeado con estado en rosa suave
+   (no un bloque tinta pesado). El ícono vive en su tile; el label va debajo. */
+.pa-sidebar {
+  flex: 0 0 74px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.6rem 0.4rem;
+  border-right: 1px solid var(--mk-line-soft);
+  background: var(--mk-bg);
+}
+.pa-sidebar-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: var(--mk-ink-3);
+  font: inherit;
+  padding: 0.25rem 0.15rem;
+  border-radius: var(--mk-r-md);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.14s;
+}
+/* el nombre NO se muestra por defecto: aparece como tooltip al hacer hover */
+.pa-sidebar-lbl {
+  position: absolute;
+  left: calc(100% - 2px);
+  top: 50%;
+  white-space: nowrap;
+  background: var(--mk-ink);
+  color: var(--mk-card);
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 0.3rem 0.6rem;
+  border-radius: 9px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%) translateX(-6px);
+  transition: opacity 0.14s, transform 0.14s;
+  z-index: 40;
+  box-shadow: 0 10px 24px -12px rgba(42, 10, 24, 0.55);
+}
+.pa-sidebar-btn:hover .pa-sidebar-lbl,
+.pa-sidebar-btn:focus-visible .pa-sidebar-lbl {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+.pa-sidebar-ic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 40px;
+  border-radius: 13px;
+  color: var(--mk-ink-2);
+  box-shadow: inset 0 0 0 1px transparent;
+  transition: background 0.14s, color 0.14s, box-shadow 0.14s, transform 0.14s;
+}
+.pa-sidebar-btn:hover {
+  color: var(--mk-rose-text);
+}
+.pa-sidebar-btn:hover .pa-sidebar-ic {
+  background: var(--mk-rose-soft);
+  color: var(--mk-rose-text);
+}
+.pa-sidebar-btn:active .pa-sidebar-ic {
+  transform: scale(0.94);
+}
+.pa-sidebar-btn.on {
+  color: var(--mk-rose-text);
+}
+.pa-sidebar-btn.on .pa-sidebar-ic {
+  background: var(--mk-rose-soft);
+  color: var(--mk-rose-text);
+  box-shadow: inset 0 0 0 1.5px var(--mk-rose);
+}
+/* flujo izquierdo (chat o multimedia) */
+.pa-flow {
+  flex: 0 0 40%;
+  max-width: 460px;
+  min-width: 0;
+  display: flex;
+  min-height: 0;
+  border-right: 1px solid var(--mk-line-soft);
+}
+/* preview FIJO derecho */
+.pa-preview-fixed {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  min-height: 0;
+  padding: clamp(0.6rem, 2vw, 1rem);
+}
+
+/* Publicar en el header: burbuja de estado + label. gris=sin publicar,
+   amarillo=en curso, verde=publicado. */
+.pa-publish-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: var(--mk-ink);
+  color: var(--mk-card);
+  border-color: transparent;
+}
+.pa-publish-btn:hover {
+  background: #000;
+  color: #fff;
+}
+/* la burbuja vive sobre un botón oscuro: el gris "idle" debe verse (claro). */
+.pa-publish-btn .pa-dot {
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+.pa-publish-btn .pa-dot.busy {
+  background: #f2b529;
+  box-shadow: none;
+}
+.pa-publish-btn .pa-dot.ready {
+  background: #2ec27e;
+  box-shadow: none;
+}
+
+/* flujo MULTIMEDIA */
+.pa-media {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+/* header: drawer de sección (izq) + botón chico "Agregar" (der) */
+.pa-media-head {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+  padding: 0.7rem;
+  border-bottom: 1px solid var(--mk-line-soft);
+  flex-shrink: 0;
+}
+.pa-media-drawer {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 300px;
+}
+.pa-media-drawer-btn {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border: 1px solid var(--mk-line);
+  background: var(--mk-card);
+  color: var(--mk-ink);
+  font: inherit;
+  text-align: left;
+  padding: 0.55rem 1.9rem 0.55rem 0.7rem;
+  border-radius: var(--mk-r-md);
+  cursor: pointer;
+  transition: border-color 0.14s, background 0.14s;
+}
+.pa-media-drawer-btn:hover,
+.pa-media-drawer-btn.open {
+  border-color: var(--mk-rose);
+}
+.pa-media-drawer-title {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: var(--mk-ink);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pa-media-drawer-btn > svg {
+  position: absolute;
+  right: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--mk-ink-3);
+  transition: transform 0.16s;
+}
+.pa-media-drawer-btn.open > svg {
+  transform: translateY(-50%) rotate(180deg);
+}
+.pa-media-drawer-menu {
+  position: absolute;
+  z-index: 16;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  right: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0.3rem;
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--mk-card);
+  border: 1px solid var(--mk-line);
+  border-radius: var(--mk-r-md);
+  box-shadow: 0 24px 54px -26px rgba(42, 10, 24, 0.45);
+  animation: ch-fade 0.16s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.pa-media-drawer-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--mk-ink);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 550;
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  border-radius: var(--mk-r-sm, 8px);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.pa-media-drawer-item:hover {
+  background: var(--mk-rose-soft);
+  color: var(--mk-rose-text);
+}
+.pa-media-drawer-item.on {
+  background: var(--mk-rose-soft);
+  color: var(--mk-rose-text);
+  font-weight: 700;
+}
+.pa-media-drawer-item-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pa-media-drawer-item-n {
+  flex-shrink: 0;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--mk-bg-alt);
+  color: var(--mk-ink-2);
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.pa-media-drawer-item.on .pa-media-drawer-item-n {
+  background: var(--mk-card);
+  color: var(--mk-rose-text);
+}
+.pa-media-add {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid var(--mk-rose);
+  background: var(--mk-rose-soft);
+  color: var(--mk-rose-text);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 650;
+  padding: 0 0.85rem;
+  border-radius: var(--mk-r-md);
+  cursor: pointer;
+  transition: filter 0.14s, opacity 0.14s;
+}
+.pa-media-add:hover:not(:disabled) {
+  filter: brightness(0.97);
+}
+.pa-media-add:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.pa-media-add > svg {
+  flex-shrink: 0;
+}
+
+.pa-media-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.7rem;
+}
+
+/* lista reordenable: fila = grip + miniatura (hover → preview grande) + nombre + acciones */
+.pa-medialist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.pa-mediarow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--mk-line-soft);
+  border-radius: var(--mk-r-md);
+  background: var(--mk-card);
+  transition: border-color 0.13s, background 0.13s, box-shadow 0.13s;
+}
+.pa-mediarow[draggable="true"] {
+  cursor: grab;
+}
+.pa-mediarow[draggable="true"]:active {
+  cursor: grabbing;
+}
+/* la fila que estás arrastrando: se ve "levantada" mientras se reordena en vivo */
+.pa-mediarow.dragging {
+  opacity: 0.5;
+  border-color: var(--mk-rose);
+  border-style: dashed;
+}
+.pa-mediarow.focused {
+  border-color: var(--mk-rose);
+  background: var(--mk-rose-soft);
+}
+.pa-mediarow-grip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  flex-shrink: 0;
+  color: var(--mk-ink-3);
+}
+.pa-mediarow-grip em {
+  font-style: normal;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--mk-ink-3);
+  min-width: 12px;
+  text-align: center;
+}
+.pa-mediarow-thumb {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: 9px;
+  overflow: hidden;
+  background: var(--mk-bg-alt);
+  box-shadow: inset 0 0 0 1px var(--mk-line-soft);
+  cursor: zoom-in;
+}
+.pa-mediarow-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+.pa-mediarow-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.86rem;
+  font-weight: 550;
+  color: var(--mk-ink);
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pa-mediarow-actions {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.13s;
+}
+.pa-mediarow:hover .pa-mediarow-actions,
+.pa-mediarow:focus-within .pa-mediarow-actions {
+  opacity: 1;
+}
+.pa-mediarow-del {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--mk-ink-3);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.pa-mediarow-del:hover:not(:disabled) {
+  background: rgba(214, 58, 82, 0.12);
+  color: #d63a52;
+}
+.pa-mediarow-del:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+/* preview grande flotante (fixed → escapa el scroll del panel) */
+.pa-media-zoom {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+  padding: 5px;
+  background: var(--mk-card);
+  border: 1px solid var(--mk-line);
+  border-radius: var(--mk-r-md);
+  box-shadow: 0 30px 70px -28px rgba(42, 10, 24, 0.5);
+  animation: ch-fade 0.12s ease both;
+}
+.pa-media-zoom img {
+  display: block;
+  width: 100%;
+  max-height: 260px;
+  object-fit: contain;
+  border-radius: 9px;
+}
+/* estado vacío de una sección */
+.pa-media-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  text-align: center;
+  padding: 1.8rem 1rem;
+  color: var(--mk-ink-2);
+}
+.pa-media-empty p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+.pa-media-empty-add {
+  border: 1.5px dashed var(--mk-line);
+  background: var(--mk-card);
+  color: var(--mk-ink-2);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  padding: 0.6rem 1rem;
+  border-radius: var(--mk-r-md);
+  cursor: pointer;
+  transition: border-color 0.14s, color 0.14s, background 0.14s;
+}
+.pa-media-empty-add:hover:not(:disabled) {
+  border-color: var(--mk-rose);
+  color: var(--mk-rose-text);
+  background: var(--mk-rose-soft);
+}
+
+/* ── afordancias de edición inline en el preview ───────────────────────────── */
+.pa-editable {
+  outline: 1px dashed rgba(140, 140, 140, 0.45);
+  outline-offset: 2px;
+  border-radius: 3px;
+  cursor: text;
+  transition: outline-color 0.12s, background 0.12s;
+}
+/* el lápiz SIEMPRE mismo tamaño (fijo en px, no en em) — si no, en un titular
+   grande se agranda horrible. Solo cambia la UI; la edición inline es igual. */
+.pa-editable::after {
+  content: "✎";
+  font-size: 12px;
+  line-height: 1;
+  margin-left: 4px;
+  opacity: 0.5;
+  vertical-align: middle;
+  font-variant-emoji: text;
+}
+.pa-editable:hover,
+.pa-editable:focus {
+  outline: 1px solid var(--mk-rose);
+  background: rgba(255, 92, 153, 0.12);
+}
+.pa-editable:hover::after,
+.pa-editable:focus::after {
+  opacity: 1;
+  color: var(--mk-rose);
+}
+.pa-img-editable {
+  cursor: pointer;
+}
+.pa-img-editable:hover {
+  outline: 3px solid var(--mk-rose);
+  outline-offset: -3px;
+  filter: brightness(0.93);
+}
+
+/* ── mobile: un panel a la vez (flujo ↔ preview) ───────────────────────────── */
+@media (max-width: 900px) {
+  .pa-sidebar {
+    flex-basis: 60px;
+  }
+  .pa-flow {
+    flex: 1;
+    max-width: none;
+    border-right: 0;
+    display: none;
+  }
+  .pa-preview-fixed {
+    display: none;
+    padding: 0.4rem;
+  }
+  .pa-flow.show,
+  .pa-preview-fixed.show {
+    display: flex;
+  }
+  .pa-edit .pa-mobilebar {
+    display: flex;
+  }
+}
+
+/* ── Phase 1: ejemplo vivo de la sección (columna derecha) ──────────────────── */
+.pa-example {
+  flex: 0 0 40%;
+  max-width: 620px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: clamp(0.8rem, 2vw, 1.4rem);
+  border-left: 1px solid var(--mk-line-soft);
+}
+.pa-example .pa-frame {
+  flex: 1;
+  min-height: 0;
+}
+.pa-example-frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: var(--mk-bg);
+}
+.pa-example-cap {
+  margin: 0;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--mk-ink-3);
+}
+@media (max-width: 1080px) {
+  .pa-example { display: none; }
 }
