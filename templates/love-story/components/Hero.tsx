@@ -4,6 +4,7 @@ import { useState } from "react";
 import { config } from "@/lib/config";
 import { full } from "@/lib/photos";
 import { BASE } from "@/lib/base";
+import { useI18n, type Bi } from "@/lib/i18n";
 import Hearts, { PixelHeart } from "@/components/Hearts";
 
 // Little hearts popping above their heads. Deterministic (index-derived, no
@@ -22,8 +23,8 @@ const HEAD_HEARTS = Array.from({ length: 8 }, (_, i) => {
 
 interface Person {
   name: string;
-  tagline: string;
-  traits: readonly { icon: string; label: string }[];
+  tagline: Bi;
+  traits: readonly { icon: string; label: Bi }[];
   artists: readonly { name: string; img: string }[];
 }
 type Side = "left" | "right";
@@ -43,6 +44,7 @@ function PersonCard({
   side: Side;
   active: boolean;
 }) {
+  const { t, tr } = useI18n();
   return (
     <aside
       className={`person-card glass-card ${side} ${active ? "on" : ""}`}
@@ -50,17 +52,17 @@ function PersonCard({
     >
       <div className="person-head">
         <span className="person-name">{person.name}</span>
-        <span className="person-tag">{person.tagline}</span>
+        <span className="person-tag">{tr(person.tagline)}</span>
       </div>
       <div className="person-traits">
-        {person.traits.map((t) => (
-          <span className="chip" key={t.label}>
-            <span aria-hidden>{t.icon}</span> {t.label}
+        {person.traits.map((trait) => (
+          <span className="chip" key={tr(trait.label)}>
+            <span aria-hidden>{trait.icon}</span> {tr(trait.label)}
           </span>
         ))}
       </div>
       <div className="person-artists">
-        <span className="person-artists-label">Favorite artists · Artistas favoritos</span>
+        <span className="person-artists-label">{t.hero.artistsLabel}</span>
         {person.artists.map((a) => (
           <span className="artist-row" key={a.name}>
             <img src={`${BASE}${a.img}`} alt="" loading="lazy" />
@@ -73,16 +75,16 @@ function PersonCard({
 }
 
 export default function Hero() {
+  const { t } = useI18n();
   const [active, setActive] = useState<Side | null>(null);
   const { left, right } = config.people;
-  // The cover image. If a file is ever missing we fall back to the real
+  // The cover image. If the file is ever missing we fall back to the real
   // photo (cat/slug) so nothing renders broken.
   const pixelSrc = config.hero.pixelSrc;
   const realSrc = full(config.hero.cat, config.hero.slug);
   const [src, setSrc] = useState<string>(pixelSrc ?? realSrc);
 
-  // Split "Orion & Sera" so the "&" can be styled, and still work if there's
-  // no "&" in the couple name.
+  // Split "Orion & Sera" so the "&" can be styled; still works without one.
   const ampParts = config.names.couple.split(/\s*&\s*/);
 
   return (
@@ -90,7 +92,7 @@ export default function Hero() {
       {/* full-screen cover backdrop */}
       <img
         src={src}
-        alt="Cover photo · Foto de portada"
+        alt={t.hero.coverAlt}
         className="hero-bg"
         fetchPriority="high"
         onError={() => {
@@ -136,23 +138,21 @@ export default function Hero() {
           )}
         </h1>
         <p className="lede hero-in" style={{ animationDelay: "0.25s" }}>
-          {/* EN · One line that sums up your story. · ES · Una línea que resume tu historia. */}
-          Write the one line that sums up your story here. · Escribí acá la línea
-          que resume su historia.
+          {t.hero.lede}
         </p>
       </div>
 
       {/* hover zones: left person on the left, right person on the right */}
       <button
         className="zone zone-l"
-        aria-label={`Meet ${left.name} · Conocé a ${left.name}`}
+        aria-label={t.hero.meet.replace("{name}", left.name)}
         onMouseEnter={() => setActive("left")}
         onFocus={() => setActive("left")}
         onClick={() => setActive(active === "left" ? null : "left")}
       />
       <button
         className="zone zone-r"
-        aria-label={`Meet ${right.name} · Conocé a ${right.name}`}
+        aria-label={t.hero.meet.replace("{name}", right.name)}
         onMouseEnter={() => setActive("right")}
         onFocus={() => setActive("right")}
         onClick={() => setActive(active === "right" ? null : "right")}

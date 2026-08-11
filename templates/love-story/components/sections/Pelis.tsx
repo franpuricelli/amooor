@@ -1,8 +1,12 @@
+"use client";
+
 import SectionHead from "@/components/SectionHead";
 import TikTokEmbed from "@/components/TikTokEmbed";
 import { config } from "@/lib/config";
+import { useI18n } from "@/lib/i18n";
 
 export default function Pelis() {
+  const { t, tr } = useI18n();
   const list = config.watchlist;
   const featured = list.filter((m) => m.note);
   const rest = list.filter((m) => !m.note);
@@ -10,9 +14,9 @@ export default function Pelis() {
   return (
     <section id="pelis" className="section-pad section-dark sheet-top">
       <SectionHead
-        kicker={`At night · De noche · ${list.length} titles · títulos`}
-        title="We binged · Maratoneamos"
-        lede="Movies, series and «just one more episode» nights. Your own lineup. · Pelis, series y madrugadas de «un capítulo más». Tu propia programación."
+        kicker={`${t.pelis.kicker} · ${list.length} ${t.pelis.titlesWord}`}
+        title={t.pelis.title}
+        lede={t.pelis.lede}
       />
 
       <div className="wrap">
@@ -24,9 +28,9 @@ export default function Pelis() {
               className="watch-feature glass-card reveal"
               style={{ "--reveal-delay": `${i * 0.08}s` } as React.CSSProperties}
             >
-              <span className={`kind-pill ${m.kind}`}>{m.kind}</span>
+              <span className={`kind-pill ${m.kind}`}>{t.pelis.kind[m.kind]}</span>
               <span className="watch-feature-title">{m.title}</span>
-              {m.note && <span className="watch-feature-note">{m.note}</span>}
+              {m.note && <span className="watch-feature-note">{tr(m.note)}</span>}
             </div>
           ))}
         </div>
@@ -41,11 +45,11 @@ export default function Pelis() {
           ))}
         </div>
 
-        <p className="watch-more reveal">…and the rest · …y las que faltan</p>
+        <p className="watch-more reveal">{t.pelis.more}</p>
 
-        {/* la película sin fin */}
+        {/* the never-ending movie */}
         <div className="tiktok-card glass-card reveal">
-          <p className="tiktok-label">and our never-ending movie · y nuestra película sin fin ↓</p>
+          <p className="tiktok-label">{t.pelis.tiktokLabel}</p>
           <TikTokEmbed />
         </div>
       </div>

@@ -35,6 +35,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // The <html lang> is updated client-side by the language switch (lib/i18n).
   return (
     <html lang="es" className={`${inter.variable} ${caveat.variable}`}>
       <body>{children}</body>

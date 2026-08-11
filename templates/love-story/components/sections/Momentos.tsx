@@ -4,33 +4,33 @@ import SectionHead from "@/components/SectionHead";
 import { config } from "@/lib/config";
 import { full, photos, thumb } from "@/lib/photos";
 import { useLightbox } from "@/components/Lightbox";
+import { useI18n } from "@/lib/i18n";
 
 export default function Momentos() {
   const { open } = useLightbox();
+  const { t, tr } = useI18n();
 
   return (
     <section id="momentos" className="section-pad">
-      <SectionHead
-        kicker="In between · Y en el medio…"
-        title="We celebrated everything · Celebramos todo"
-        lede="The little celebrations along the way. Tap a card to see them all. · Las pequeñas celebraciones del camino. Tocá una carta para verlas todas."
-      />
+      <SectionHead kicker={t.momentos.kicker} title={t.momentos.title} lede={t.momentos.lede} />
       <div className="wrap bento">
         {config.momentos.map((m, i) => {
           const slugs = photos(m.cat);
           if (!slugs.length) return null;
+          const title = tr(m.title);
           const items = slugs.map((s) => ({
             src: full(m.cat, s),
             thumb: thumb(m.cat, s),
-            caption: m.title,
+            caption: title,
           }));
+          const flag = (m as { flag?: string }).flag;
           return (
             <button
               key={m.cat}
               className={`moment-card reveal-scale span-${i < 2 ? 3 : 2}`}
               style={{ "--reveal-delay": `${(i % 3) * 0.07}s` } as React.CSSProperties}
               onClick={() => open(items, 0)}
-              aria-label={`See photos · Ver fotos: ${m.title}`}
+              aria-label={`${t.momentos.title}: ${title}`}
             >
               <img
                 className="moment-cover"
@@ -42,12 +42,12 @@ export default function Momentos() {
               <span className="moment-overlay" aria-hidden />
               <span className="moment-meta">
                 <span className="moment-title">
-                  {(m as { flag?: string }).flag ? (
-                    <img className="flag" src={(m as { flag?: string }).flag} alt="" />
-                  ) : null}
-                  <span aria-hidden>{m.emoji}</span> {m.title}
+                  {flag ? <img className="flag" src={flag} alt="" /> : null}
+                  <span aria-hidden>{m.emoji}</span> {title}
                 </span>
-                <span className="chip">{slugs.length} 📷</span>
+                <span className="chip">
+                  {slugs.length} {t.photosWord}
+                </span>
               </span>
             </button>
           );

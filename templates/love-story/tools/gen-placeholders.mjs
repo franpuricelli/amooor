@@ -1,6 +1,8 @@
 // gen-placeholders.mjs — generate the template's blank placeholder art.
-// Uses sharp (a dependency) to rasterize small vector SVGs, so there are no
-// font dependencies. Run: node tools/gen-placeholders.mjs
+// Uses sharp (a dependency) to rasterize small vector SVGs — no font deps.
+// Three aspect ratios (portrait / square / landscape) so grids and collages
+// read like a natural mix of photos instead of a flat wall.
+// Run: node tools/gen-placeholders.mjs
 import sharp from "sharp";
 import { mkdirSync } from "node:fs";
 
@@ -9,16 +11,15 @@ const FRAME = "#E9CFDD";
 const HEART = "#E4BBCF";
 const HEART_FILL = "#EFD8E4";
 
-// A heart path in a 0..100 box.
 const HEART_PATH =
   "M50 86 C 18 60, 8 39, 25 24 C 37 13.5, 50 21, 50 33 C 50 21, 63 13.5, 75 24 C 92 39, 82 60, 50 86 Z";
 
 function card({ w, h, bg = ROSE_BG, heart = HEART, heartFill = HEART_FILL, frame = true }) {
   const s = Math.min(w, h);
-  const hs = s * 0.26; // heart size
+  const hs = s * 0.24;
   const hx = (w - hs) / 2;
   const hy = (h - hs) / 2;
-  const inset = Math.round(s * 0.06);
+  const inset = Math.round(s * 0.055);
   const frameRect = frame
     ? `<rect x="${inset}" y="${inset}" width="${w - inset * 2}" height="${h - inset * 2}" rx="${Math.round(
         s * 0.03
@@ -41,21 +42,32 @@ const png = (buf, out) => sharp(buf).png().toFile(out);
 mkdirSync("public/brand/artists", { recursive: true });
 mkdirSync("tools/_blank", { recursive: true });
 
+// [variant, fullW, fullH, thumbW, thumbH]
+const VARIANTS = [
+  ["a", 900, 1200, 480, 640], // portrait 3:4
+  ["b", 1100, 1100, 560, 560], // square
+  ["c", 1200, 900, 640, 480], // landscape 4:3
+];
+
 await Promise.all([
-  // reusable photo blanks (copied into every category by build-template-media.mjs)
-  jpg(card({ w: 1200, h: 1200 }), "tools/_blank/full.jpg"),
-  jpg(card({ w: 600, h: 600 }), "tools/_blank/thumb.jpg"),
+  ...VARIANTS.flatMap(([v, fw, fh, tw, th]) => [
+    jpg(card({ w: fw, h: fh }), `tools/_blank/full-${v}.jpg`),
+    jpg(card({ w: tw, h: th }), `tools/_blank/thumb-${v}.jpg`),
+  ]),
   // six square artist avatars
   ...[1, 2, 3, 4, 5, 6].map((n) =>
     jpg(card({ w: 320, h: 320 }), `public/brand/artists/artist-${n}.jpg`)
   ),
   // footer drawing card
   png(card({ w: 900, h: 640 }), "public/drawing.png"),
+  // favicon: brand pink with a white heart
+  png(
+    card({ w: 512, h: 512, bg: "#ff6fae", heart: "#ffffff", heartFill: "rgba(255,255,255,0.28)", frame: false }),
+    "app/icon.png"
+  ),
+  // social cards
+  png(card({ w: 1200, h: 630 }), "app/opengraph-image.png"),
+  png(card({ w: 1200, h: 630 }), "app/twitter-image.png"),
 ]);
 
-// favicon + social images live in app/
-await png(card({ w: 512, h: 512, bg: "#ff6fae", heart: "#ffffff", heartFill: "rgba(255,255,255,0.28)", frame: false }), "app/icon.png");
-await png(card({ w: 1200, h: 630 }), "app/opengraph-image.png");
-await png(card({ w: 1200, h: 630 }), "app/twitter-image.png");
-
-console.log("placeholders generated");
+console.log("placeholders generated (3 aspect variants)");

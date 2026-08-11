@@ -12,27 +12,31 @@ import Momentos from "@/components/sections/Momentos";
 import Pelis from "@/components/sections/Pelis";
 import Galeria from "@/components/sections/Galeria";
 import Footer from "@/components/Footer";
+import { I18nProvider, LangSwitch } from "@/lib/i18n";
 
 export default function Home() {
   return (
-    <SmoothScroll>
-      <LightboxProvider>
-        <RevealInit />
-        <HeartCursor />
-        <Nav />
-        <main>
-          {/* la historia, en orden: conocerse → enamorarse → mudarse → viajar… */}
-          <Hero />
-          <Historia />
-          <Viajes />
-          <Cocina />
-          <Momentos />
-          <Pelis />
-          <Stats />
-          <Galeria />
-        </main>
-        <Footer />
-      </LightboxProvider>
-    </SmoothScroll>
+    <I18nProvider>
+      <LangSwitch />
+      <SmoothScroll>
+        <LightboxProvider>
+          <RevealInit />
+          <HeartCursor />
+          <Nav />
+          <main>
+            {/* the story, in order: meet → fall in love → move in → travel… */}
+            <Hero />
+            <Historia />
+            <Viajes />
+            <Cocina />
+            <Momentos />
+            <Pelis />
+            <Stats />
+            <Galeria />
+          </main>
+          <Footer />
+        </LightboxProvider>
+      </SmoothScroll>
+    </I18nProvider>
   );
 }

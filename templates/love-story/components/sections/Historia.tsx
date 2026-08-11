@@ -2,6 +2,7 @@
 
 import StoryRow from "@/components/StoryRow";
 import { photos } from "@/lib/photos";
+import { useI18n } from "@/lib/i18n";
 
 const pick = (cat: string, ...idx: number[]) =>
   idx
@@ -9,40 +10,40 @@ const pick = (cat: string, ...idx: number[]) =>
     .filter((p): p is { cat: string; slug: string } => Boolean(p.slug));
 
 /**
- * Beats 1–3 of the story. Each StoryRow pulls its album from one or more photo
- * folders (see `cats`). Edit the kicker/title/text and the folders to tell yours.
- * Beats 1–3 de la historia. Cada StoryRow arma su álbum desde una o más carpetas
- * (ver `cats`). Editá kicker/título/texto y las carpetas para contar la tuya.
+ * Beats 1–3 of the story. Copy lives in lib/strings.ts (bilingual); each beat
+ * pulls its album from one or more photo folders (see `cats`).
+ * Beats 1–3 de la historia. El texto está en lib/strings.ts (bilingüe); cada
+ * beat arma su álbum desde una o más carpetas (ver `cats`).
  */
 export default function Historia() {
+  const { t } = useI18n();
   return (
     <section id="historia" className="section-pad story">
       <StoryRow
-        kicker="Chapter one · Capítulo uno"
-        title="How we met · Cómo nos conocimos"
-        text="Tell the story of the very beginning — where you met and how it started. · Contá el principio de todo: dónde se cruzaron y cómo empezó."
+        kicker={t.historia.ch1.kicker}
+        title={t.historia.ch1.title}
+        text={t.historia.ch1.text}
         cats={["how-we-met", "graduation"]}
         picks={[...pick("how-we-met", 0, 1), ...pick("graduation", 0)]}
       />
 
       <StoryRow
         flip
-        kicker="Chapter two · Capítulo dos"
-        title="Falling in love · Nos enamoramos"
-        text="The first year: small plans, big laughs, the day it became official. · El primer año: planes chiquitos, risas enormes, el día que se hizo oficial."
+        kicker={t.historia.ch2.kicker}
+        title={t.historia.ch2.title}
+        text={t.historia.ch2.text}
         cats={["first-year", "valentines"]}
         picks={[...pick("first-year", 0, 2), ...pick("valentines", 0)]}
       />
 
       <StoryRow
-        kicker="Chapter three · Capítulo tres"
+        kicker={t.historia.ch3.kicker}
         title={
           <>
-            A place of our own · Un lugar nuestro{" "}
-            <span className="story-heart">❤</span>
+            {t.historia.ch3.title} <span className="story-heart">❤</span>
           </>
         }
-        text="Boxes, a move, and a space that slowly became home. · Cajas, mudanza y un espacio que de a poco se volvió hogar."
+        text={t.historia.ch3.text}
         cats={["moving-in"]}
         picks={pick("moving-in", 0, 1, 2)}
       />

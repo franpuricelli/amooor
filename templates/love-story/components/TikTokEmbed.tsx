@@ -2,12 +2,14 @@
 
 import Script from "next/script";
 import { config } from "@/lib/config";
+import { useI18n } from "@/lib/i18n";
 
 /**
  * Official TikTok blockquote embed. embed.js hydrates the blockquote into the
  * real player; it works most reliably on a deployed domain (see README).
  */
 export default function TikTokEmbed() {
+  const { tr } = useI18n();
   const { url, videoId, caption } = config.tiktok;
   return (
     <>
@@ -19,7 +21,7 @@ export default function TikTokEmbed() {
       >
         <section>
           <a target="_blank" rel="noreferrer" href={url}>
-            {caption}
+            {tr(caption)}
           </a>
         </section>
       </blockquote>

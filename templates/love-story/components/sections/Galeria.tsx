@@ -4,16 +4,18 @@ import { useEffect, useMemo, useState } from "react";
 import SectionHead from "@/components/SectionHead";
 import { allPhotos, full, thumb, totalPhotos } from "@/lib/photos";
 import { useLightbox } from "@/components/Lightbox";
+import { useI18n } from "@/lib/i18n";
 import { useLenis } from "lenis/react";
 
 const COLS = 8;
 
 /**
  * Wall of love: 8 columns of memories drifting up/down in a loop (no infinite
- * page scroll). "Ver todas" opens a full-screen overlay with every photo.
+ * page scroll). "See all" opens a full-screen overlay with every photo.
  */
 export default function Galeria() {
   const { open } = useLightbox();
+  const { t } = useI18n();
   const lenis = useLenis();
   const [showAll, setShowAll] = useState(false);
 
@@ -39,13 +41,15 @@ export default function Galeria() {
     };
   }, [showAll, lenis]);
 
+  const eyebrow = `❤ wall of love · ${totalPhotos} ${t.gallery.memories}`;
+
   const tile = (p: { cat: string; slug: string; i: number }, extra?: number) => (
     <button
       key={`${p.cat}/${p.slug}/${extra ?? 0}`}
       className="wol-tile"
       onClick={() => open(items, p.i)}
       tabIndex={extra ? -1 : 0}
-      aria-label={`Photo · Foto ${p.i + 1}/${totalPhotos}`}
+      aria-label={`${t.gallery.photo} ${p.i + 1}/${totalPhotos}`}
     >
       <img src={thumb(p.cat, p.slug)} alt="" loading="lazy" decoding="async" />
     </button>
@@ -53,11 +57,7 @@ export default function Galeria() {
 
   return (
     <section id="galeria" className="section-pad section-dark">
-      <SectionHead
-        eyebrow={`❤ wall of love · ${totalPhotos} memories · recuerdos`}
-        title="Wall of love"
-        lede="Every memory, all together. Tap any one to see it big. · Todos los recuerdos, juntitos. Tocá cualquiera para verla grande."
-      />
+      <SectionHead eyebrow={eyebrow} title={t.gallery.title} lede={t.gallery.lede} />
 
       <div className="wrap">
         <div className="wol-marquee reveal">
@@ -80,7 +80,7 @@ export default function Galeria() {
 
         <div className="wol-actions reveal">
           <button className="btn" onClick={() => setShowAll(true)}>
-            See all · Ver todas ({totalPhotos}) →
+            {t.gallery.seeAll} ({totalPhotos}) →
           </button>
         </div>
       </div>
@@ -89,13 +89,13 @@ export default function Galeria() {
         <div className="wol-overlay" role="dialog" aria-modal="true" data-lenis-prevent>
           <button
             className="lightbox-btn wol-close glass"
-            aria-label="Close · Cerrar"
+            aria-label={t.gallery.close}
             onClick={() => setShowAll(false)}
           >
             ✕
           </button>
           <div className="wol-overlay-head">
-            <span className="eyebrow">❤ wall of love · {totalPhotos} memories · recuerdos</span>
+            <span className="eyebrow">{eyebrow}</span>
           </div>
           <div className="wall wall-mini">
             {allPhotos.map((p, i) => (
@@ -103,7 +103,7 @@ export default function Galeria() {
                 key={`${p.cat}/${p.slug}`}
                 className="tile"
                 onClick={() => open(items, i)}
-                aria-label={`Foto ${i + 1} de ${totalPhotos}`}
+                aria-label={`${t.gallery.photo} ${i + 1}/${totalPhotos}`}
               >
                 <img src={thumb(p.cat, p.slug)} alt="" loading="lazy" decoding="async" />
               </button>

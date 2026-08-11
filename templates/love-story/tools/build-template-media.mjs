@@ -1,19 +1,19 @@
 // build-template-media.mjs — regenerate the template's photo folders + manifest.
 //
 // EN · Wipes /public/photos + /public/thumbs, recreates one folder per category
-//      with N blank placeholders (01.jpg, 02.jpg, …), and writes lib/photos.ts.
-//      To use the template: replace these blanks with your own images (same
-//      names) or just drop your photos in and rename accordingly.
+//      with N blank placeholders (01.jpg, 02.jpg, …) in a mix of aspect ratios,
+//      and writes lib/photos.ts. Replace these blanks with your own images
+//      (same names) to make it yours.
 // ES · Borra /public/photos + /public/thumbs, recrea una carpeta por categoría
-//      con N placeholders en blanco (01.jpg, 02.jpg, …) y escribe lib/photos.ts.
-//      Para usar la plantilla: reemplazá estos blancos por tus imágenes (mismos
-//      nombres) o poné tus fotos y renombralas.
+//      con N placeholders en blanco (01.jpg, 02.jpg, …) en una mezcla de
+//      proporciones, y escribe lib/photos.ts. Reemplazá estos blancos por tus
+//      imágenes (mismos nombres) para hacerla tuya.
 //
-// Run: node tools/build-template-media.mjs
+// Run: node tools/gen-placeholders.mjs && node tools/build-template-media.mjs
 import { rmSync, mkdirSync, copyFileSync, writeFileSync } from "node:fs";
 
-// [slug, count] — order = order they appear on the site. Counts mirror the
-// original layout so the grids look full. Edit freely.
+// [slug, count] — order = order on the site. Counts mirror the original layout
+// so grids look full. Edit freely.
 const CATEGORIES = [
   ["how-we-met", 1],
   ["graduation", 9],
@@ -33,8 +33,7 @@ const CATEGORIES = [
   ["everything-else", 110],
 ];
 
-const FULL = "tools/_blank/full.jpg";
-const THUMB = "tools/_blank/thumb.jpg";
+const VARIANTS = ["a", "b", "c"]; // portrait / square / landscape
 
 rmSync("public/photos", { recursive: true, force: true });
 rmSync("public/thumbs", { recursive: true, force: true });
@@ -42,7 +41,7 @@ rmSync("public/thumbs", { recursive: true, force: true });
 const manifest = {};
 let total = 0;
 
-for (const [cat, count] of CATEGORIES) {
+CATEGORIES.forEach(([cat, count], ci) => {
   mkdirSync(`public/photos/${cat}`, { recursive: true });
   mkdirSync(`public/thumbs/${cat}`, { recursive: true });
   const width = Math.max(2, String(count).length);
@@ -50,12 +49,14 @@ for (const [cat, count] of CATEGORIES) {
   for (let i = 1; i <= count; i++) {
     const slug = String(i).padStart(width, "0");
     slugs.push(slug);
-    copyFileSync(FULL, `public/photos/${cat}/${slug}.jpg`);
-    copyFileSync(THUMB, `public/thumbs/${cat}/${slug}.jpg`);
+    // deterministic aspect mix; offset per category so columns vary
+    const v = VARIANTS[(i + ci) % VARIANTS.length];
+    copyFileSync(`tools/_blank/full-${v}.jpg`, `public/photos/${cat}/${slug}.jpg`);
+    copyFileSync(`tools/_blank/thumb-${v}.jpg`, `public/thumbs/${cat}/${slug}.jpg`);
   }
   manifest[cat] = slugs;
   total += count;
-}
+});
 
 const body = Object.entries(manifest)
   .map(

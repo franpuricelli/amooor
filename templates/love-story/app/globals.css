@@ -5,11 +5,11 @@
    ─────────────────────────────────────────────────────────────────────────── */
 
 :root {
-  /* canvas */
-  --canvas: #ff6fae;
-  --canvas-soft: #ffa6cf;
-  --canvas-deep: #fb5399;
-  --pink: #ff2e8c;
+  /* canvas — rose pink, capped at --canvas-deep (#fd7ab1) */
+  --canvas: #fe9cc4;
+  --canvas-soft: #ffc9df;
+  --canvas-deep: #fd7ab1;
+  --pink: #e24d8b;
 
   /* ink on pink */
   --ink: #1c0512;
@@ -51,11 +51,11 @@ body {
   background: var(--canvas);
   background-image: radial-gradient(
       70% 55% at 12% -5%,
-      rgba(255, 199, 226, 0.85) 0%,
+      rgba(255, 224, 238, 0.9) 0%,
       transparent 60%
     ),
-    radial-gradient(55% 45% at 90% 8%, rgba(255, 133, 187, 0.9) 0%, transparent 55%),
-    linear-gradient(180deg, #ff8abd 0%, var(--canvas) 45%, var(--canvas-deep) 100%);
+    radial-gradient(55% 45% at 90% 8%, rgba(254, 156, 196, 0.85) 0%, transparent 55%),
+    linear-gradient(180deg, #ffc9df 0%, var(--canvas) 45%, var(--canvas-deep) 100%);
   background-attachment: fixed;
   color: var(--ink);
   font-family: var(--font-sans);
@@ -176,6 +176,20 @@ html.lenis body {
   font-weight: 550;
   white-space: nowrap;
 }
+/* clickable count chip (e.g. "26 fotos" → opens the album) */
+.chip-btn {
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), background 0.2s,
+    border-color 0.2s;
+}
+.chip-btn:hover {
+  transform: translateY(-1px) scale(1.04);
+  background: var(--glass-strong);
+  border-color: rgba(255, 255, 255, 0.32);
+}
+.chip-btn:active {
+  transform: scale(0.98);
+}
 
 .btn {
   display: inline-flex;
@@ -208,10 +222,10 @@ section {
   background: var(--dark);
   background-image: radial-gradient(
       55% 40% at 50% 0%,
-      rgba(255, 46, 140, 0.16) 0%,
+      rgba(253, 122, 177, 0.2) 0%,
       transparent 60%
     ),
-    radial-gradient(40% 30% at 85% 100%, rgba(255, 46, 140, 0.1) 0%, transparent 60%);
+    radial-gradient(40% 30% at 85% 100%, rgba(253, 122, 177, 0.13) 0%, transparent 60%);
   color: var(--white);
 }
 
@@ -390,7 +404,7 @@ section {
   background: var(--dark);
   background-image: radial-gradient(
     55% 40% at 50% 0%,
-    rgba(255, 46, 140, 0.14) 0%,
+    rgba(253, 122, 177, 0.18) 0%,
     transparent 60%
   );
   overflow-y: auto;
@@ -496,6 +510,10 @@ section {
   border-radius: 999px;
   padding: 0.5rem 1.1rem;
   box-shadow: 0 12px 40px -12px rgba(28, 5, 18, 0.5);
+  /* keep the pill reliably dark: over the bright pink sections the glass washes
+     out and the heart/label lose contrast — an opaque backdrop fixes that so
+     the ❤ (the play/pause control) is always visible, esp. on mobile */
+  background: rgba(14, 3, 10, 0.82);
 }
 .nav-logo {
   display: flex;
@@ -506,15 +524,34 @@ section {
   letter-spacing: -0.01em;
 }
 .nav-heart {
-  color: #ff7ab5;
-  font-size: 0.9em;
+  color: #ff5c99;
+  font-size: 1em;
   display: inline-block;
+  text-shadow: 0 0 10px rgba(255, 92, 153, 0.55);
 }
 /* while the song plays, MusicToggle drives the heart's scale from the
    audio's bass energy (Web Audio analyser) via inline transform */
 .nav-logo .nav-heart {
   transform-origin: center;
   will-change: transform;
+}
+/* before the song starts, gently pulse the heart so it reads as "tap me" */
+.nav-logo:not(.playing) .nav-heart {
+  animation: nav-heart-hint 1.8s ease-in-out infinite;
+}
+@keyframes nav-heart-hint {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.18);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-logo:not(.playing) .nav-heart {
+    animation: none;
+  }
 }
 .nav-links {
   display: flex;
@@ -738,11 +775,11 @@ section {
     transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 /* the cards float over the full-screen art */
-.person-card.ivi {
+.person-card.left {
   left: clamp(16px, 4vw, 56px);
   transform: translateY(-50%) translateX(-14px) scale(0.96);
 }
-.person-card.fran {
+.person-card.right {
   right: clamp(16px, 4vw, 56px);
   transform: translateY(-50%) translateX(14px) scale(0.96);
 }
@@ -816,14 +853,46 @@ section {
     display: none;
   }
   .person-card,
-  .person-card.ivi,
-  .person-card.fran {
+  .person-card.left,
+  .person-card.right {
     position: static;
     opacity: 1;
     transform: none;
     pointer-events: auto;
     width: min(360px, 100%);
   }
+}
+
+/* ── Language switch (minimal, pinned top-right) ─────────────────────────── */
+.lang-switch {
+  position: fixed;
+  top: clamp(0.6rem, 2vw, 1.05rem);
+  right: clamp(0.6rem, 2vw, 1.05rem);
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
+  padding: 0.26rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.lang-switch button {
+  color: var(--white-45);
+  padding: 0.08rem 0.32rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.2s, transform 0.2s;
+}
+.lang-switch button:hover {
+  color: var(--white);
+}
+.lang-switch button.on {
+  color: var(--white);
+}
+.lang-sep {
+  color: rgba(255, 255, 255, 0.28);
 }
 
 /* ── Story rows (la historia, beat a beat) ──────────────────────────────── */
@@ -1042,13 +1111,13 @@ section {
   border-top: 1px solid rgba(255, 255, 255, 0.35);
 }
 .pais-panel:nth-child(3n + 1) {
-  background: linear-gradient(180deg, #ff8abd 0%, #ff6fae 100%);
+  background: linear-gradient(180deg, #feafd0 0%, #fe9cc4 100%);
 }
 .pais-panel:nth-child(3n + 2) {
-  background: linear-gradient(180deg, #fb5399 0%, #ff3f90 100%);
+  background: linear-gradient(180deg, #fe9cc4 0%, #fd7ab1 100%);
 }
 .pais-panel:nth-child(3n) {
-  background: linear-gradient(180deg, #ffa6cf 0%, #ff85bb 100%);
+  background: linear-gradient(180deg, #ffc9df 0%, #feb3d3 100%);
 }
 .pais-inner {
   width: 100%;

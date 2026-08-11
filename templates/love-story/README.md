@@ -1,42 +1,39 @@
 # 💘 Love Story — a one-page website template
 
-A single-page, framer-style anniversary/relationship website: a full-bleed hero
-with hover "main character" cards, a live counter, story chapters, trips, a
-moments grid, a watchlist, and a final wall of all your photos. Built with
-**Next.js 15 + Lenis**, ready for **Vercel**.
+A single-page, framer-style relationship / anniversary website: a full-bleed
+hero with hover "main character" cards, a **live ES/EN switch**, a live counter,
+story chapters, trips, a moments grid, a watchlist, and a final wall of all your
+photos. Built with **Next.js 15 + Lenis**, ready for **Vercel**.
 
 **This repo is a template.** Everything you see is a placeholder — fantasy names
-(Orion & Sera), made-up favorites, and blank photos. Swap in your own story and
-photos and you have your site.
+(Orion & Sera), made-up favorites, blank photos. Swap in your own and it's yours.
 
-> 🇬🇧 English below · 🇪🇸 Español más abajo · the site itself is bilingual (EN · ES)
-> everywhere, so translate or delete whichever half you don't need.
-
-🔗 Live preview: deploy it (see below) and share your own URL.
+> 🌐 **Bilingual.** A minimal **ES / EN** switch sits in the top-right corner.
+> Fixed UI text lives in `lib/strings.ts` (both languages); your content lives in
+> `lib/config.ts` (plain strings, or `{ en, es }` pairs where you want both).
 
 ---
 
 ## 🇬🇧 English
 
-### The only file you really edit: `lib/config.ts`
+### The two files you edit
 
-- **Names & dates** (`names`, `dates`) — the live counter is computed on its own.
-- **Hero** (`hero`) — which photo is the cover (folder + slug).
-- **People** (`people.left`, `people.right`) — the traits and favorite artists
-  that appear when you hover each person in the hero. Left person on the left,
-  right person on the right. Artist images live in `public/brand/artists/`.
-- **Trips** (`viajes`) & **Moments** (`momentos`) — title + emoji (or a `flag`
-  image path) for each photo folder.
-- **Watchlist** (`watchlist`) and **TikTok** (`tiktok`).
+- **`lib/config.ts` — your content.** Names & dates (the counter is automatic),
+  the hero cover, the two people (`people.left` / `people.right`) with their
+  traits and favorite artists, your trips (`viajes`) and moments (`momentos`),
+  the watchlist and the TikTok. Descriptive bits can be bilingual — write
+  `{ en: "…", es: "…" }` — or a plain string used for both.
+- **`lib/strings.ts` — the fixed UI text** (section titles, buttons, labels…) in
+  `en` and `es`. Edit both columns, or change `DEFAULT_LANG` in `lib/i18n.tsx`.
 
 ### Photos: one folder = one section
 
 Each category is a folder in `public/photos/<category>/` (full size) **and**
 `public/thumbs/<category>/` (small). The template ships blank placeholders named
-`01.jpg`, `02.jpg`, … To use it, **replace those files with your own images**
-(keep the `.jpg` names, or add your own and update `lib/photos.ts`).
+`01.jpg`, `02.jpg`, … in a mix of aspect ratios. **Replace those files with your
+own images** (keep the `.jpg` names, or add your own and update `lib/photos.ts`).
 
-Regenerate the blank set / counts at any time:
+Regenerate the blank set / counts any time:
 
 ```bash
 node tools/gen-placeholders.mjs      # (re)make the blank heart placeholders
@@ -45,16 +42,6 @@ node tools/build-template-media.mjs  # fill every folder + rewrite lib/photos.ts
 
 Edit the `CATEGORIES` list at the top of `tools/build-template-media.mjs` to
 change category names or how many photos each section holds.
-
-### Copy that lives in components (not in config)
-
-To keep `config.ts` small, the narrative text sits next to where it renders:
-
-- `components/Hero.tsx` — the hero one-liner.
-- `components/sections/Historia.tsx` — the three story chapters.
-- `components/sections/Cocina.tsx` — the "we ate well" chapter.
-- Section intros — `Viajes.tsx`, `Momentos.tsx`, `Pelis.tsx`, `Galeria.tsx`.
-- `components/Footer.tsx` and `components/DrawingFlip.tsx` — the closing message.
 
 ### Music & drawing
 
@@ -70,14 +57,11 @@ npm run dev      # http://localhost:3000
 npm run build    # production build
 ```
 
-> ⚠️ Don't run `npm run build` while `npm run dev` is running — they fight over
-> `.next`. If it breaks: stop the server, `rm -rf .next`, rebuild.
-
 ### Deploy on Vercel
 
 1. Push this repo to GitHub.
-2. [vercel.com](https://vercel.com) → *Add New Project* → import the repo.
-3. Framework: **Next.js** (auto-detected). Deploy. Share the URL. 📲
+2. [vercel.com](https://vercel.com) → *Add New Project* → import the repo →
+   **Next.js** (auto-detected) → Deploy. Share the URL. 📲
 
 > The TikTok embed loads more reliably on the real Vercel domain than on
 > `localhost`.
@@ -86,27 +70,26 @@ npm run build    # production build
 
 ## 🇪🇸 Español
 
-### El único archivo que de verdad editás: `lib/config.ts`
+### Los dos archivos que editás
 
-- **Nombres y fechas** (`names`, `dates`) — el contador en vivo se calcula solo.
-- **Hero** (`hero`) — qué foto es la portada (carpeta + slug).
-- **Personas** (`people.left`, `people.right`) — los traits y artistas favoritos
-  que aparecen al pasar el mouse por cada persona en el hero. La de la izquierda
-  a la izquierda, la de la derecha a la derecha. Las imágenes de artistas están
-  en `public/brand/artists/`.
-- **Viajes** (`viajes`) y **Momentos** (`momentos`) — título + emoji (o una ruta
-  de imagen `flag`) para cada carpeta de fotos.
-- **Watchlist** (`watchlist`) y **TikTok** (`tiktok`).
+- **`lib/config.ts` — tu contenido.** Nombres y fechas (el contador es
+  automático), la portada del hero, las dos personas (`people.left` /
+  `people.right`) con sus traits y artistas favoritos, tus viajes (`viajes`) y
+  momentos (`momentos`), la watchlist y el TikTok. Los textos descriptivos pueden
+  ser bilingües — poné `{ en: "…", es: "…" }` — o un string para ambos.
+- **`lib/strings.ts` — el texto fijo de UI** (títulos de sección, botones,
+  labels…) en `en` y `es`. Editá las dos columnas, o cambiá `DEFAULT_LANG` en
+  `lib/i18n.tsx`.
 
 ### Fotos: una carpeta = una sección
 
 Cada categoría es una carpeta en `public/photos/<categoría>/` (tamaño completo)
 **y** `public/thumbs/<categoría>/` (chica). La plantilla trae placeholders en
-blanco llamados `01.jpg`, `02.jpg`, … Para usarla, **reemplazá esos archivos por
-tus imágenes** (mantené los nombres `.jpg`, o poné los tuyos y actualizá
-`lib/photos.ts`).
+blanco `01.jpg`, `02.jpg`, … en una mezcla de proporciones. **Reemplazá esos
+archivos por tus imágenes** (mantené los nombres `.jpg`, o poné los tuyos y
+actualizá `lib/photos.ts`).
 
-Regenerá el set de blancos / las cantidades cuando quieras:
+Regenerá los blancos / las cantidades cuando quieras:
 
 ```bash
 node tools/gen-placeholders.mjs      # (re)genera los placeholders con corazón
@@ -114,25 +97,13 @@ node tools/build-template-media.mjs  # llena cada carpeta + reescribe lib/photos
 ```
 
 Editá la lista `CATEGORIES` arriba de `tools/build-template-media.mjs` para
-cambiar los nombres de categoría o cuántas fotos tiene cada sección.
-
-### Texto que vive en los componentes (no en config)
-
-Para que `config.ts` quede chico, el texto narrativo está al lado de donde se
-renderiza:
-
-- `components/Hero.tsx` — la frase del hero.
-- `components/sections/Historia.tsx` — los tres capítulos de la historia.
-- `components/sections/Cocina.tsx` — el capítulo "comimos rico".
-- Intros de sección — `Viajes.tsx`, `Momentos.tsx`, `Pelis.tsx`, `Galeria.tsx`.
-- `components/Footer.tsx` y `components/DrawingFlip.tsx` — el mensaje de cierre.
+cambiar nombres de categoría o cuántas fotos tiene cada sección.
 
 ### Música y dibujo
 
-- Poné tu canción en `public/song.mp3` (viene un placeholder mudo corto). Usá
-  una que tengas permitido usar.
-- `public/drawing.png` es el dibujo de la carta que se da vuelta en el footer —
-  reemplazalo.
+- Poné tu canción en `public/song.mp3` (viene un placeholder mudo corto). Usá una
+  que tengas permitido usar.
+- `public/drawing.png` es el dibujo de la carta del footer — reemplazalo.
 
 ### Correr local
 
@@ -142,17 +113,11 @@ npm run dev      # http://localhost:3000
 npm run build    # build de producción
 ```
 
-> ⚠️ No corras `npm run build` mientras `npm run dev` está corriendo — se pisan
-> en `.next`. Si se rompe: pará el server, `rm -rf .next`, rebuild.
-
 ### Deploy en Vercel
 
 1. Subí este repo a GitHub.
-2. [vercel.com](https://vercel.com) → *Add New Project* → importá el repo.
-3. Framework: **Next.js** (lo detecta solo). Deploy. Mandá la URL. 📲
-
-> El embed de TikTok carga más confiable en el dominio real de Vercel que en
-> `localhost`.
+2. [vercel.com](https://vercel.com) → *Add New Project* → importá el repo →
+   **Next.js** (lo detecta solo) → Deploy. Mandá la URL. 📲
 
 ---
 
@@ -160,38 +125,31 @@ npm run build    # build de producción
 
 EN · Every asset URL respects `NEXT_PUBLIC_BASE_PATH`, so the template can be
 served under a sub-path (e.g. `/template` inside another app) with no code
-changes. In this repo it's mounted at **`/template`** as a static export inside
-an isolated iframe (`app/template/page.tsx` + `public/template/`). To rebuild
-that bundle after editing the template:
+changes. Build that bundle with:
 
 ```bash
-cd templates/love-story
-npm install
-EXPORT=1 NEXT_PUBLIC_BASE_PATH=/template npm run build
-rm -rf ../../public/template && cp -R out ../../public/template
+EXPORT=1 NEXT_PUBLIC_BASE_PATH=/template npm run build   # → out/
 ```
 
 ES · Cada URL de asset respeta `NEXT_PUBLIC_BASE_PATH`, así que el template se
 puede servir bajo un sub-path (ej. `/template` dentro de otra app) sin tocar
-código. En este repo está montado en **`/template`** como export estático dentro
-de un iframe aislado (`app/template/page.tsx` + `public/template/`). Para
-regenerar ese bundle después de editar el template, corré los comandos de arriba.
+código. Generá ese bundle con el comando de arriba.
 
 ---
 
 ## 🗺️ Structure · Estructura
 
 ```
-app/                  layout (metadata + fonts), page, globals.css
+app/                  layout (metadata + fonts), page (providers), globals.css
 components/           Nav, Hero (person hover), Stats (counter), Lightbox,
                       PhotoStrip/PhotoGrid, DrawingFlip (footer), MusicToggle
 components/sections/  Historia, Viajes, Cocina, Momentos, Pelis, Galeria
-lib/config.ts         👉 the file you edit · el archivo que editás
+lib/config.ts         👉 your content · tu contenido
+lib/strings.ts        👉 UI text (en/es) · texto de UI (en/es)
+lib/i18n.tsx          language provider + top-right ES/EN switch
 lib/photos.ts         photo manifest (generated) · manifiesto de fotos (generado)
 public/photos|thumbs/ your photos per category · tus fotos por categoría
 public/brand/artists/ favorite-artist avatars · avatares de artistas favoritos
-public/drawing.png    footer flip-card drawing · dibujo de la carta del footer
-public/song.mp3       background song placeholder · placeholder de la canción
 tools/                gen-placeholders.mjs + build-template-media.mjs
 ```
 

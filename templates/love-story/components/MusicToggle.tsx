@@ -2,19 +2,19 @@
 
 import { useEffect, useRef, useState } from "react";
 import { BASE } from "@/lib/base";
+import { useI18n } from "@/lib/i18n";
 
 /**
  * The navbar pill doubles as the music control: the song starts when you enter
  * the site (or on the first interaction if the browser blocks autoplay) and
- * clicking the pill toggles play/pause. While it plays, the heart beats with the
- * actual audio (Web Audio analyser on the bass bins).
+ * clicking the pill toggles play/pause. While it plays, the heart beats with
+ * the actual audio (Web Audio analyser on the bass bins).
  *
- * EN · Drop your own song at /public/song.mp3 (a short silent placeholder ships
- *      with the template). Use a track you have the rights to.
- * ES · Poné tu propia canción en /public/song.mp3 (viene un placeholder mudo
- *      corto). Usá una que tengas permitido usar.
+ * Drop your own song at /public/song.mp3 (a short silent placeholder ships with
+ * the template). Use a track you have the rights to.
  */
 export default function MusicToggle({ label }: { label: string }) {
+  const { t } = useI18n();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const heartRef = useRef<HTMLSpanElement>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -134,8 +134,8 @@ export default function MusicToggle({ label }: { label: string }) {
     <button
       className={`nav-logo ${playing ? "playing" : ""}`}
       onClick={toggle}
-      aria-label={playing ? "Pause music · Pausar la música" : "Play music · Reproducir la música"}
-      title={playing ? "Pause · Pausar" : "Music · Música"}
+      aria-label={playing ? t.nav.pause : t.nav.play}
+      title={playing ? t.nav.pause : t.nav.music}
     >
       <span ref={heartRef} className="nav-heart" aria-hidden>
         ❤

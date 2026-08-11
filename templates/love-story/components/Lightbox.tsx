@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { useLenis } from "lenis/react";
+import { useI18n } from "@/lib/i18n";
 
 /**
  * Fixed-size stage for the carousel. The (already-cached) thumb renders
@@ -59,6 +60,7 @@ function Filmstrip({
   jumpTo: (i: number) => void;
 }) {
   const currentRef = useRef<HTMLButtonElement>(null);
+  const { t } = useI18n();
 
   // keep the active thumb centered as you navigate
   useEffect(() => {
@@ -77,7 +79,7 @@ function Filmstrip({
           ref={i === index ? currentRef : undefined}
           className={`lightbox-strip-thumb ${i === index ? "current" : ""}`}
           onClick={() => jumpTo(i)}
-          aria-label={`Foto ${i + 1}`}
+          aria-label={`${t.lightbox.photo} ${i + 1}`}
           aria-current={i === index}
         >
           <img src={p.thumb ?? p.src} alt="" loading="lazy" decoding="async" />
@@ -112,6 +114,7 @@ export function useLightbox() {
 export default function LightboxProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<LightboxState | null>(null);
   const lenis = useLenis();
+  const { t } = useI18n();
 
   const open = useCallback((photos: LightboxPhoto[], index: number) => {
     setState({ photos, index, grid: false });
@@ -185,7 +188,7 @@ export default function LightboxProvider({ children }: { children: ReactNode }) 
                   key={p.src}
                   className={`lightbox-grid-tile ${i === state.index ? "current" : ""}`}
                   onClick={() => jumpTo(i)}
-                  aria-label={`Foto ${i + 1}`}
+                  aria-label={`${t.lightbox.photo} ${i + 1}`}
                 >
                   <img src={p.thumb ?? p.src} alt="" loading="lazy" decoding="async" />
                 </button>
@@ -206,13 +209,13 @@ export default function LightboxProvider({ children }: { children: ReactNode }) 
             </span>
             {state.photos.length > 1 && (
               <button className="lightbox-grid-toggle" onClick={toggleGrid}>
-                {state.grid ? "◂ volver" : "▦ ver todas"}
+                {state.grid ? t.lightbox.back : t.lightbox.seeAll}
               </button>
             )}
           </div>
           <button
             className="lightbox-btn lightbox-close glass"
-            aria-label="Cerrar"
+            aria-label={t.lightbox.close}
             onClick={close}
           >
             ✕
@@ -221,7 +224,7 @@ export default function LightboxProvider({ children }: { children: ReactNode }) 
             <>
               <button
                 className="lightbox-btn lightbox-prev glass"
-                aria-label="Anterior"
+                aria-label={t.lightbox.prev}
                 onClick={(e) => {
                   e.stopPropagation();
                   step(-1);
@@ -231,7 +234,7 @@ export default function LightboxProvider({ children }: { children: ReactNode }) 
               </button>
               <button
                 className="lightbox-btn lightbox-next glass"
-                aria-label="Siguiente"
+                aria-label={t.lightbox.next}
                 onClick={(e) => {
                   e.stopPropagation();
                   step(1);

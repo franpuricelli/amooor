@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { full, photos, thumb } from "@/lib/photos";
 import { useLightbox } from "@/components/Lightbox";
+import { useI18n } from "@/lib/i18n";
 
 export interface StoryPhoto {
   cat: string;
@@ -30,6 +31,7 @@ export default function StoryRow({
   flip?: boolean;
 }) {
   const { open } = useLightbox();
+  const { t } = useI18n();
   const catsKey = cats.join(",");
   const album = useMemo(
     () => cats.flatMap((c) => photos(c).map((slug) => ({ cat: c, slug }))),
@@ -75,7 +77,7 @@ export default function StoryRow({
           style={{ "--reveal-delay": "0.18s" } as React.CSSProperties}
           onClick={() => open(items, 0)}
         >
-          See the {album.length} photos · Ver las {album.length} fotos →
+          {t.story.seePhotos.replace("{n}", String(album.length))} →
         </button>
       </div>
 
