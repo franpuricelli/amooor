@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { config } from "@/lib/config";
 import { full } from "@/lib/photos";
+import { BASE } from "@/lib/base";
 import Hearts, { PixelHeart } from "@/components/Hearts";
 
 // Little hearts popping above their heads. Deterministic (index-derived, no
@@ -62,7 +63,7 @@ function PersonCard({
         <span className="person-artists-label">Favorite artists · Artistas favoritos</span>
         {person.artists.map((a) => (
           <span className="artist-row" key={a.name}>
-            <img src={a.img} alt="" loading="lazy" />
+            <img src={`${BASE}${a.img}`} alt="" loading="lazy" />
             {a.name}
           </span>
         ))}

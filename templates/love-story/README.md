@@ -12,14 +12,6 @@ photos and you have your site.
 > 🇬🇧 English below · 🇪🇸 Español más abajo · the site itself is bilingual (EN · ES)
 > everywhere, so translate or delete whichever half you don't need.
 
-> 📦 This template lives at `templates/love-story/` inside the repo. It's a
-> **standalone Next.js app** — copy the folder out to its own repo, or point
-> Vercel's *Root Directory* at `templates/love-story`. All commands below run
-> from inside this folder. · Esta plantilla vive en `templates/love-story/`
-> dentro del repo. Es una app Next.js independiente — copiá la carpeta a su
-> propio repo, o apuntá el *Root Directory* de Vercel a `templates/love-story`.
-> Todos los comandos de abajo se corren desde esta carpeta.
-
 🔗 Live preview: deploy it (see below) and share your own URL.
 
 ---
@@ -161,6 +153,29 @@ npm run build    # build de producción
 
 > El embed de TikTok carga más confiable en el dominio real de Vercel que en
 > `localhost`.
+
+---
+
+## 🔌 Embedding under a sub-path · Montarlo en un sub-path
+
+EN · Every asset URL respects `NEXT_PUBLIC_BASE_PATH`, so the template can be
+served under a sub-path (e.g. `/template` inside another app) with no code
+changes. In this repo it's mounted at **`/template`** as a static export inside
+an isolated iframe (`app/template/page.tsx` + `public/template/`). To rebuild
+that bundle after editing the template:
+
+```bash
+cd templates/love-story
+npm install
+EXPORT=1 NEXT_PUBLIC_BASE_PATH=/template npm run build
+rm -rf ../../public/template && cp -R out ../../public/template
+```
+
+ES · Cada URL de asset respeta `NEXT_PUBLIC_BASE_PATH`, así que el template se
+puede servir bajo un sub-path (ej. `/template` dentro de otra app) sin tocar
+código. En este repo está montado en **`/template`** como export estático dentro
+de un iframe aislado (`app/template/page.tsx` + `public/template/`). Para
+regenerar ese bundle después de editar el template, corré los comandos de arriba.
 
 ---
 

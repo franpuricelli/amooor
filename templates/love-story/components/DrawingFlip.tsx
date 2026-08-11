@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { BASE } from "@/lib/base";
 
 /** Hand-drawn card in the footer: click to flip it over and reveal the message. */
 export default function DrawingFlip() {
@@ -17,7 +18,7 @@ export default function DrawingFlip() {
       >
         <span className={`drawing-flip-inner ${flipped ? "flipped" : ""}`}>
           <span className="drawing-card drawing-face drawing-front">
-            <img src="/drawing.png" alt="A drawing of the two of you · Un dibujo de ustedes dos" />
+            <img src={`${BASE}/drawing.png`} alt="A drawing of the two of you · Un dibujo de ustedes dos" />
           </span>
           <span className="drawing-card drawing-face drawing-back" aria-hidden={!flipped}>
             <span className="drawing-back-msg">I love you · Te amo</span>

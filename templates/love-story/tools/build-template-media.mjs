@@ -86,9 +86,11 @@ export const allPhotos: CatPhoto[] = Object.entries(photosByCategory).flatMap(
 
 export const totalPhotos = ${total};
 
+import { BASE } from "./base";
+
 export const photos = (cat: string): string[] => photosByCategory[cat] ?? [];
-export const thumb = (cat: string, slug: string) => \`/thumbs/\${cat}/\${slug}.jpg\`;
-export const full = (cat: string, slug: string) => \`/photos/\${cat}/\${slug}.jpg\`;
+export const thumb = (cat: string, slug: string) => \`\${BASE}/thumbs/\${cat}/\${slug}.jpg\`;
+export const full = (cat: string, slug: string) => \`\${BASE}/photos/\${cat}/\${slug}.jpg\`;
 `;
 
 writeFileSync("lib/photos.ts", out);

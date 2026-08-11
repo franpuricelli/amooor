@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { BASE } from "@/lib/base";
 
 /**
  * The navbar pill doubles as the music control: the song starts when you enter
@@ -20,7 +21,7 @@ export default function MusicToggle({ label }: { label: string }) {
   const [playing, setPlaying] = useState(false);
 
   useEffect(() => {
-    const audio = new Audio("/song.mp3");
+    const audio = new Audio(`${BASE}/song.mp3`);
     audio.loop = true;
     audio.volume = 0.55;
     audio.preload = "auto";
