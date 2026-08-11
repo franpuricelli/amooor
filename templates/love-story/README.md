@@ -128,7 +128,7 @@ served under a sub-path (e.g. `/template` inside another app) with no code
 changes. Build that bundle with:
 
 ```bash
-EXPORT=1 NEXT_PUBLIC_BASE_PATH=/template npm run build   # → out/
+EXPORT=1 NEXT_PUBLIC_BASE_PATH=/template/romantic npm run build   # → out/
 ```
 
 ES · Cada URL de asset respeta `NEXT_PUBLIC_BASE_PATH`, así que el template se
