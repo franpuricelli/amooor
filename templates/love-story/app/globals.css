@@ -1868,3 +1868,38 @@ html[data-theme="noir"] .drawing-back-msg {
   font-weight: 600;
   letter-spacing: -0.02em;
 }
+
+/* Noir runs on squared corners — sharp, editorial edges. Zero the radius tokens
+   (covers cards, photo tiles, footer…) and flatten every pill / hard-coded
+   radius, including the circular avatars, dots and lightbox buttons. Romantic
+   keeps its rounded system. */
+html[data-theme="noir"] {
+  --r-xl: 0;
+  --r-lg: 0;
+  --r-md: 0;
+}
+html[data-theme="noir"] .eyebrow,
+html[data-theme="noir"] .chip,
+html[data-theme="noir"] .btn,
+html[data-theme="noir"] .nav-inner,
+html[data-theme="noir"] .nav-badge,
+html[data-theme="noir"] .person-pill,
+html[data-theme="noir"] .lang-switch,
+html[data-theme="noir"] .lang-switch button,
+html[data-theme="noir"] .kind-pill,
+html[data-theme="noir"] .watch-chip,
+html[data-theme="noir"] .lightbox-caption,
+html[data-theme="noir"] .artist-row img,
+html[data-theme="noir"] .kind-dot,
+html[data-theme="noir"] .lightbox-btn,
+html[data-theme="noir"] .wall-mini .tile,
+html[data-theme="noir"] .wol-tile,
+html[data-theme="noir"] .collage-tile,
+html[data-theme="noir"] .flag,
+html[data-theme="noir"] .pais-panel,
+html[data-theme="noir"] .pais-panel .flag,
+html[data-theme="noir"] .sheet-top,
+html[data-theme="noir"] .lightbox-strip-thumb,
+html[data-theme="noir"] .lightbox-grid-tile {
+  border-radius: 0;
+}
