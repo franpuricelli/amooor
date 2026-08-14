@@ -39,9 +39,9 @@ function card({ w, h, bg = ROSE_BG, heart = HEART, heartFill = HEART_FILL, frame
 const jpg = (buf, out, q = 82) => sharp(buf).jpeg({ quality: q }).toFile(out);
 const png = (buf, out) => sharp(buf).png().toFile(out);
 
-mkdirSync("public/brand/artists", { recursive: true });
-// Six shared blanks, served straight from /public — every empty slot points here
-// instead of getting its own identical copy (see tools/build-template-media.mjs).
+// Shared blanks, served straight from /public — every empty photo slot and every
+// placeholder artist avatar points here instead of getting its own identical
+// copy (see tools/build-template-media.mjs and lib/config.ts).
 mkdirSync("public/_blank", { recursive: true });
 
 // [variant, fullW, fullH, thumbW, thumbH]
@@ -56,10 +56,8 @@ await Promise.all([
     jpg(card({ w: fw, h: fh }), `public/_blank/full-${v}.jpg`),
     jpg(card({ w: tw, h: th }), `public/_blank/thumb-${v}.jpg`),
   ]),
-  // six square artist avatars
-  ...[1, 2, 3, 4, 5, 6].map((n) =>
-    jpg(card({ w: 320, h: 320 }), `public/brand/artists/artist-${n}.jpg`)
-  ),
+  // one shared blank artist avatar (lib/config.ts points every artist at it)
+  jpg(card({ w: 320, h: 320 }), "public/_blank/artist.jpg"),
   // footer drawing card
   png(card({ w: 900, h: 640 }), "public/drawing.png"),
   // favicon: brand pink with a white heart

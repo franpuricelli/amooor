@@ -156,8 +156,8 @@ lib/config.ts         👉 your content · tu contenido
 lib/strings.ts        👉 UI text (en/es) · texto de UI (en/es)
 lib/i18n.tsx          language provider + top-right ES/EN switch
 lib/photos.ts         photo manifest (generated) · manifiesto de fotos (generado)
-public/photos|thumbs/ your photos per category · tus fotos por categoría
-public/brand/artists/ favorite-artist avatars · avatares de artistas favoritos
+public/_blank/        shared blank placeholders · placeholders en blanco compartidos
+public/photos|thumbs/ your own photos per category · tus fotos por categoría
 tools/                gen-placeholders.mjs + build-template-media.mjs
 ```
 

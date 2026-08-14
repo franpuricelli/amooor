@@ -35,8 +35,9 @@ export const config = {
   },
 
   people: {
-    // LEFT person (hero left). traits = chips; artists = square avatars in
-    // /public/brand/artists/.
+    // LEFT person (hero left). traits = chips; artists = square avatars. Each
+    // `img` defaults to the shared blank (/_blank/artist.jpg) — point it at your
+    // own square image (e.g. /brand/artists/my-band.jpg) to customize.
     left: {
       name: "Sera",
       tagline: { en: "main character energy", es: "main character energy" },
@@ -47,9 +48,9 @@ export const config = {
         { icon: "❤️", label: { en: "Love", es: "Amor" } },
       ],
       artists: [
-        { name: "The Moonlarks", img: "/brand/artists/artist-1.jpg" },
-        { name: "Velvet Aria", img: "/brand/artists/artist-2.jpg" },
-        { name: "Isolde", img: "/brand/artists/artist-3.jpg" },
+        { name: "The Moonlarks", img: "/_blank/artist.jpg" },
+        { name: "Velvet Aria", img: "/_blank/artist.jpg" },
+        { name: "Isolde", img: "/_blank/artist.jpg" },
       ],
     },
     // RIGHT person (hero right).
@@ -62,9 +63,9 @@ export const config = {
         { icon: "🍳", label: { en: "Cooking", es: "Cocinar" } },
       ],
       artists: [
-        { name: "Ashgrove", img: "/brand/artists/artist-4.jpg" },
-        { name: "Nightfell", img: "/brand/artists/artist-5.jpg" },
-        { name: "The Kestrels", img: "/brand/artists/artist-6.jpg" },
+        { name: "Ashgrove", img: "/_blank/artist.jpg" },
+        { name: "Nightfell", img: "/_blank/artist.jpg" },
+        { name: "The Kestrels", img: "/_blank/artist.jpg" },
       ],
     },
   },
