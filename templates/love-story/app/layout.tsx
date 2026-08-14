@@ -46,14 +46,14 @@ const montserrat = Montserrat({
 });
 
 // Theme is chosen at build time via NEXT_PUBLIC_THEME. "romantic" (default) is
-// the rose-pink system; "noir" is the dark + warm-gold variant. Both themes
-// share every component, string and photo — only the fonts and the color tokens
-// in globals.css (scoped under html[data-theme="noir"]) differ.
+// the rose-pink system; "editorial" is the light, elegant fine-art variant.
+// Both themes share every component, string and photo — only the fonts and the
+// color tokens in globals.css (scoped under html[data-theme="editorial"]) differ.
 const THEME = process.env.NEXT_PUBLIC_THEME ?? "romantic";
-const isNoir = THEME === "noir";
+const isEditorial = THEME === "editorial";
 
 // Attach only the active theme's fonts, so the other theme's fonts never load.
-const fontVars = isNoir
+const fontVars = isEditorial
   ? `${parisienne.variable} ${cormorant.variable} ${montserrat.variable}`
   : `${inter.variable} ${caveat.variable}`;
 
@@ -67,7 +67,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: isNoir ? "#0c0c10" : "#ff6fae",
+  themeColor: isEditorial ? "#f3f0ea" : "#ff6fae",
   width: "device-width",
   initialScale: 1,
 };
@@ -82,7 +82,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      data-theme={isNoir ? "noir" : undefined}
+      data-theme={isEditorial ? "editorial" : undefined}
       className={fontVars}
     >
       <body>{children}</body>

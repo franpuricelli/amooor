@@ -1749,200 +1749,251 @@ section {
   }
 }
 
-/* ───────────────────────────────────────────────────────────────────────────
-   NOIR theme — build with NEXT_PUBLIC_THEME=noir.
-   Near-black canvas, off-white ink, one warm-gold accent, Space Grotesk display.
-   Same layout, content and components as the default (romantic) system — only
-   the color tokens, the handful of hard-coded pinks, and the fonts change.
-   Everything is scoped under html[data-theme="noir"], so the default theme's
-   output is byte-for-byte untouched.
-   ─────────────────────────────────────────────────────────────────────────── */
-html[data-theme="noir"] {
-  /* canvas — near-black */
-  --canvas: #0c0c10;
-  --canvas-soft: #16161c;
-  --canvas-deep: #050507;
-  /* accent — warm gold (the system's "--pink") */
-  --pink: #d9b25f;
+/* ═══════════════════════════════════════════════════════════════════════════
+   EDITORIAL theme — build with NEXT_PUBLIC_THEME=editorial.
+   A light, fine-art wedding look: warm cream canvas, charcoal ink, hairline
+   rules, muted photography, and an editorial type trio (Parisienne script /
+   Cormorant Garamond serif / wide-tracked Montserrat). The base template is
+   built "light text on dark glass", so this flips those assumptions. All scoped
+   under html[data-theme="editorial"]; romantic is untouched.
+   ═══════════════════════════════════════════════════════════════════════════ */
+html[data-theme="editorial"] {
+  /* canvas — warm cream / greige */
+  --canvas: #f3f0ea;
+  --canvas-soft: #eae5dc;
+  --canvas-deep: #e6e0d6;
+  /* monochrome: the "accent" is just charcoal */
+  --pink: #2a251f;
 
-  /* ink on canvas — off-white */
-  --ink: #f2efe8;
-  --ink-70: rgba(242, 239, 232, 0.68);
-  --ink-50: rgba(242, 239, 232, 0.46);
+  /* ink — warm charcoal */
+  --ink: #2a251f;
+  --ink-70: rgba(42, 37, 31, 0.66);
+  --ink-50: rgba(42, 37, 31, 0.46);
 
-  /* elevated surfaces — light glass on black (was dark glass on pink) */
-  --dark: #08080b;
-  --glass: rgba(255, 255, 255, 0.045);
-  --glass-strong: rgba(255, 255, 255, 0.08);
-  --glass-border: rgba(255, 255, 255, 0.14);
-  --glass-border-soft: rgba(255, 255, 255, 0.08);
+  /* flip "white on dark" → "charcoal on light" (base uses --white for text) */
+  --white: #2a251f;
+  --white-70: rgba(42, 37, 31, 0.66);
+  --white-45: rgba(42, 37, 31, 0.46);
 
-  --font-sans: var(--font-montserrat), "Montserrat", -apple-system,
-    "SF Pro Display", sans-serif;
-  --font-serif: var(--font-cormorant), "Cormorant Garamond", "Times New Roman",
-    Georgia, serif;
-  --font-script: var(--font-parisienne), "Parisienne", "Snell Roundhand",
-    cursive;
+  /* surfaces — flat light panels + hairline borders (no glass blur) */
+  --dark: #e7e1d7;
+  --glass: #f7f4ee;
+  --glass-strong: #efeae1;
+  --glass-border: rgba(42, 37, 31, 0.16);
+  --glass-border-soft: rgba(42, 37, 31, 0.1);
+
+  /* fonts */
+  --font-sans: var(--font-montserrat), "Montserrat", -apple-system, sans-serif;
+  --font-serif: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  --font-script: var(--font-parisienne), "Parisienne", "Snell Roundhand", cursive;
 }
 
-/* canvas backdrop — dark with a soft gold aura (replaces the pink gradients) */
-html[data-theme="noir"] body {
+/* canvas backdrop — soft cream, a whisper of warmth top-corners, no fixed attach */
+html[data-theme="editorial"] body {
   background: var(--canvas);
-  background-image: radial-gradient(
-      70% 55% at 12% -5%,
-      rgba(217, 178, 95, 0.13) 0%,
-      transparent 60%
-    ),
-    radial-gradient(55% 45% at 90% 8%, rgba(217, 178, 95, 0.08) 0%, transparent 55%),
-    linear-gradient(180deg, #101015 0%, var(--canvas) 45%, var(--canvas-deep) 100%);
+  background-image: radial-gradient(60% 50% at 8% -8%, #faf8f3 0%, transparent 60%),
+    radial-gradient(50% 45% at 100% 0%, #efe9df 0%, transparent 55%);
+  background-attachment: scroll;
+  color: var(--ink);
+  font-weight: 400;
+}
+
+/* flat light panels — drop the blur + heavy shadow */
+html[data-theme="editorial"] .glass,
+html[data-theme="editorial"] .glass-card {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  color: var(--ink);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+}
+
+/* alternating cream/greige blocks, hairline rules top+bottom, no pink glow */
+html[data-theme="editorial"] .section-dark {
+  background: var(--dark);
+  background-image: none;
+  color: var(--ink);
+  border-top: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--glass-border);
+}
+html[data-theme="editorial"] .section-dark .lede {
+  color: var(--ink-70);
+}
+
+/* eyebrows → plain wide-tracked caps with a short leading rule (no pill) */
+html[data-theme="editorial"] .eyebrow {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--ink-70);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+html[data-theme="editorial"] .eyebrow::before {
+  content: "";
+  width: 26px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.55;
+}
+
+/* chips → tone-on-tone with hairline */
+html[data-theme="editorial"] .chip {
+  background: rgba(42, 37, 31, 0.04);
+  border: 1px solid var(--glass-border-soft);
   color: var(--ink);
 }
-
-/* dark sections keep their depth but glow gold, not pink */
-html[data-theme="noir"] .section-dark {
-  background-image: radial-gradient(
-      55% 40% at 50% 0%,
-      rgba(217, 178, 95, 0.14) 0%,
-      transparent 60%
-    ),
-    radial-gradient(40% 30% at 85% 100%, rgba(217, 178, 95, 0.09) 0%, transparent 60%);
-}
-html[data-theme="noir"] .wol-overlay {
-  background-image: radial-gradient(
-    55% 40% at 50% 0%,
-    rgba(217, 178, 95, 0.14) 0%,
-    transparent 60%
-  );
+html[data-theme="editorial"] .chip-btn:hover {
+  background: rgba(42, 37, 31, 0.07);
+  border-color: var(--glass-border);
 }
 
-/* primary pill — gold on near-black. (Default maps text to --ink, which noir
-   flips to off-white; without this the pill would be off-white on off-white.) */
-html[data-theme="noir"] .btn {
-  background: var(--pink);
-  color: #0c0c10;
+/* buttons → squared outline, ink on cream, fill on hover */
+html[data-theme="editorial"] .btn {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--ink);
 }
-html[data-theme="noir"] .btn:hover {
-  background: #e8cd90;
-}
-
-/* accents that were hard-coded pink → gold */
-html[data-theme="noir"] ::selection {
-  background: var(--pink);
-  color: #0c0c10;
-}
-html[data-theme="noir"] .nav-heart {
-  color: var(--pink);
-  text-shadow: 0 0 10px rgba(217, 178, 95, 0.5);
-}
-html[data-theme="noir"] .hero-amp,
-html[data-theme="noir"] .watch-feature-note,
-html[data-theme="noir"] .lightbox-grid-toggle {
-  color: var(--pink);
-}
-html[data-theme="noir"] .cursor-heart-fill {
-  background: rgba(217, 178, 95, 0.5);
+html[data-theme="editorial"] .btn:hover {
+  background: var(--ink);
+  color: var(--canvas);
 }
 
-/* Países sticky deck — stepped charcoals instead of pink gradients */
-html[data-theme="noir"] .pais-panel {
-  box-shadow: 0 -14px 34px -18px rgba(0, 0, 0, 0.6);
-}
-html[data-theme="noir"] .pais-panel:nth-child(3n + 1) {
-  background: linear-gradient(180deg, #1c1c23 0%, #101015 100%);
-}
-html[data-theme="noir"] .pais-panel:nth-child(3n + 2) {
-  background: linear-gradient(180deg, #141419 0%, #0b0b0e 100%);
-}
-html[data-theme="noir"] .pais-panel:nth-child(3n) {
-  background: linear-gradient(180deg, #23222b 0%, #16161c 100%);
+/* selection */
+html[data-theme="editorial"] ::selection {
+  background: var(--ink);
+  color: var(--canvas);
 }
 
-/* polaroid collage frame — warm off-white reads better than pure white on black */
-html[data-theme="noir"] .collage-tile {
-  border-color: #ece7db;
+/* muted, near-monochrome photography */
+html[data-theme="editorial"] .tile img {
+  filter: grayscale(0.9) contrast(1.02) brightness(1.01);
+}
+html[data-theme="editorial"] .hero-bg {
+  filter: grayscale(1);
+}
+html[data-theme="editorial"] .tile:focus-visible {
+  outline-color: var(--ink);
 }
 
-/* the handwriting accent doesn't fit noir → fall back to the grotesk */
-html[data-theme="noir"] .drawing-back-msg,
-html[data-theme="noir"] .drawing-back-from {
-  font-family: var(--font-sans);
+/* HERO — light backdrop, charcoal script, no scrim, no floating hearts */
+html[data-theme="editorial"] .hero-scrim,
+html[data-theme="editorial"] .hearts,
+html[data-theme="editorial"] .head-hearts,
+html[data-theme="editorial"] .cursor-heart,
+html[data-theme="editorial"] .heart-cursor {
+  display: none !important;
 }
-html[data-theme="noir"] .drawing-back-msg {
-  color: var(--pink);
-  font-weight: 600;
-  letter-spacing: -0.02em;
+html[data-theme="editorial"] .hero .display {
+  color: var(--ink);
+  text-shadow: none;
 }
-
-/* Noir runs on squared corners — sharp, editorial edges. Zero the radius tokens
-   (covers cards, photo tiles, footer…) and flatten every pill / hard-coded
-   radius, including the circular avatars, dots and lightbox buttons. Romantic
-   keeps its rounded system. */
-html[data-theme="noir"] {
-  --r-xl: 0;
-  --r-lg: 0;
-  --r-md: 0;
-}
-html[data-theme="noir"] .eyebrow,
-html[data-theme="noir"] .chip,
-html[data-theme="noir"] .btn,
-html[data-theme="noir"] .nav-inner,
-html[data-theme="noir"] .nav-badge,
-html[data-theme="noir"] .person-pill,
-html[data-theme="noir"] .lang-switch,
-html[data-theme="noir"] .lang-switch button,
-html[data-theme="noir"] .kind-pill,
-html[data-theme="noir"] .watch-chip,
-html[data-theme="noir"] .lightbox-caption,
-html[data-theme="noir"] .artist-row img,
-html[data-theme="noir"] .kind-dot,
-html[data-theme="noir"] .lightbox-btn,
-html[data-theme="noir"] .wall-mini .tile,
-html[data-theme="noir"] .wol-tile,
-html[data-theme="noir"] .collage-tile,
-html[data-theme="noir"] .flag,
-html[data-theme="noir"] .pais-panel,
-html[data-theme="noir"] .pais-panel .flag,
-html[data-theme="noir"] .sheet-top,
-html[data-theme="noir"] .lightbox-strip-thumb,
-html[data-theme="noir"] .lightbox-grid-tile {
-  border-radius: 0;
+html[data-theme="editorial"] .hero .lede {
+  color: var(--ink-70);
+  text-shadow: none;
 }
 
-/* ── Noir typography — editorial "wild moon" system ──────────────────────────
-   Couple name in a flowing script, headings in a high-contrast serif, labels /
-   buttons in a light wide-tracked uppercase sans. Body inherits --font-sans
-   (Montserrat). Scoped to noir; romantic keeps Inter + Caveat. */
-html[data-theme="noir"] .display {
+/* Países deck → greige steps + hairline, no pink */
+html[data-theme="editorial"] .pais-panel {
+  box-shadow: 0 -14px 34px -22px rgba(0, 0, 0, 0.18);
+  border-top: 1px solid var(--glass-border);
+}
+html[data-theme="editorial"] .pais-panel:nth-child(3n + 1) {
+  background: linear-gradient(180deg, #eee9e0 0%, #e7e1d7 100%);
+}
+html[data-theme="editorial"] .pais-panel:nth-child(3n + 2) {
+  background: linear-gradient(180deg, #e9e3d9 0%, #e2dbd0 100%);
+}
+html[data-theme="editorial"] .pais-panel:nth-child(3n) {
+  background: linear-gradient(180deg, #f1ece3 0%, #eae4da 100%);
+}
+
+/* polaroid collage → thin charcoal mat + soft shadow (not a white border) */
+html[data-theme="editorial"] .collage-tile {
+  border: 1px solid rgba(42, 37, 31, 0.16);
+  box-shadow: 0 14px 34px -20px rgba(42, 37, 31, 0.3);
+}
+
+/* accents that were pink → charcoal (monochrome) */
+html[data-theme="editorial"] .nav-heart,
+html[data-theme="editorial"] .hero-amp,
+html[data-theme="editorial"] .watch-feature-note,
+html[data-theme="editorial"] .lightbox-grid-toggle {
+  color: var(--ink);
+  text-shadow: none;
+}
+
+/* ── Editorial typography ──────────────────────────────────────────────────── */
+html[data-theme="editorial"] .display {
   font-family: var(--font-script);
   font-weight: 400;
   letter-spacing: 0.01em;
   line-height: 1.12;
 }
-/* the script already draws its own "&" — drop the special sizing, keep it gold */
-html[data-theme="noir"] .hero-amp {
+html[data-theme="editorial"] .hero-amp {
   font-family: var(--font-script);
 }
-
-html[data-theme="noir"] .h2,
-html[data-theme="noir"] .h3,
-html[data-theme="noir"] .stats-num {
+html[data-theme="editorial"] .h2,
+html[data-theme="editorial"] .h3,
+html[data-theme="editorial"] .stats-num {
   font-family: var(--font-serif);
   font-weight: 500;
   letter-spacing: 0;
 }
-html[data-theme="noir"] .h2 {
+html[data-theme="editorial"] .h2 {
   line-height: 1.06;
 }
-
-/* labels, buttons and kickers: light, wide-tracked, uppercase */
-html[data-theme="noir"] .eyebrow,
-html[data-theme="noir"] .btn,
-html[data-theme="noir"] .stats-kicker,
-html[data-theme="noir"] .stats-label,
-html[data-theme="noir"] .person-artists-label,
-html[data-theme="noir"] .kind-pill {
+html[data-theme="editorial"] .eyebrow,
+html[data-theme="editorial"] .btn,
+html[data-theme="editorial"] .stats-kicker,
+html[data-theme="editorial"] .stats-label,
+html[data-theme="editorial"] .person-artists-label,
+html[data-theme="editorial"] .kind-pill {
   font-family: var(--font-sans);
   text-transform: uppercase;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.22em;
   font-weight: 500;
+}
+
+/* ── Editorial squared corners — sharp edges throughout ──────────────────────── */
+html[data-theme="editorial"] {
+  --r-xl: 0;
+  --r-lg: 0;
+  --r-md: 0;
+}
+html[data-theme="editorial"] .eyebrow,
+html[data-theme="editorial"] .chip,
+html[data-theme="editorial"] .btn,
+html[data-theme="editorial"] .nav-inner,
+html[data-theme="editorial"] .nav-badge,
+html[data-theme="editorial"] .person-pill,
+html[data-theme="editorial"] .lang-switch,
+html[data-theme="editorial"] .lang-switch button,
+html[data-theme="editorial"] .kind-pill,
+html[data-theme="editorial"] .watch-chip,
+html[data-theme="editorial"] .lightbox-caption,
+html[data-theme="editorial"] .artist-row img,
+html[data-theme="editorial"] .kind-dot,
+html[data-theme="editorial"] .lightbox-btn,
+html[data-theme="editorial"] .wall-mini .tile,
+html[data-theme="editorial"] .wol-tile,
+html[data-theme="editorial"] .collage-tile,
+html[data-theme="editorial"] .flag,
+html[data-theme="editorial"] .pais-panel,
+html[data-theme="editorial"] .pais-panel .flag,
+html[data-theme="editorial"] .sheet-top,
+html[data-theme="editorial"] .lightbox-strip-thumb,
+html[data-theme="editorial"] .lightbox-grid-tile {
+  border-radius: 0;
+}
+
+/* mute the colourful content emojis (trip/moment icons, trait + stat chips) to
+   monochrome so they sit inside the editorial palette instead of popping */
+html[data-theme="editorial"] .flag-emoji,
+html[data-theme="editorial"] .moment-title span[aria-hidden],
+html[data-theme="editorial"] .person-traits .chip span[aria-hidden],
+html[data-theme="editorial"] .stats-chips .chip {
+  filter: grayscale(1);
+  opacity: 0.8;
 }

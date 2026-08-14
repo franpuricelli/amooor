@@ -1,16 +1,19 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { isEditorial } from "@/lib/theme-tokens";
 
 /**
  * Replaces the cursor with a pink glass pixel-heart on fine-pointer devices
  * (touch keeps the normal behavior). Follows the mouse with a soft lerp and
- * grows over anything clickable.
+ * grows over anything clickable. Disabled in the editorial theme, which keeps
+ * the native cursor.
  */
 export default function HeartCursor() {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (isEditorial) return;
     if (!window.matchMedia("(pointer: fine)").matches) return;
     const el = ref.current;
     if (!el) return;
@@ -83,6 +86,8 @@ export default function HeartCursor() {
       document.documentElement.classList.remove("heart-cursor");
     };
   }, []);
+
+  if (isEditorial) return null;
 
   return (
     <div ref={ref} className="cursor-heart" aria-hidden>

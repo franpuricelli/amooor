@@ -61,18 +61,21 @@ npm run dev      # http://localhost:3000
 npm run build    # production build
 ```
 
-### Themes: romantic (default) · noir
+### Themes: romantic (default) · editorial
 
 Same content and layout, two looks. `NEXT_PUBLIC_THEME` picks the palette + fonts
-at build time — `romantic` (rose pink, Inter) is the default; `noir` is dark +
-warm gold, Space Grotesk. The theme touches only the color tokens in
-`app/globals.css` (scoped under `html[data-theme="noir"]`), the fonts in
-`app/layout.tsx`, the inline SVG heart fills in `lib/theme-tokens.ts`, and which
-tinted blank set (`public/_blank/*` vs `*-noir`) empty slots use.
+at build time — `romantic` (rose pink, Inter + Caveat) is the default; `editorial`
+is a light, fine-art look (warm cream + charcoal, hairline rules, muted photos,
+and Parisienne script / Cormorant Garamond serif / wide-tracked Montserrat). The
+theme touches only the color tokens in `app/globals.css` (scoped under
+`html[data-theme="editorial"]`), the fonts in `app/layout.tsx`, the inline SVG
+heart fills in `lib/theme-tokens.ts`, and which tinted blank set
+(`public/_blank/*` vs `*-editorial`) empty slots use. The editorial theme also
+hides the playful pixel hearts + heart cursor for a calmer, elegant feel.
 
 ```bash
-npm run dev                     # romantic
-NEXT_PUBLIC_THEME=noir npm run dev   # noir
+npm run dev                          # romantic
+NEXT_PUBLIC_THEME=editorial npm run dev   # editorial
 ```
 
 ### Deploy on Vercel

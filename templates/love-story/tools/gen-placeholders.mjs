@@ -14,9 +14,14 @@ const HEART_FILL = "#EFD8E4";
 const HEART_PATH =
   "M50 86 C 18 60, 8 39, 25 24 C 37 13.5, 50 21, 50 33 C 50 21, 63 13.5, 75 24 C 92 39, 82 60, 50 86 Z";
 
-// Noir palette — charcoal card, warm-gold heart (mirrors the html[data-theme="noir"]
-// tokens in globals.css). Used for the "-noir" blank set.
-const NOIR = { bg: "#14141a", frame: "#2b2b34", heart: "#c9a24b", heartFill: "rgba(201,162,75,0.12)" };
+// Editorial palette — soft greige card, tone-on-tone hairline (mirrors the
+// html[data-theme="editorial"] tokens in globals.css). Used for "-editorial".
+const EDITORIAL = {
+  bg: "#e8e3da",
+  frame: "#d7d1c6",
+  heart: "rgba(35,32,28,0.13)",
+  heartFill: "rgba(35,32,28,0.04)",
+};
 
 function card({
   w,
@@ -63,20 +68,20 @@ const VARIANTS = [
   ["c", 1200, 900, 640, 480], // landscape 4:3
 ];
 
-// Per-theme blank sets: "" = romantic (rose), "-noir" = charcoal + gold. The
+// Per-theme blank sets: "" = romantic (rose), "-editorial" = soft greige. The
 // active theme's set is chosen at build time in lib/photos.ts via BLANK suffix.
-const noirArgs = { bg: NOIR.bg, heart: NOIR.heart, heartFill: NOIR.heartFill, frameColor: NOIR.frame };
+const edArgs = { bg: EDITORIAL.bg, heart: EDITORIAL.heart, heartFill: EDITORIAL.heartFill, frameColor: EDITORIAL.frame };
 
 await Promise.all([
   ...VARIANTS.flatMap(([v, fw, fh, tw, th]) => [
     jpg(card({ w: fw, h: fh }), `public/_blank/full-${v}.jpg`),
     jpg(card({ w: tw, h: th }), `public/_blank/thumb-${v}.jpg`),
-    jpg(card({ w: fw, h: fh, ...noirArgs }), `public/_blank/full-${v}-noir.jpg`),
-    jpg(card({ w: tw, h: th, ...noirArgs }), `public/_blank/thumb-${v}-noir.jpg`),
+    jpg(card({ w: fw, h: fh, ...edArgs }), `public/_blank/full-${v}-editorial.jpg`),
+    jpg(card({ w: tw, h: th, ...edArgs }), `public/_blank/thumb-${v}-editorial.jpg`),
   ]),
   // one shared blank artist avatar per theme (lib/config.ts points every artist at it)
   jpg(card({ w: 320, h: 320 }), "public/_blank/artist.jpg"),
-  jpg(card({ w: 320, h: 320, ...noirArgs }), "public/_blank/artist-noir.jpg"),
+  jpg(card({ w: 320, h: 320, ...edArgs }), "public/_blank/artist-editorial.jpg"),
   // footer drawing card
   png(card({ w: 900, h: 640 }), "public/drawing.png"),
   // favicon: brand pink with a white heart
