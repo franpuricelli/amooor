@@ -533,6 +533,10 @@ const REAL = new Set<string>([
 const CATS = Object.keys(photosByCategory);
 const VARIANTS = ["a", "b", "c"]; // portrait / square / landscape
 
+// Each theme has its own tinted blank set (romantic = rose, noir = charcoal);
+// NEXT_PUBLIC_THEME picks the suffix so empty slots match the active palette.
+const BLANK = (process.env.NEXT_PUBLIC_THEME ?? "romantic") === "noir" ? "-noir" : "";
+
 // Deterministic aspect mix (offset per category so columns vary) — picks which
 // of the three shared blanks a still-empty slot shows.
 function variant(cat: string, slug: string): string {
@@ -545,8 +549,8 @@ export const photos = (cat: string): string[] => photosByCategory[cat] ?? [];
 export const thumb = (cat: string, slug: string) =>
   REAL.has(`${cat}/${slug}`)
     ? `${BASE}/thumbs/${cat}/${slug}.jpg`
-    : `${BASE}/_blank/thumb-${variant(cat, slug)}.jpg`;
+    : `${BASE}/_blank/thumb-${variant(cat, slug)}${BLANK}.jpg`;
 export const full = (cat: string, slug: string) =>
   REAL.has(`${cat}/${slug}`)
     ? `${BASE}/photos/${cat}/${slug}.jpg`
-    : `${BASE}/_blank/full-${variant(cat, slug)}.jpg`;
+    : `${BASE}/_blank/full-${variant(cat, slug)}${BLANK}.jpg`;

@@ -14,7 +14,19 @@ const HEART_FILL = "#EFD8E4";
 const HEART_PATH =
   "M50 86 C 18 60, 8 39, 25 24 C 37 13.5, 50 21, 50 33 C 50 21, 63 13.5, 75 24 C 92 39, 82 60, 50 86 Z";
 
-function card({ w, h, bg = ROSE_BG, heart = HEART, heartFill = HEART_FILL, frame = true }) {
+// Noir palette — charcoal card, warm-gold heart (mirrors the html[data-theme="noir"]
+// tokens in globals.css). Used for the "-noir" blank set.
+const NOIR = { bg: "#14141a", frame: "#2b2b34", heart: "#c9a24b", heartFill: "rgba(201,162,75,0.12)" };
+
+function card({
+  w,
+  h,
+  bg = ROSE_BG,
+  heart = HEART,
+  heartFill = HEART_FILL,
+  frameColor = FRAME,
+  frame = true,
+}) {
   const s = Math.min(w, h);
   const hs = s * 0.24;
   const hx = (w - hs) / 2;
@@ -23,7 +35,7 @@ function card({ w, h, bg = ROSE_BG, heart = HEART, heartFill = HEART_FILL, frame
   const frameRect = frame
     ? `<rect x="${inset}" y="${inset}" width="${w - inset * 2}" height="${h - inset * 2}" rx="${Math.round(
         s * 0.03
-      )}" fill="none" stroke="${FRAME}" stroke-width="${Math.max(2, Math.round(s * 0.006))}"/>`
+      )}" fill="none" stroke="${frameColor}" stroke-width="${Math.max(2, Math.round(s * 0.006))}"/>`
     : "";
   return Buffer.from(
     `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
@@ -51,13 +63,20 @@ const VARIANTS = [
   ["c", 1200, 900, 640, 480], // landscape 4:3
 ];
 
+// Per-theme blank sets: "" = romantic (rose), "-noir" = charcoal + gold. The
+// active theme's set is chosen at build time in lib/photos.ts via BLANK suffix.
+const noirArgs = { bg: NOIR.bg, heart: NOIR.heart, heartFill: NOIR.heartFill, frameColor: NOIR.frame };
+
 await Promise.all([
   ...VARIANTS.flatMap(([v, fw, fh, tw, th]) => [
     jpg(card({ w: fw, h: fh }), `public/_blank/full-${v}.jpg`),
     jpg(card({ w: tw, h: th }), `public/_blank/thumb-${v}.jpg`),
+    jpg(card({ w: fw, h: fh, ...noirArgs }), `public/_blank/full-${v}-noir.jpg`),
+    jpg(card({ w: tw, h: th, ...noirArgs }), `public/_blank/thumb-${v}-noir.jpg`),
   ]),
-  // one shared blank artist avatar (lib/config.ts points every artist at it)
+  // one shared blank artist avatar per theme (lib/config.ts points every artist at it)
   jpg(card({ w: 320, h: 320 }), "public/_blank/artist.jpg"),
+  jpg(card({ w: 320, h: 320, ...noirArgs }), "public/_blank/artist-noir.jpg"),
   // footer drawing card
   png(card({ w: 900, h: 640 }), "public/drawing.png"),
   // favicon: brand pink with a white heart
@@ -70,4 +89,4 @@ await Promise.all([
   png(card({ w: 1200, h: 630 }), "app/twitter-image.png"),
 ]);
 
-console.log("placeholders generated (3 aspect variants)");
+console.log("placeholders generated (3 aspect variants × romantic + noir)");

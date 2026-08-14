@@ -1,5 +1,7 @@
 "use client";
 
+import { heartFills as fills } from "@/lib/theme-tokens";
+
 /**
  * 8-bit pixel hearts drifting up behind the hero. Positions/timings are
  * derived from the index (no Math.random) so SSR and client render
@@ -17,8 +19,6 @@ const hearts = Array.from({ length: COUNT }, (_, i) => {
   const tone = i % 3; // 0 white-ish, 1 hot pink, 2 soft pink
   return { left, size, delay, dur, opacity, tone };
 });
-
-const fills = ["rgba(255,255,255,0.95)", "#ff2e8c", "#ffc7e2"];
 
 // Classic 8-bit heart on a 9×8 grid: per row, [x, width] runs of filled cells.
 const ROWS: [number, number][][] = [

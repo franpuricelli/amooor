@@ -1748,3 +1748,123 @@ section {
     margin-top: 0;
   }
 }
+
+/* ───────────────────────────────────────────────────────────────────────────
+   NOIR theme — build with NEXT_PUBLIC_THEME=noir.
+   Near-black canvas, off-white ink, one warm-gold accent, Space Grotesk display.
+   Same layout, content and components as the default (romantic) system — only
+   the color tokens, the handful of hard-coded pinks, and the fonts change.
+   Everything is scoped under html[data-theme="noir"], so the default theme's
+   output is byte-for-byte untouched.
+   ─────────────────────────────────────────────────────────────────────────── */
+html[data-theme="noir"] {
+  /* canvas — near-black */
+  --canvas: #0c0c10;
+  --canvas-soft: #16161c;
+  --canvas-deep: #050507;
+  /* accent — warm gold (the system's "--pink") */
+  --pink: #d9b25f;
+
+  /* ink on canvas — off-white */
+  --ink: #f2efe8;
+  --ink-70: rgba(242, 239, 232, 0.68);
+  --ink-50: rgba(242, 239, 232, 0.46);
+
+  /* elevated surfaces — light glass on black (was dark glass on pink) */
+  --dark: #08080b;
+  --glass: rgba(255, 255, 255, 0.045);
+  --glass-strong: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --glass-border-soft: rgba(255, 255, 255, 0.08);
+
+  --font-sans: var(--font-space-grotesk), "Space Grotesk", -apple-system,
+    "SF Pro Display", sans-serif;
+}
+
+/* canvas backdrop — dark with a soft gold aura (replaces the pink gradients) */
+html[data-theme="noir"] body {
+  background: var(--canvas);
+  background-image: radial-gradient(
+      70% 55% at 12% -5%,
+      rgba(217, 178, 95, 0.13) 0%,
+      transparent 60%
+    ),
+    radial-gradient(55% 45% at 90% 8%, rgba(217, 178, 95, 0.08) 0%, transparent 55%),
+    linear-gradient(180deg, #101015 0%, var(--canvas) 45%, var(--canvas-deep) 100%);
+  color: var(--ink);
+}
+
+/* dark sections keep their depth but glow gold, not pink */
+html[data-theme="noir"] .section-dark {
+  background-image: radial-gradient(
+      55% 40% at 50% 0%,
+      rgba(217, 178, 95, 0.14) 0%,
+      transparent 60%
+    ),
+    radial-gradient(40% 30% at 85% 100%, rgba(217, 178, 95, 0.09) 0%, transparent 60%);
+}
+html[data-theme="noir"] .wol-overlay {
+  background-image: radial-gradient(
+    55% 40% at 50% 0%,
+    rgba(217, 178, 95, 0.14) 0%,
+    transparent 60%
+  );
+}
+
+/* primary pill — gold on near-black. (Default maps text to --ink, which noir
+   flips to off-white; without this the pill would be off-white on off-white.) */
+html[data-theme="noir"] .btn {
+  background: var(--pink);
+  color: #0c0c10;
+}
+html[data-theme="noir"] .btn:hover {
+  background: #e8cd90;
+}
+
+/* accents that were hard-coded pink → gold */
+html[data-theme="noir"] ::selection {
+  background: var(--pink);
+  color: #0c0c10;
+}
+html[data-theme="noir"] .nav-heart {
+  color: var(--pink);
+  text-shadow: 0 0 10px rgba(217, 178, 95, 0.5);
+}
+html[data-theme="noir"] .hero-amp,
+html[data-theme="noir"] .watch-feature-note,
+html[data-theme="noir"] .lightbox-grid-toggle {
+  color: var(--pink);
+}
+html[data-theme="noir"] .cursor-heart-fill {
+  background: rgba(217, 178, 95, 0.5);
+}
+
+/* Países sticky deck — stepped charcoals instead of pink gradients */
+html[data-theme="noir"] .pais-panel {
+  box-shadow: 0 -14px 34px -18px rgba(0, 0, 0, 0.6);
+}
+html[data-theme="noir"] .pais-panel:nth-child(3n + 1) {
+  background: linear-gradient(180deg, #1c1c23 0%, #101015 100%);
+}
+html[data-theme="noir"] .pais-panel:nth-child(3n + 2) {
+  background: linear-gradient(180deg, #141419 0%, #0b0b0e 100%);
+}
+html[data-theme="noir"] .pais-panel:nth-child(3n) {
+  background: linear-gradient(180deg, #23222b 0%, #16161c 100%);
+}
+
+/* polaroid collage frame — warm off-white reads better than pure white on black */
+html[data-theme="noir"] .collage-tile {
+  border-color: #ece7db;
+}
+
+/* the handwriting accent doesn't fit noir → fall back to the grotesk */
+html[data-theme="noir"] .drawing-back-msg,
+html[data-theme="noir"] .drawing-back-from {
+  font-family: var(--font-sans);
+}
+html[data-theme="noir"] .drawing-back-msg {
+  color: var(--pink);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}

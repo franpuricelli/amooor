@@ -6,10 +6,10 @@ import { full } from "@/lib/photos";
 import { BASE } from "@/lib/base";
 import { useI18n, type Bi } from "@/lib/i18n";
 import Hearts, { PixelHeart } from "@/components/Hearts";
+import { headHeartFills as HEAD_HEART_FILLS } from "@/lib/theme-tokens";
 
 // Little hearts popping above their heads. Deterministic (index-derived, no
 // Math.random) so SSR and client render identically.
-const HEAD_HEART_FILLS = ["#ff2e8c", "#ffc7e2", "rgba(255,255,255,0.95)"];
 const HEAD_HEARTS = Array.from({ length: 8 }, (_, i) => {
   const side = i % 2; // alternate: left head / right head
   const left = (side ? 52.5 : 42.5) + ((i * 2.3) % 5.5);
