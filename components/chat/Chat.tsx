@@ -55,6 +55,11 @@ function StarterIcon({ name }: { name: string }) {
   );
 }
 
+// Ritmo de tipeo del agente: el texto llega tan rápido como Kimi lo streamea, pero
+// lo MOSTRAMOS a ~la mitad de esa velocidad para que se lea humano y pausado (no un
+// golpe de texto). Tuneable: subilo para tipear más rápido, bajalo para más calma.
+const TYPE_CHARS_PER_SEC = 45;
+
 function ArrowDown() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -187,6 +192,32 @@ export default function Chat() {
           return next;
         });
 
+      // Typewriter: acumulamos TODO lo que llega y avanzamos lo MOSTRADO a un ritmo
+      // constante (~la mitad de la velocidad natural). Si el modelo va más rápido,
+      // el display queda atrás a propósito; si va más lento, lo alcanza y espera.
+      let received = "";
+      let shown = 0;
+      let streamDone = false;
+      let typer: Promise<void> | null = null;
+      const step = Math.max(1, Math.round((TYPE_CHARS_PER_SEC * 25) / 1000));
+      const runTyper = () =>
+        new Promise<void>((resolve) => {
+          const id = window.setInterval(() => {
+            if (shown < received.length) {
+              shown = Math.min(received.length, shown + step);
+              const text = received.slice(0, shown);
+              updateLast((m) => ({ ...m, content: text }));
+            } else if (streamDone) {
+              window.clearInterval(id);
+              resolve();
+            }
+          }, 25);
+        });
+      const pushText = (v: string) => {
+        received += v;
+        if (!typer) typer = runTyper();
+      };
+
       const handle = (evt: any) => {
         if (evt.type === "activity") {
           setThinking(false);
@@ -201,7 +232,7 @@ export default function Chat() {
         } else if (evt.type === "token") {
           setThinking(false);
           ensureAssistant();
-          updateLast((m) => ({ ...m, content: m.content + evt.value }));
+          pushText(evt.value);
         } else if (evt.type === "progress") {
           if (typeof evt.value === "number") setServerProgress(evt.value);
         } else if (evt.type === "plan") {
@@ -232,6 +263,11 @@ export default function Chat() {
           }
         }
       }
+
+      // El stream terminó: dejamos que el typewriter termine de mostrar lo que quede
+      // en cola antes de cerrar el turno (así el fallback ve el content final real).
+      streamDone = true;
+      if (typer) await typer;
 
       // Un turno que sólo produjo plan (sin tokens) deja el mensaje del asistente
       // vacío → Kimi rechaza el próximo request ("assistant must not be empty").
