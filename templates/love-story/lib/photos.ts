@@ -533,10 +533,10 @@ const REAL = new Set<string>([
 const CATS = Object.keys(photosByCategory);
 const VARIANTS = ["a", "b", "c"]; // portrait / square / landscape
 
-// Each theme has its own tinted blank set (romantic = rose, editorial = greige);
-// NEXT_PUBLIC_THEME picks the suffix so empty slots match the active palette.
-const BLANK =
-  (process.env.NEXT_PUBLIC_THEME ?? "romantic") === "editorial" ? "-editorial" : "";
+// Each theme has its own tinted blank set (romantic = rose, editorial = greige,
+// brutalist = paper + ink frame); NEXT_PUBLIC_THEME picks the matching suffix.
+const BLANK_BY_THEME: Record<string, string> = { editorial: "-editorial", brutalist: "-brutalist" };
+const BLANK = BLANK_BY_THEME[process.env.NEXT_PUBLIC_THEME ?? "romantic"] ?? "";
 
 // Deterministic aspect mix (offset per category so columns vary) — picks which
 // of the three shared blanks a still-empty slot shows.

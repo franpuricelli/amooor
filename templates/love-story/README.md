@@ -61,21 +61,28 @@ npm run dev      # http://localhost:3000
 npm run build    # production build
 ```
 
-### Themes: romantic (default) · editorial
+### Themes: romantic (default) · editorial · brutalist
 
-Same content and layout, two looks. `NEXT_PUBLIC_THEME` picks the palette + fonts
-at build time — `romantic` (rose pink, Inter + Caveat) is the default; `editorial`
-is a light, fine-art look (warm cream + charcoal, hairline rules, muted photos,
-and Parisienne script / Cormorant Garamond serif / wide-tracked Montserrat). The
-theme touches only the color tokens in `app/globals.css` (scoped under
-`html[data-theme="editorial"]`), the fonts in `app/layout.tsx`, the inline SVG
-heart fills in `lib/theme-tokens.ts`, and which tinted blank set
-(`public/_blank/*` vs `*-editorial`) empty slots use. The editorial theme also
-hides the playful pixel hearts + heart cursor for a calmer, elegant feel.
+Same content and layout, three looks. `NEXT_PUBLIC_THEME` picks the palette +
+fonts at build time:
+
+- **romantic** (default) — rose pink, Inter + Caveat, rounded, playful.
+- **editorial** — light fine-art: warm cream + charcoal, hairline rules, muted
+  photos, Parisienne script / Cormorant Garamond serif / wide-tracked Montserrat.
+- **brutalist** — bold neo-brutalist: warm paper + electric-blue/yellow pops,
+  Bricolage Grotesque display / Space Mono tag-labels, thick borders, hard offset
+  shadows, squared corners, faint grid.
+
+A theme touches only the color tokens in `app/globals.css` (scoped under
+`html[data-theme="…"]`), the fonts in `app/layout.tsx`, the inline SVG heart
+fills in `lib/theme-tokens.ts`, and which tinted blank set (`public/_blank/*` vs
+`*-editorial` / `*-brutalist`) empty slots use. Editorial and brutalist also hide
+the playful pixel hearts + heart cursor.
 
 ```bash
-npm run dev                          # romantic
+npm run dev                            # romantic
 NEXT_PUBLIC_THEME=editorial npm run dev   # editorial
+NEXT_PUBLIC_THEME=brutalist npm run dev   # brutalist
 ```
 
 ### Deploy on Vercel

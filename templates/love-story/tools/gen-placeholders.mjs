@@ -23,6 +23,15 @@ const EDITORIAL = {
   heartFill: "rgba(35,32,28,0.04)",
 };
 
+// Brutalist palette — flat paper card + bold ink heart, no inner frame (the CSS
+// tile draws the thick square border). Used for "-brutalist".
+const BRUTALIST = {
+  bg: "#ece4d3",
+  heart: "#141210",
+  heartFill: "rgba(20,18,16,0.05)",
+  frame: false,
+};
+
 function card({
   w,
   h,
@@ -68,9 +77,10 @@ const VARIANTS = [
   ["c", 1200, 900, 640, 480], // landscape 4:3
 ];
 
-// Per-theme blank sets: "" = romantic (rose), "-editorial" = soft greige. The
-// active theme's set is chosen at build time in lib/photos.ts via BLANK suffix.
+// Per-theme blank sets: "" = romantic (rose), "-editorial" = greige, "-brutalist"
+// = paper + ink. The active set is chosen at build time in lib/photos.ts.
 const edArgs = { bg: EDITORIAL.bg, heart: EDITORIAL.heart, heartFill: EDITORIAL.heartFill, frameColor: EDITORIAL.frame };
+const brArgs = { bg: BRUTALIST.bg, heart: BRUTALIST.heart, heartFill: BRUTALIST.heartFill, frame: BRUTALIST.frame };
 
 await Promise.all([
   ...VARIANTS.flatMap(([v, fw, fh, tw, th]) => [
@@ -78,10 +88,13 @@ await Promise.all([
     jpg(card({ w: tw, h: th }), `public/_blank/thumb-${v}.jpg`),
     jpg(card({ w: fw, h: fh, ...edArgs }), `public/_blank/full-${v}-editorial.jpg`),
     jpg(card({ w: tw, h: th, ...edArgs }), `public/_blank/thumb-${v}-editorial.jpg`),
+    jpg(card({ w: fw, h: fh, ...brArgs }), `public/_blank/full-${v}-brutalist.jpg`),
+    jpg(card({ w: tw, h: th, ...brArgs }), `public/_blank/thumb-${v}-brutalist.jpg`),
   ]),
   // one shared blank artist avatar per theme (lib/config.ts points every artist at it)
   jpg(card({ w: 320, h: 320 }), "public/_blank/artist.jpg"),
   jpg(card({ w: 320, h: 320, ...edArgs }), "public/_blank/artist-editorial.jpg"),
+  jpg(card({ w: 320, h: 320, ...brArgs }), "public/_blank/artist-brutalist.jpg"),
   // footer drawing card
   png(card({ w: 900, h: 640 }), "public/drawing.png"),
   // favicon: brand pink with a white heart

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { isEditorial } from "@/lib/theme-tokens";
+import { hidesHeartCursor } from "@/lib/theme-tokens";
 
 /**
  * Replaces the cursor with a pink glass pixel-heart on fine-pointer devices
@@ -13,7 +13,7 @@ export default function HeartCursor() {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (isEditorial) return;
+    if (hidesHeartCursor) return;
     if (!window.matchMedia("(pointer: fine)").matches) return;
     const el = ref.current;
     if (!el) return;
@@ -87,7 +87,7 @@ export default function HeartCursor() {
     };
   }, []);
 
-  if (isEditorial) return null;
+  if (hidesHeartCursor) return null;
 
   return (
     <div ref={ref} className="cursor-heart" aria-hidden>

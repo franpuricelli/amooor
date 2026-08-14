@@ -7,8 +7,11 @@
 // ES · Elegido en build por NEXT_PUBLIC_THEME. "romantic" (default) es el
 //      sistema rosa; "editorial" es la variante clara y elegante (sus corazones
 //      pixelados se ocultan por CSS, así que esto es sólo fallback).
-export const isEditorial =
-  (process.env.NEXT_PUBLIC_THEME ?? "romantic") === "editorial";
+const THEME = process.env.NEXT_PUBLIC_THEME ?? "romantic";
+export const isEditorial = THEME === "editorial";
+export const isBrutalist = THEME === "brutalist";
+// Themes that drop the playful pixel-heart cursor for a calmer/bolder feel.
+export const hidesHeartCursor = isEditorial || isBrutalist;
 
 // Floating hero hearts (Hearts.tsx) — [white-ish, accent, soft accent].
 export const heartFills = isEditorial

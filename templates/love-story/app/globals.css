@@ -1997,3 +1997,255 @@ html[data-theme="editorial"] .stats-chips .chip {
   filter: grayscale(1);
   opacity: 0.8;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BRUTALIST theme — build with NEXT_PUBLIC_THEME=brutalist.
+   A bold neo-brutalist system: warm paper canvas, near-black ink, electric-blue
+   + yellow pops, chunky Bricolage Grotesque display, Space Mono tag-labels,
+   thick 2px borders, hard offset shadows, hard squared corners, zero blur.
+   Reuses the section STRUCTURE only; the visual language is its own.
+   All scoped under html[data-theme="brutalist"]; other themes untouched.
+   ═══════════════════════════════════════════════════════════════════════════ */
+html[data-theme="brutalist"] {
+  --canvas: #f4efe1;
+  --canvas-soft: #efe8d6;
+  --canvas-deep: #eae2cd;
+  --pink: #2f27e0; /* accent → electric blue */
+
+  --ink: #141210;
+  --ink-70: rgba(20, 18, 16, 0.72);
+  --ink-50: rgba(20, 18, 16, 0.5);
+
+  /* keep white for the one dark block (section-dark); light panels get ink text
+     via explicit overrides below */
+  --white: #ffffff;
+  --white-70: rgba(255, 255, 255, 0.74);
+  --white-45: rgba(255, 255, 255, 0.5);
+
+  --dark: #141210; /* section-dark → solid black block */
+  --glass: #ffffff;
+  --glass-strong: #ffffff;
+  --glass-border: #141210;
+  --glass-border-soft: #141210;
+
+  --pop: #2f27e0;
+  --pop-yellow: #ffcf2e;
+  --border: 2px solid var(--ink);
+  --shadow: 5px 5px 0 var(--ink);
+
+  --font-sans: var(--font-archivo), "Archivo", system-ui, sans-serif;
+  --font-display: var(--font-bricolage), "Bricolage Grotesque", system-ui, sans-serif;
+  --font-mono: var(--font-space-mono), "Space Mono", ui-monospace, monospace;
+}
+
+/* paper canvas + faint engineering grid */
+html[data-theme="brutalist"] body {
+  background: var(--canvas);
+  background-image: linear-gradient(rgba(20, 18, 16, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 18, 16, 0.05) 1px, transparent 1px);
+  background-size: 30px 30px;
+  background-attachment: fixed;
+  color: var(--ink);
+}
+
+/* ── display / headings → chunky grotesque ──────────────────────────────────── */
+html[data-theme="brutalist"] .display {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 0.94;
+  color: var(--ink);
+  text-shadow: 5px 5px 0 var(--pop);
+}
+html[data-theme="brutalist"] .hero-amp {
+  color: var(--pop);
+  -webkit-text-stroke: 2px var(--ink);
+}
+html[data-theme="brutalist"] .h2,
+html[data-theme="brutalist"] .h3,
+html[data-theme="brutalist"] .stats-num {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+html[data-theme="brutalist"] .stats-num {
+  color: var(--pop);
+}
+
+/* ── mono tag-labels ─────────────────────────────────────────────────────────── */
+html[data-theme="brutalist"] .btn,
+html[data-theme="brutalist"] .stats-kicker,
+html[data-theme="brutalist"] .stats-label,
+html[data-theme="brutalist"] .person-artists-label,
+html[data-theme="brutalist"] .story-kicker,
+html[data-theme="brutalist"] .kind-pill,
+html[data-theme="brutalist"] .chip {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-weight: 700;
+}
+
+/* eyebrow → a yellow mono tag with hard shadow (not a glass pill) */
+html[data-theme="brutalist"] .eyebrow {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--pop-yellow);
+  border: var(--border);
+  box-shadow: 3px 3px 0 var(--ink);
+  padding: 0.5rem 0.85rem;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* ── panels → solid white boxes, thick border, hard shadow, no blur ──────────── */
+html[data-theme="brutalist"] .glass,
+html[data-theme="brutalist"] .glass-card {
+  background: #fff;
+  color: var(--ink);
+  border: var(--border);
+  box-shadow: var(--shadow);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+html[data-theme="brutalist"] .chip {
+  background: #fff;
+  color: var(--ink);
+  border: var(--border);
+}
+html[data-theme="brutalist"] .chip-btn:hover {
+  background: var(--pop-yellow);
+  transform: translate(-1px, -1px);
+}
+
+/* buttons → electric-blue block that "presses" on hover */
+html[data-theme="brutalist"] .btn {
+  background: var(--pop);
+  color: #fff;
+  border: var(--border);
+  box-shadow: 4px 4px 0 var(--ink);
+  letter-spacing: 0.04em;
+}
+html[data-theme="brutalist"] .btn:hover {
+  background: var(--pop);
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+/* section-dark → solid black block, no pink glow */
+html[data-theme="brutalist"] .section-dark {
+  background: var(--dark);
+  background-image: none;
+  color: #fff;
+  border-top: var(--border);
+  border-bottom: var(--border);
+}
+
+/* photos → boxed with a hard shadow, punchy contrast */
+html[data-theme="brutalist"] .tile {
+  border: var(--border);
+  box-shadow: var(--shadow);
+  background: var(--canvas-soft);
+}
+html[data-theme="brutalist"] .tile img {
+  filter: contrast(1.06) saturate(1.05);
+}
+html[data-theme="brutalist"] .tile:focus-visible {
+  outline-color: var(--pop);
+}
+html[data-theme="brutalist"] .collage-tile {
+  border: var(--border);
+  box-shadow: var(--shadow);
+}
+
+/* Países deck → pale blue / yellow / paper blocks, thick ink top border */
+html[data-theme="brutalist"] .pais-panel {
+  border-top: 3px solid var(--ink);
+  box-shadow: 0 -10px 0 -6px var(--ink);
+}
+html[data-theme="brutalist"] .pais-panel:nth-child(3n + 1) {
+  background: #cfe0ff;
+}
+html[data-theme="brutalist"] .pais-panel:nth-child(3n + 2) {
+  background: #ffe9a3;
+}
+html[data-theme="brutalist"] .pais-panel:nth-child(3n) {
+  background: var(--canvas);
+}
+
+/* accents that were pink → electric blue */
+html[data-theme="brutalist"] .nav-heart,
+html[data-theme="brutalist"] .watch-feature-note,
+html[data-theme="brutalist"] .lightbox-grid-toggle {
+  color: var(--pop);
+}
+
+/* HERO — paper backdrop, ink display, no scrim / hearts / heart-cursor */
+html[data-theme="brutalist"] .hero-scrim,
+html[data-theme="brutalist"] .hearts,
+html[data-theme="brutalist"] .head-hearts,
+html[data-theme="brutalist"] .cursor-heart {
+  display: none !important;
+}
+html[data-theme="brutalist"] .hero .display {
+  color: var(--ink);
+}
+html[data-theme="brutalist"] .hero .lede {
+  color: var(--ink);
+  text-shadow: none;
+  font-weight: 500;
+}
+
+/* selection */
+html[data-theme="brutalist"] ::selection {
+  background: var(--pop);
+  color: #fff;
+}
+
+/* ── hard squared corners everywhere ─────────────────────────────────────────── */
+html[data-theme="brutalist"] {
+  --r-xl: 0;
+  --r-lg: 0;
+  --r-md: 0;
+}
+html[data-theme="brutalist"] .eyebrow,
+html[data-theme="brutalist"] .chip,
+html[data-theme="brutalist"] .btn,
+html[data-theme="brutalist"] .nav-inner,
+html[data-theme="brutalist"] .nav-badge,
+html[data-theme="brutalist"] .person-pill,
+html[data-theme="brutalist"] .lang-switch,
+html[data-theme="brutalist"] .lang-switch button,
+html[data-theme="brutalist"] .kind-pill,
+html[data-theme="brutalist"] .watch-chip,
+html[data-theme="brutalist"] .lightbox-caption,
+html[data-theme="brutalist"] .artist-row img,
+html[data-theme="brutalist"] .kind-dot,
+html[data-theme="brutalist"] .lightbox-btn,
+html[data-theme="brutalist"] .wall-mini .tile,
+html[data-theme="brutalist"] .wol-tile,
+html[data-theme="brutalist"] .collage-tile,
+html[data-theme="brutalist"] .flag,
+html[data-theme="brutalist"] .pais-panel,
+html[data-theme="brutalist"] .pais-panel .flag,
+html[data-theme="brutalist"] .sheet-top,
+html[data-theme="brutalist"] .lightbox-strip-thumb,
+html[data-theme="brutalist"] .lightbox-grid-tile {
+  border-radius: 0;
+}
+
+/* language switch — mono, ink text (its .glass box already gives the border) */
+html[data-theme="brutalist"] .lang-switch button {
+  color: var(--ink-50);
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+html[data-theme="brutalist"] .lang-switch button.on {
+  color: var(--pop);
+}
+html[data-theme="brutalist"] .lang-sep {
+  color: var(--ink-50);
+}
