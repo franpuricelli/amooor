@@ -17,11 +17,12 @@ import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { parseContent, type Theme } from "@/lib/template";
 import type { Content } from "@/lib/content";
-import type { PaletteId } from "@/lib/theme";
+import type { PaletteId, Palette } from "@/lib/theme";
 import { slugifyCouple } from "@/lib/subdomain";
 import { planSectionSlugs } from "@/lib/plan-to-state";
 import { mediaFromPhotos, rebindMedia } from "@/lib/generate";
 import { uploadImage, uploadVideo } from "@/lib/media-client";
+import type { Swatch } from "@/lib/palette-gen";
 import type { EditAPI } from "@/lib/edit-context";
 import ChatMessages from "../ChatMessages";
 import ChatComposer from "../ChatComposer";
@@ -119,6 +120,13 @@ export default function EditStep({
   const [tool, setTool] = useState<Tool>("chat");
   const [mediaFocus, setMediaFocus] = useState<MediaFocus | null>(null);
   const [mobilePane, setMobilePane] = useState<MobilePane>("flow");
+  // sección visible en el preview (id = category) → Multimedia la sigue al scroll
+  const [previewCat, setPreviewCat] = useState<string | null>(null);
+  // pedido inverso: al elegir una sección en Multimedia, scrollear el preview
+  const [scrollTarget, setScrollTarget] = useState<{ cat: string; nonce: number } | null>(null);
+  const pickSection = useCallback((cat: string) => {
+    setScrollTarget((prev) => ({ cat, nonce: (prev?.nonce ?? 0) + 1 }));
+  }, []);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const subdomain = slugifyCouple(content.couple || "tu-sitio");
@@ -173,12 +181,22 @@ export default function EditStep({
   }, [token, content, onContent]);
 
   // ── paleta (control directo del toolbar del navegador) ──────────────────────
+  // custom → guardamos la paleta COMPLETA como overrides (si no, resolvePalette
+  // cae a la default y el cambio no se aplica). built-in → sin overrides.
   const onPalette = useCallback(
-    (id: string) => {
-      onTheme({ palette: id as PaletteId });
-      convo.setPalette(id);
+    (id: string, sw?: Swatch) => {
+      const overrides: Partial<Palette> | undefined =
+        sw && id.startsWith("custom-") ? sw.palette : undefined;
+      onTheme({ palette: id as PaletteId, overrides });
+      convo.setPalette(id, overrides);
       if (token && isConvexConfigured()) {
-        void convexClient().mutation(api.drafts.save, { token, theme: { palette: id } });
+        void convexClient().mutation(api.drafts.save, {
+          token,
+          theme: {
+            palette: id,
+            ...(overrides ? { overrides: overrides as Record<string, string> } : {}),
+          },
+        });
       }
     },
     [onTheme, convo, token]
@@ -249,7 +267,13 @@ export default function EditStep({
           {tool === "chat" ? (
             <ChatFlow token={token} content={content} onContent={onContent} />
           ) : (
-            <MediaFlow convo={convo} focus={mediaFocus} onRebind={rebind} />
+            <MediaFlow
+              convo={convo}
+              focus={mediaFocus}
+              scrollCat={previewCat}
+              onPickSection={pickSection}
+              onRebind={rebind}
+            />
           )}
         </div>
 
@@ -261,6 +285,8 @@ export default function EditStep({
             subdomain={subdomain}
             toolbar={toolbar}
             edit={editApi}
+            onVisibleSection={setPreviewCat}
+            scrollTo={scrollTarget}
           />
         </div>
       </div>
@@ -409,10 +435,16 @@ function ChatFlow({
 function MediaFlow({
   convo,
   focus,
+  scrollCat,
+  onPickSection,
   onRebind,
 }: {
   convo: UseConversation;
   focus: MediaFocus | null;
+  /** sección a la vista en el preview (scroll-spy): Multimedia la sigue */
+  scrollCat: string | null;
+  /** al elegir una sección acá, pedirle al preview que scrollee hasta ella */
+  onPickSection: (cat: string) => void;
   onRebind: () => Promise<void>;
 }) {
   const token = convo.token;
@@ -451,6 +483,16 @@ function MediaFlow({
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  // scroll-spy: al scrollear el preview, seguir a la sección visible. Va ANTES
+  // del efecto de foco para que un click en una imagen (foco explícito) gane si
+  // ambos disparan al montar (el efecto declarado después corre último).
+  useEffect(() => {
+    if (!scrollCat || !sections.length) return;
+    const idx = sections.findIndex((s) => s.category === scrollCat);
+    if (idx >= 0) setActive(idx);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scrollCat]);
 
   // enfoque desde el click en el preview → seleccionar esa sección
   useEffect(() => {
@@ -581,6 +623,7 @@ function MediaFlow({
                     onClick={() => {
                       setActive(i);
                       setDrawer(false);
+                      onPickSection(sec.category); // scrollea el preview a la sección
                     }}
                   >
                     <span className="pa-media-drawer-item-title">{sec.title}</span>
