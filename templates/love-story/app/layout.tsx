@@ -1,5 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Caveat, Space_Grotesk } from "next/font/google";
+import {
+  Inter,
+  Caveat,
+  Parisienne,
+  Cormorant_Garamond,
+  Montserrat,
+} from "next/font/google";
 import { config } from "@/lib/config";
 import "./globals.css";
 
@@ -15,10 +21,28 @@ const caveat = Caveat({
   variable: "--font-caveat",
 });
 
-const spaceGrotesk = Space_Grotesk({
+// Noir type system — an editorial trio: a flowing script for the couple name,
+// a high-contrast serif for headings, a light wide-tracked sans for labels/body.
+const parisienne = Parisienne({
   subsets: ["latin"],
+  weight: "400",
   display: "swap",
-  variable: "--font-space-grotesk",
+  variable: "--font-parisienne",
+});
+
+const cormorant = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
+  display: "swap",
+  variable: "--font-cormorant",
+});
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+  display: "swap",
+  variable: "--font-montserrat",
 });
 
 // Theme is chosen at build time via NEXT_PUBLIC_THEME. "romantic" (default) is
@@ -28,9 +52,9 @@ const spaceGrotesk = Space_Grotesk({
 const THEME = process.env.NEXT_PUBLIC_THEME ?? "romantic";
 const isNoir = THEME === "noir";
 
-// Attach only the active theme's fonts, so the other theme's font never loads.
+// Attach only the active theme's fonts, so the other theme's fonts never load.
 const fontVars = isNoir
-  ? `${spaceGrotesk.variable} ${inter.variable}`
+  ? `${parisienne.variable} ${cormorant.variable} ${montserrat.variable}`
   : `${inter.variable} ${caveat.variable}`;
 
 export const metadata: Metadata = {
