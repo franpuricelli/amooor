@@ -331,7 +331,7 @@ export default function PlanCard({
   plan: Plan;
   palette: string;
   customPalettes: Swatch[];
-  onPalette: (id: string) => void;
+  onPalette: (id: string, sw?: Swatch) => void;
   onCreatePalette: (sw: Swatch) => void;
   onRefine: (instruction: string) => void;
   onAskMore: (sectionTitle: string) => void;

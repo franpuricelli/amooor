@@ -5,6 +5,8 @@
 //  theme.ts, pero derivadas en vivo). Client-safe, sin deps.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import type { Palette } from "./theme";
+
 export interface Swatch {
   /** id estable (paleta built-in o "custom-…") */
   id: string;
@@ -15,6 +17,9 @@ export interface Swatch {
   accent: string;
   /** colores de muestra para el popover de hover (chips) */
   chips: string[];
+  /** paleta COMPLETA (13 tokens) — lo que el sitio tematiza de verdad. Sin esto,
+   *  una paleta custom no se aplicaba (resolvePalette caía a la default). */
+  palette: Palette;
 }
 
 const clamp = (n: number, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, n));
@@ -72,25 +77,46 @@ export function normalizeHex(input: string): string | null {
 }
 
 /**
+ * Deriva una paleta COMPLETA (13 tokens del template) a partir de un color
+ * principal, con el mismo espíritu que las 5 paletas built-in de theme.ts. Al
+ * cambiar el color base cambian TODOS los tonos (respeta la saturación del base:
+ * un gris queda gris, un color vivo queda vivo).
+ */
+export function paletteFromHex(baseHex: string): Palette {
+  const [h, s] = hexToHsl(baseHex);
+  const sat = clamp(s, 8, 95);
+  const H = (ss: number, ll: number) => hslToHex(h, clamp(ss, 0, 100), clamp(ll, 0, 100));
+  return {
+    canvas: H(sat * 0.5, 82),
+    canvasSoft: H(sat * 0.42, 88),
+    canvasDeep: H(sat * 0.65, 68),
+    pink: H(sat * 0.82, 57),
+    accent: H(sat * 0.9, 74),
+    accentStrong: H(sat, 62),
+    accentMid: H(sat, 68),
+    ink: H(clamp(sat, 22, 85), 9),
+    dark: H(clamp(sat, 22, 85), 4),
+    gradA: H(sat * 0.5, 84),
+    gradB: H(sat * 0.55, 82),
+    heart1: H(clamp(sat, 55, 100), 58),
+    heart2: H(sat * 0.7, 85),
+  };
+}
+
+/**
  * Recomienda una paleta coherente a partir de un color principal.
  * canvas = tinte claro del color; accent = el color saturado; y un set de chips
- * (tintes/sombras) para el preview de hover.
+ * (tintes/sombras) para el preview de hover. Incluye la paleta completa que el
+ * sitio tematiza.
  */
 export function recommendPalette(baseHex: string, id: string, label: string): Swatch {
-  const [h, s, l] = hexToHsl(baseHex);
-  // Respetamos el carácter del color base: un gris queda gris, un color vivo
-  // queda vivo. Así, al cambiar el color principal cambian TODOS los tonos.
-  const sat = clamp(s, 8, 95);
-  const canvas = hslToHex(h, clamp(sat * 0.5, 6, 58), 82);
-  const canvasDeep = hslToHex(h, clamp(sat * 0.65, 8, 68), 68);
-  const pink = hslToHex(h, clamp(sat * 0.8, 10, 78), 58);
-  const accent = hslToHex(h, sat, clamp(l, 40, 66));
-  const accentSoft = hslToHex(h, clamp(sat * 0.85, 10, 88), 74);
+  const palette = paletteFromHex(baseHex);
   return {
     id,
     label,
-    canvas,
-    accent,
-    chips: [canvas, canvasDeep, pink, accent, accentSoft],
+    canvas: palette.canvas,
+    accent: palette.accentStrong,
+    chips: [palette.canvas, palette.canvasDeep, palette.pink, palette.accentStrong, palette.accent],
+    palette,
   };
 }

@@ -49,36 +49,78 @@
   padding: 0.85rem clamp(1rem, 4vw, 2rem);
   background: var(--mk-bg);
 }
-/* barra de progreso del intake (centro del header) */
-.ch-progress {
+/* stepper de etapas del intake (centro del header): Historia → Plan → Fotos →
+   Tu sitio. La etapa activa se marca; las pasadas van con check. */
+.ch-steps {
   flex: 1;
-  max-width: 360px;
-  height: 6px;
+  max-width: 440px;
   margin: 0 auto;
+  list-style: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+.ch-step {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--mk-ink-3);
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+/* conector entre etapas (hairline) */
+.ch-step + .ch-step::before {
+  content: "";
+  width: clamp(10px, 3vw, 30px);
+  height: 1.5px;
   border-radius: 999px;
-  background: var(--mk-line-soft);
-  overflow: hidden;
+  background: var(--mk-line);
+  transition: background 0.35s;
 }
-.ch-progress-fill {
-  display: block;
-  height: 100%;
+.ch-step.done + .ch-step::before,
+.ch-step.on::before {
+  background: var(--mk-rose-btn);
+}
+.ch-step-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--mk-rose), var(--mk-rose-btn));
-  transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  border: 1.5px solid var(--mk-line);
+  background: var(--mk-card);
+  color: var(--mk-ink-3);
+  font-size: 0.74rem;
+  font-weight: 700;
+  transition: background 0.3s, color 0.3s, border-color 0.3s;
 }
-.ch-progress-fill.busy {
-  background: linear-gradient(
-    90deg,
-    var(--mk-rose-btn),
-    var(--mk-rose),
-    var(--mk-rose-btn)
-  );
-  background-size: 200% 100%;
-  animation: ch-prog 1.2s linear infinite;
+.ch-step.done .ch-step-dot {
+  background: var(--mk-rose-soft);
+  border-color: transparent;
+  color: var(--mk-rose-text);
 }
-@keyframes ch-prog {
-  to {
-    background-position: -200% 0;
+.ch-step.on .ch-step-dot {
+  background: var(--mk-rose-btn);
+  border-color: transparent;
+  color: #fff;
+}
+.ch-step.on .ch-step-label {
+  color: var(--mk-ink);
+}
+.ch-step-dot.busy {
+  animation: ch-step-pulse 1.2s ease-in-out infinite;
+}
+@keyframes ch-step-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(223, 45, 114, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(223, 45, 114, 0);
   }
 }
 .ch-brand {
@@ -1641,9 +1683,17 @@
     padding: 0.65rem 0.9rem;
     padding-right: 3.4rem;
   }
-  .ch-progress {
+  .ch-steps {
     max-width: none;
     margin: 0;
+    gap: 0.15rem;
+  }
+  /* en mobile mostramos sólo los puntitos: los labels no entran */
+  .ch-step-label {
+    display: none;
+  }
+  .ch-step + .ch-step::before {
+    width: 12px;
   }
   .ch-save-btn {
     padding: 0.34rem 0.66rem;

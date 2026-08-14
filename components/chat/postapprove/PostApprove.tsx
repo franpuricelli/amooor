@@ -25,10 +25,21 @@ import EditStep from "./EditStep";
 
 export type Step = "upload" | "build" | "edit";
 
-export default function PostApprove({ convo }: { convo: UseConversation }) {
+export default function PostApprove({
+  convo,
+  onStep,
+}: {
+  convo: UseConversation;
+  /** avisa el paso actual al header (para el stepper de etapas) */
+  onStep?: (step: Step | null) => void;
+}) {
   const [step, setStep] = useState<Step | null>(null); // null = hidratando
   const [content, setContent] = useState<Content | null>(null);
   const [theme, setTheme] = useState<Theme>({ palette: convo.palette as PaletteId });
+
+  useEffect(() => {
+    onStep?.(step);
+  }, [step, onStep]);
 
   // ── restauración del paso al montar ─────────────────────────────────────────
   useEffect(() => {

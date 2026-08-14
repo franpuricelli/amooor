@@ -26,6 +26,7 @@ const BUILTIN: Swatch[] = (Object.keys(palettes) as PaletteId[]).map((id) => {
     canvas: p.canvas,
     accent: p.accentStrong,
     chips: [p.canvas, p.canvasDeep, p.pink, p.accentStrong, p.accent],
+    palette: p,
   };
 });
 
@@ -80,7 +81,9 @@ export default function PalettePicker({
 }: {
   value: string;
   custom: Swatch[];
-  onSelect: (id: string) => void;
+  /** el swatch completo viaja para que el consumidor pueda aplicar la paleta
+   *  (custom → overrides del theme); sin esto la paleta custom no se aplicaba. */
+  onSelect: (id: string, sw: Swatch) => void;
   onCreate: (sw: Swatch) => void;
   /** compact = en el editor: se ve UN solo swatch (el elegido); al tocarlo abre la
    *  paleta completa para cambiarla o editarla. */
@@ -125,7 +128,7 @@ export default function PalettePicker({
     const id = `custom-${Date.now().toString(36)}`;
     const sw = recommendPalette(hex, id, "Personalizada");
     onCreate(sw);
-    onSelect(id);
+    onSelect(id, sw);
     setCreating(false);
   };
 
@@ -136,7 +139,7 @@ export default function PalettePicker({
           key={sw.id}
           sw={sw}
           selected={value === sw.id}
-          onSelect={() => onSelect(sw.id)}
+          onSelect={() => onSelect(sw.id, sw)}
         />
       ))}
 
