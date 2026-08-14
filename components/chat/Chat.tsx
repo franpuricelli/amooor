@@ -15,14 +15,31 @@ import { GREETING_SUBLINE, STARTER_IDEAS } from "@/lib/intake-prompt";
 import { parsePlan } from "@/lib/plan";
 import { PURIVI_PLAN, SKIP_WIZARD_TRIGGER } from "@/lib/demo-plan";
 import { parseDeepen, deriveShared } from "@/lib/chat-format";
+import type { Swatch } from "@/lib/palette-gen";
 import ChatMessages from "./ChatMessages";
 import ChatComposer, { type SendOpts } from "./ChatComposer";
 import PlanCard from "./PlanCard";
 import ProfileMenu from "./ProfileMenu";
 import SharedPanel from "./SharedPanel";
 import SelectionReply from "./SelectionReply";
-import PostApprove from "./postapprove/PostApprove";
+import PostApprove, { type Step } from "./postapprove/PostApprove";
 import StatusDot, { type DotStatus } from "./postapprove/StatusDot";
+
+// etapas del flujo /comenzar (para el stepper del header)
+const STAGES = [
+  { key: "historia", label: "Historia" },
+  { key: "plan", label: "Plan" },
+  { key: "fotos", label: "Fotos" },
+  { key: "sitio", label: "Tu sitio" },
+] as const;
+
+function StepCheck() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M5 13l4 4 10-11" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
 
 function StarterIcon({ name }: { name: string }) {
   const p: Record<string, React.ReactNode> = {
@@ -81,7 +98,7 @@ export default function Chat() {
   // busy=amarillo (en curso), ready=verde (publicado). El backend de pago/publish
   // todavía es un stub, así que arranca en "idle".
   const [publishStatus] = useState<DotStatus>("idle");
-  const [serverProgress, setServerProgress] = useState(0);
+  const [paStep, setPaStep] = useState<Step | null>(null);
   const [refining, setRefining] = useState(false);
   const [refLabels, setRefLabels] = useState<Record<string, string>>({});
   const mainRef = useRef<HTMLDivElement | null>(null);
@@ -142,6 +159,16 @@ export default function Chat() {
       correctionsRef.current.push(
         `El usuario eliminó la sección "${gone.title}" (${gone.kind}): no la incluyas en el plan.`
       );
+    },
+    [convo]
+  );
+
+  // Aplicar paleta: una custom viaja con su paleta completa (overrides) para que
+  // el sitio la tematice; una built-in va sin overrides (los limpia).
+  const applyPalette = useCallback(
+    (id: string, sw?: Swatch) => {
+      const overrides = sw && id.startsWith("custom-") ? sw.palette : undefined;
+      convo.setPalette(id, overrides);
     },
     [convo]
   );
@@ -233,8 +260,6 @@ export default function Chat() {
           setThinking(false);
           ensureAssistant();
           pushText(evt.value);
-        } else if (evt.type === "progress") {
-          if (typeof evt.value === "number") setServerProgress(evt.value);
         } else if (evt.type === "plan") {
           setThinking(false);
           const p = parsePlan(evt.plan);
@@ -300,7 +325,6 @@ export default function Chat() {
         ]);
         convo.setPalette("rosa");
         convo.setPlan(PURIVI_PLAN);
-        setServerProgress(1);
         atBottomRef.current = true;
         setAtBottom(true);
         requestAnimationFrame(() => scrollToBottom(true));
@@ -418,9 +442,16 @@ export default function Chat() {
     />
   );
 
-  // progreso del intake para la barra del header: viene del checklist REAL del
-  // agente (evento SSE "progress"); con plan a la vista, 100%.
-  const progress = approved || hasPlan ? 1 : serverProgress;
+  // etapa actual del flujo (para el stepper del header): Historia → Plan → Fotos
+  // → Tu sitio. Antes de aprobar sale del estado del intake; después, del paso de
+  // PostApprove (upload = Fotos; build/edit = Tu sitio).
+  const stageIndex = !approved
+    ? hasPlan
+      ? 1
+      : 0
+    : paStep === "build" || paStep === "edit"
+      ? 3
+      : 2;
 
   return (
     <div className={`ch-root mk-root ${approved ? "ch-editing" : ""}`}>
@@ -429,20 +460,27 @@ export default function Chat() {
           amooor
         </a>
         {convo.ready && !empty && (
-          <div
-            className="ch-progress"
-            role="progressbar"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={Math.round(progress * 100)}
-            aria-label="Progreso del intake"
-            title={hasPlan ? "Plan listo" : "Armando tu plan…"}
-          >
-            <span
-              className={`ch-progress-fill ${sending || thinking ? "busy" : ""}`}
-              style={{ width: `${Math.round(progress * 100)}%` }}
-            />
-          </div>
+          <ol className="ch-steps" aria-label="Etapas">
+            {STAGES.map((st, i) => {
+              const done = i < stageIndex;
+              const on = i === stageIndex;
+              return (
+                <li
+                  key={st.key}
+                  className={`ch-step ${done ? "done" : ""} ${on ? "on" : ""}`}
+                  aria-current={on ? "step" : undefined}
+                >
+                  <span
+                    className={`ch-step-dot ${on && (sending || thinking) ? "busy" : ""}`}
+                    aria-hidden
+                  >
+                    {done ? <StepCheck /> : i + 1}
+                  </span>
+                  <span className="ch-step-label">{st.label}</span>
+                </li>
+              );
+            })}
+          </ol>
         )}
         {approved ? (
           <button
@@ -480,7 +518,7 @@ export default function Chat() {
       </header>
 
       {approved ? (
-        <PostApprove convo={convo} />
+        <PostApprove convo={convo} onStep={setPaStep} />
       ) : (
       <>
       <div className="ch-main" ref={mainRef} onScroll={onScroll}>
@@ -524,7 +562,7 @@ export default function Chat() {
                     plan={convo.plan}
                     palette={convo.palette}
                     customPalettes={convo.customPalettes}
-                    onPalette={convo.setPalette}
+                    onPalette={applyPalette}
                     onCreatePalette={convo.addCustomPalette}
                     onRefine={(instruction) => send(instruction)}
                     onAskMore={() => {}}
@@ -552,7 +590,7 @@ export default function Chat() {
                       plan={convo.plan}
                       palette={convo.palette}
                       customPalettes={convo.customPalettes}
-                      onPalette={convo.setPalette}
+                      onPalette={applyPalette}
                       onCreatePalette={convo.addCustomPalette}
                       onRefine={(instruction) => send(instruction)}
                       onAskMore={(sectionTitle) =>

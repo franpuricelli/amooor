@@ -14,6 +14,7 @@ import { convexClient, isConvexConfigured } from "@/lib/convex-browser";
 import { parsePlan, type Plan } from "@/lib/plan";
 import type { Activity, Attachment } from "@/lib/chat-format";
 import type { Swatch } from "@/lib/palette-gen";
+import type { Palette } from "@/lib/theme";
 
 const TOKEN_KEY = "amooor_draft_token";
 const CUSTOM_PAL_KEY = "amooor_custom_palettes";
@@ -77,7 +78,9 @@ export interface UseConversation {
   customPalettes: Swatch[];
   setMessages: (updater: (m: Message[]) => Message[]) => void;
   setPlan: (plan: Plan | null) => void;
-  setPalette: (id: string) => void;
+  /** overrides = paleta custom completa (13 tokens); sin ellos una custom no se
+   *  tematiza. Para un built-in va sin overrides y se limpian los previos. */
+  setPalette: (id: string, overrides?: Partial<Palette>) => void;
   addCustomPalette: (sw: Swatch) => void;
   saving: boolean;
 }
@@ -95,6 +98,7 @@ export function useConversation(): UseConversation {
   const messagesRef = useRef<Message[]>([]);
   const planRef = useRef<Plan | null>(null);
   const paletteRef = useRef<string>("rosa");
+  const paletteOverridesRef = useRef<Partial<Palette> | undefined>(undefined);
   const tokenRef = useRef("");
 
   // ── carga inicial (rehidrata del draft) ──────────────────────────────────────
@@ -127,6 +131,10 @@ export function useConversation(): UseConversation {
           paletteRef.current = pal;
           setPaletteRaw(pal);
         }
+        const ov = draft?.theme?.overrides;
+        if (ov && typeof ov === "object") {
+          paletteOverridesRef.current = ov as Partial<Palette>;
+        }
       } catch (e) {
         console.error("[useConversation] carga falló:", e);
       } finally {
@@ -144,7 +152,12 @@ export function useConversation(): UseConversation {
         token: t,
         conversation: messagesRef.current,
         intakePlan: planRef.current ?? undefined,
-        theme: { palette: paletteRef.current },
+        theme: {
+          palette: paletteRef.current,
+          ...(paletteOverridesRef.current
+            ? { overrides: paletteOverridesRef.current as Record<string, string> }
+            : {}),
+        },
         status: "editing",
       });
     } catch (e) {
@@ -181,8 +194,10 @@ export function useConversation(): UseConversation {
   );
 
   const setPalette = useCallback(
-    (id: string) => {
+    (id: string, overrides?: Partial<Palette>) => {
       paletteRef.current = id;
+      // custom → guardamos la paleta completa; built-in → limpiamos overrides.
+      paletteOverridesRef.current = overrides;
       setPaletteRaw(id);
       schedule();
     },

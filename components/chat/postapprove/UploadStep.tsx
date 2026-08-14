@@ -48,18 +48,6 @@ function buildSections(convo: UseConversation): SectionDesc[] {
   return out;
 }
 
-// kind de sección → ancla en el sitio de ejemplo (default Puri & Ivi)
-const EXAMPLE_ANCHOR: Record<SectionKind, string> = {
-  hero: "inicio",
-  story: "historia",
-  travel: "viajes",
-  moments: "momentos",
-  watch: "pelis",
-  stats: "stats",
-  gallery: "galeria",
-  closing: "footer",
-};
-
 function Check() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -296,30 +284,6 @@ export default function UploadStep({
           )}
         </div>
       </div>
-
-      {/* ejemplo vivo de la sección (template de la codebase) */}
-      <aside className="pa-example">
-        <div className="pa-frame">
-          <div className="pa-frame-bar">
-            <span className="pa-dots" aria-hidden>
-              <i />
-              <i />
-              <i />
-            </span>
-            <span className="pa-urlbar">purivi.love</span>
-          </div>
-          <div className="pa-frame-body">
-            <iframe
-              key={EXAMPLE_ANCHOR[s.kind]}
-              className="pa-example-frame"
-              src={`/comenzar/example?section=${EXAMPLE_ANCHOR[s.kind]}&palette=${convo.palette}`}
-              title="Ejemplo de la sección"
-              loading="lazy"
-            />
-          </div>
-        </div>
-        <p className="pa-example-cap">Así se ve esta sección en un sitio amooor.</p>
-      </aside>
     </div>
   );
 }

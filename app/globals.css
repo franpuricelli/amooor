@@ -739,11 +739,13 @@ section {
   }
 }
 
+/* zonas de hover: SOLO el 10% de cada extremo revela la tarjeta de esa persona.
+   El 80% del medio no dispara nada (hover ahí = sin tarjeta). */
 .zone {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 50%;
+  width: 10%;
   z-index: 1;
 }
 .zone-l {

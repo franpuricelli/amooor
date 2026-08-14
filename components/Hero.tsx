@@ -29,12 +29,15 @@ function PersonCard({
   side,
   active,
   onReveal,
+  onHide,
 }: {
   person: Person;
   side: Side;
   active: boolean;
   /** mantener la tarjeta abierta al pasar el mouse por encima (para editarla) */
   onReveal: () => void;
+  /** ocultar al sacar el mouse de la tarjeta (si no estás editando adentro) */
+  onHide: () => void;
 }) {
   const content = useContent();
   return (
@@ -42,6 +45,7 @@ function PersonCard({
       className={`person-card glass-card ${side} ${active ? "on" : ""}`}
       aria-hidden={!active}
       onMouseEnter={onReveal}
+      onMouseLeave={onHide}
     >
       <div className="person-head">
         <EditableText
@@ -96,19 +100,22 @@ export default function Hero({ id }: { id: string }) {
   const realSrc = full(hero.cat, hero.slug);
   const [src, setSrc] = useState<string>(hero.pixelSrc ?? realSrc);
 
+  // Cerrar la tarjeta. En edición NO la cerramos si estás editando un campo
+  // adentro (si no, se cierra mientras escribís).
+  const closeCard = () => {
+    if (
+      edit?.editing &&
+      (document.activeElement as HTMLElement | null)?.closest?.(".person-card")
+    )
+      return;
+    setActive(null);
+  };
+
   return (
     <section
       id={id}
       className={`hero ${edit?.editing ? "pa-hero-editing" : ""}`}
-      onMouseLeave={() => {
-        // en edición: no cerrar la tarjeta si estás editando un campo adentro
-        if (
-          edit?.editing &&
-          (document.activeElement as HTMLElement | null)?.closest?.(".person-card")
-        )
-          return;
-        setActive(null);
-      }}
+      onMouseLeave={closeCard}
     >
       {/* full-screen backdrop */}
       <img
@@ -173,6 +180,7 @@ export default function Hero({ id }: { id: string }) {
         className="zone zone-l"
         aria-label={left.zoneLabel}
         onMouseEnter={() => setActive("left")}
+        onMouseLeave={closeCard}
         onFocus={() => setActive("left")}
         onClick={() => setActive(active === "left" ? null : "left")}
       />
@@ -180,6 +188,7 @@ export default function Hero({ id }: { id: string }) {
         className="zone zone-r"
         aria-label={right.zoneLabel}
         onMouseEnter={() => setActive("right")}
+        onMouseLeave={closeCard}
         onFocus={() => setActive("right")}
         onClick={() => setActive(active === "right" ? null : "right")}
       />
@@ -197,12 +206,14 @@ export default function Hero({ id }: { id: string }) {
         side="left"
         active={active === "left"}
         onReveal={() => setActive("left")}
+        onHide={closeCard}
       />
       <PersonCard
         person={right}
         side="right"
         active={active === "right"}
         onReveal={() => setActive("right")}
+        onHide={closeCard}
       />
     </section>
   );
