@@ -28,16 +28,20 @@ photos. Built with **Next.js 15 + Lenis**, ready for **Vercel**.
 
 ### Photos: one folder = one section
 
-Each category is a folder in `public/photos/<category>/` (full size) **and**
-`public/thumbs/<category>/` (small). The template ships blank placeholders named
-`01.jpg`, `02.jpg`, … in a mix of aspect ratios. **Replace those files with your
-own images** (keep the `.jpg` names, or add your own and update `lib/photos.ts`).
+The gallery is a list of slots per category in `lib/photos.ts`. Empty slots all
+share **six blank placeholders** in `public/_blank/` (three aspect ratios, full
++ thumb) — so the repo carries six images, not one identical copy per slot.
 
-Regenerate the blank set / counts any time:
+**To use your own photo:** drop it at `public/photos/<category>/<slug>.jpg` and a
+matching thumb at `public/thumbs/<category>/<slug>.jpg` (the `<slug>` is the
+`01`, `02`, … from `lib/photos.ts`), then re-run the build script below. That
+slot switches from the shared blank to your image; every other slot stays blank.
+
+Regenerate the blanks / manifest any time:
 
 ```bash
-node tools/gen-placeholders.mjs      # (re)make the blank heart placeholders
-node tools/build-template-media.mjs  # fill every folder + rewrite lib/photos.ts
+node tools/gen-placeholders.mjs      # (re)make the six blank heart placeholders
+node tools/build-template-media.mjs  # rewrite lib/photos.ts (detects your photos)
 ```
 
 Edit the `CATEGORIES` list at the top of `tools/build-template-media.mjs` to
@@ -83,17 +87,21 @@ npm run build    # production build
 
 ### Fotos: una carpeta = una sección
 
-Cada categoría es una carpeta en `public/photos/<categoría>/` (tamaño completo)
-**y** `public/thumbs/<categoría>/` (chica). La plantilla trae placeholders en
-blanco `01.jpg`, `02.jpg`, … en una mezcla de proporciones. **Reemplazá esos
-archivos por tus imágenes** (mantené los nombres `.jpg`, o poné los tuyos y
-actualizá `lib/photos.ts`).
+La galería es una lista de slots por categoría en `lib/photos.ts`. Todos los
+slots vacíos comparten **seis placeholders en blanco** en `public/_blank/` (tres
+proporciones, full + thumb) — así el repo lleva seis imágenes, no una copia
+idéntica por slot.
 
-Regenerá los blancos / las cantidades cuando quieras:
+**Para usar tu propia foto:** dejala en `public/photos/<categoría>/<slug>.jpg` y
+un thumb en `public/thumbs/<categoría>/<slug>.jpg` (el `<slug>` es el `01`, `02`,
+… de `lib/photos.ts`), y re-corré el script de abajo. Ese slot pasa del blanco
+compartido a tu imagen; los demás siguen en blanco.
+
+Regenerá los blancos / el manifiesto cuando quieras:
 
 ```bash
-node tools/gen-placeholders.mjs      # (re)genera los placeholders con corazón
-node tools/build-template-media.mjs  # llena cada carpeta + reescribe lib/photos.ts
+node tools/gen-placeholders.mjs      # (re)genera los seis placeholders con corazón
+node tools/build-template-media.mjs  # reescribe lib/photos.ts (detecta tus fotos)
 ```
 
 Editá la lista `CATEGORIES` arriba de `tools/build-template-media.mjs` para

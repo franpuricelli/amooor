@@ -40,7 +40,9 @@ const jpg = (buf, out, q = 82) => sharp(buf).jpeg({ quality: q }).toFile(out);
 const png = (buf, out) => sharp(buf).png().toFile(out);
 
 mkdirSync("public/brand/artists", { recursive: true });
-mkdirSync("tools/_blank", { recursive: true });
+// Six shared blanks, served straight from /public — every empty slot points here
+// instead of getting its own identical copy (see tools/build-template-media.mjs).
+mkdirSync("public/_blank", { recursive: true });
 
 // [variant, fullW, fullH, thumbW, thumbH]
 const VARIANTS = [
@@ -51,8 +53,8 @@ const VARIANTS = [
 
 await Promise.all([
   ...VARIANTS.flatMap(([v, fw, fh, tw, th]) => [
-    jpg(card({ w: fw, h: fh }), `tools/_blank/full-${v}.jpg`),
-    jpg(card({ w: tw, h: th }), `tools/_blank/thumb-${v}.jpg`),
+    jpg(card({ w: fw, h: fh }), `public/_blank/full-${v}.jpg`),
+    jpg(card({ w: tw, h: th }), `public/_blank/thumb-${v}.jpg`),
   ]),
   // six square artist avatars
   ...[1, 2, 3, 4, 5, 6].map((n) =>
