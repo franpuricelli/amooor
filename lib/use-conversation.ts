@@ -9,6 +9,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useUser } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
 import { convexClient, isConvexConfigured } from "@/lib/convex-browser";
 import { parsePlan, type Plan } from "@/lib/plan";
@@ -102,6 +103,8 @@ export function useConversation(): UseConversation {
   const [customPalettes, setCustomPalettes] = useState<Swatch[]>([]);
   const [saving, setSaving] = useState(false);
 
+  const { isSignedIn } = useUser();
+
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messagesRef = useRef<Message[]>([]);
   const planRef = useRef<Plan | null>(null);
@@ -109,6 +112,57 @@ export function useConversation(): UseConversation {
   const paletteOverridesRef = useRef<Partial<Palette> | undefined>(undefined);
   const templateRef = useRef<string>(DEFAULT_TEMPLATE_ID);
   const tokenRef = useRef("");
+  const linkedRef = useRef(false);
+
+  // Vuelca un draft de Convex al estado. `replace`=true (adopción tras login) es
+  // autoritativo: limpia lo que el draft no traiga; `replace`=false (carga inicial)
+  // sólo pisa lo que exista, para no borrar lo que el usuario ya esté tipeando.
+  const hydrate = useCallback((draft: unknown, replace: boolean) => {
+    const d = draft as {
+      conversation?: unknown;
+      intakePlan?: unknown;
+      theme?: { palette?: unknown; overrides?: unknown };
+    } | null;
+    if (d?.conversation) {
+      const msgs = parseMessages(d.conversation);
+      messagesRef.current = msgs;
+      setMessagesRaw(msgs);
+    } else if (replace) {
+      messagesRef.current = [];
+      setMessagesRaw([]);
+    }
+    if (d?.intakePlan) {
+      const p = parsePlan(d.intakePlan as string);
+      planRef.current = p;
+      setPlanRaw(p);
+    } else if (replace) {
+      planRef.current = null;
+      setPlanRaw(null);
+    }
+    const pal = d?.theme?.palette;
+    if (typeof pal === "string" && pal) {
+      paletteRef.current = pal;
+      setPaletteRaw(pal);
+    } else if (replace) {
+      paletteRef.current = "rosa";
+      setPaletteRaw("rosa");
+    }
+    const ov = d?.theme?.overrides;
+    if (ov && typeof ov === "object") {
+      paletteOverridesRef.current = ov as Partial<Palette>;
+    } else if (replace) {
+      paletteOverridesRef.current = undefined;
+    }
+  }, []);
+
+  const loadDraft = useCallback(
+    async (t: string, replace: boolean) => {
+      if (!isConvexConfigured()) return;
+      const draft = await convexClient().query(api.drafts.get, { token: t });
+      hydrate(draft, replace);
+    },
+    [hydrate]
+  );
 
   // ── carga inicial (rehidrata del draft) ──────────────────────────────────────
   useEffect(() => {
@@ -132,38 +186,52 @@ export function useConversation(): UseConversation {
     }
     (async () => {
       try {
-        const draft = await convexClient().query(api.drafts.get, { token: t });
-        if (draft?.conversation) {
-          const msgs = parseMessages(draft.conversation);
-          messagesRef.current = msgs;
-          setMessagesRaw(msgs);
-        }
-        if (draft?.intakePlan) {
-          const p = parsePlan(draft.intakePlan);
-          planRef.current = p;
-          setPlanRaw(p);
-        }
-        const pal = draft?.theme?.palette;
-        if (typeof pal === "string" && pal) {
-          paletteRef.current = pal;
-          setPaletteRaw(pal);
-        }
-        const ov = draft?.theme?.overrides;
-        if (ov && typeof ov === "object") {
-          paletteOverridesRef.current = ov as Partial<Palette>;
-        }
-        const tpl = draft?.theme?.template;
-        if (typeof tpl === "string" && tpl) {
-          templateRef.current = tpl;
-          setTemplateRaw(tpl);
-        }
+        await loadDraft(t, false);
       } catch (e) {
         console.error("[useConversation] carga falló:", e);
       } finally {
         setReady(true);
       }
     })();
-  }, []);
+  }, [loadDraft]);
+
+  // ── al iniciar sesión: vincular el draft a la cuenta y, si la cuenta ya tenía
+  //    uno, adoptar su token (reanuda la historia en otro dispositivo) ───────────
+  useEffect(() => {
+    if (!isSignedIn) {
+      linkedRef.current = false; // permite re-vincular si cambia de cuenta
+      return;
+    }
+    if (!ready || linkedRef.current || !isConvexConfigured()) return;
+    const t = tokenRef.current;
+    if (!t) return;
+    linkedRef.current = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/account/link", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: t }),
+        });
+        if (!res.ok) {
+          linkedRef.current = false;
+          return;
+        }
+        const data = (await res.json()) as { token?: string };
+        const next = data?.token;
+        if (next && next !== tokenRef.current) {
+          // La cuenta ya tenía un draft → adoptamos su token y rehidratamos.
+          window.localStorage.setItem(TOKEN_KEY, next);
+          tokenRef.current = next;
+          setToken(next);
+          await loadDraft(next, true);
+        }
+      } catch (e) {
+        console.error("[useConversation] link de cuenta falló:", e);
+        linkedRef.current = false;
+      }
+    })();
+  }, [isSignedIn, ready, loadDraft]);
 
   const persist = useCallback(async () => {
     const t = tokenRef.current;

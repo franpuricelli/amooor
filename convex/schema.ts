@@ -99,6 +99,11 @@ export default defineSchema({
   drafts: defineTable({
     token: v.string(), // uuid del cliente (localStorage) — identidad del draft
     ownerId: v.optional(v.id("users")),
+    // Clerk user id (`user_...`) del dueño, si inició sesión. Vincula el draft a la
+    // cuenta para reanudar en otro dispositivo: el `token` local sigue siendo la
+    // clave (fotos/videos/audio lo usan), pero al loguearse el cliente adopta el
+    // token de la cuenta. Ver convex/account.ts + /api/account/link.
+    clerkUserId: v.optional(v.string()),
     email: v.optional(v.string()), // para re-activación + recibo (Resend, WP-4)
     productSlug: v.string(),
     templateSlug: v.string(),
@@ -122,6 +127,7 @@ export default defineSchema({
   })
     .index("by_token", ["token"])
     .index("by_owner", ["ownerId"])
+    .index("by_clerk_user", ["clerkUserId"])
     .index("by_email", ["email"]),
 
   // Fotos subidas contra un draft (WP-3/WP-4). Al pagar se copian a `photos`

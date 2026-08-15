@@ -8,6 +8,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { Show, SignInButton, UserButton } from "@clerk/nextjs";
 import Script from "next/script";
 import { PLANS, PLAN_ORDER } from "@/lib/pricing";
 import type { PlanId } from "@/lib/pricing";
@@ -67,9 +68,16 @@ export function MkNav() {
         </ul>
 
         <div className="mk-nav-right">
-          <a href={m.ui.langHref} className="mk-nav-lang" aria-label={m.ui.langLabel}>
-            {m.ui.langLabel}
-          </a>
+          <Show when="signed-out">
+            <SignInButton mode="modal">
+              <button type="button" className="mk-nav-signin">
+                Iniciar sesión
+              </button>
+            </SignInButton>
+          </Show>
+          <Show when="signed-in">
+            <UserButton />
+          </Show>
 
           <a href="/comenzar" className="mk-nav-cta">
             {m.hero.ctaLabel}

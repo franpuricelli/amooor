@@ -9,6 +9,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useUser, useClerk } from "@clerk/nextjs";
 import "./chat.css";
 import { useConversation, type Message } from "@/lib/use-conversation";
 import { GREETING_SUBLINE, STARTER_IDEAS } from "@/lib/intake-prompt";
@@ -88,6 +89,10 @@ function ArrowDown() {
 
 export default function Chat() {
   const convo = useConversation();
+  // Soft gate: el hero carga para todos, pero el primer envío al bot abre el
+  // modal de Clerk. useUser().isSignedIn puede ser undefined mientras carga.
+  const { isSignedIn } = useUser();
+  const { openSignIn } = useClerk();
   const [sending, setSending] = useState(false);
   const [thinking, setThinking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -340,6 +345,15 @@ export default function Chat() {
         return;
       }
 
+      // Soft gate: cualquier envío real al bot exige sesión. Va DESPUÉS del atajo
+      // "skip wizard" (que no toca la red y debe seguir andando) y antes de tocar
+      // los mensajes. Cubre chips de arranque, composer, deepen y refine porque
+      // todos pasan por acá.
+      if (!isSignedIn) {
+        openSignIn();
+        return;
+      }
+
       const converse = opts?.converse ?? false;
       // plan a la vista → cada mensaje refina (el plan se muestra directo, sin gate).
       const refine = !converse && hasPlan;
@@ -409,7 +423,7 @@ export default function Chat() {
         setRefining(false);
       }
     },
-    [sending, convo, hasPlan, consumeSSE, scrollToBottom]
+    [sending, convo, hasPlan, consumeSSE, scrollToBottom, isSignedIn, openSignIn]
   );
 
   const empty = convo.messages.length === 0 && !convo.plan && !approved;
@@ -543,7 +557,9 @@ export default function Chat() {
             Publicar
           </button>
         ) : (
-          convo.messages.length > 0 && (
+          // "Guardar" sólo tiene sentido sin sesión (pide login). Con sesión ya
+          // iniciada desaparece.
+          !isSignedIn && convo.messages.length > 0 && (
             <button
               type="button"
               className="ch-save-btn"

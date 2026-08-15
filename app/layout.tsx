@@ -1,4 +1,7 @@
 import type { Metadata, Viewport } from "next";
+import { Inter, Caveat, Fraunces } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
+import { esES } from "@clerk/localizations";
 import "./globals.css";
 import { fontVariables } from "./fonts";
 import { resolvePalette, paletteVars } from "@/lib/theme";
@@ -48,7 +51,12 @@ export default async function RootLayout({
       style={paletteStyle}
     >
       <body>
-        <TenantProvider content={content}>{children}</TenantProvider>
+        {/* ClerkProvider must live inside <body> (never around <html>), so
+            <html> keeps its per-tenant palette style + font classes. Spanish
+            localization matches the app voice. */}
+        <ClerkProvider localization={esES}>
+          <TenantProvider content={content}>{children}</TenantProvider>
+        </ClerkProvider>
       </body>
     </html>
   );
