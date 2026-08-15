@@ -1,35 +1,34 @@
-# Plantilla: `brutalist`
+# Template: `brutalist`
 
-**Neo-brutalista** — "Contraste fuerte, bloques y borde." Papel cálido, tinta
-casi negra, azul eléctrico + amarillo, tipografía chunky y sombras duras.
+**Neo-brutalist** — "Strong contrast, blocks and border." Warm paper, near-black
+ink, electric blue + yellow, chunky type and hard shadows.
 
 - **id:** `brutalist` · **vibe:** `brutalist`
-- **CSS:** bloque `[data-template="brutalist"]` en `app/globals.css`.
-- **Preview standalone:** `public/template/brutalist/` (fuente en
-  `templates/love-story/`, build con `NEXT_PUBLIC_THEME=brutalist`). El skin del
-  preview vivo se portó de ahí.
+- **CSS:** `[data-template="brutalist"]` block in `app/globals.css`.
+- **Standalone preview:** `public/template/brutalist/` (source in
+  `templates/love-story/`, built with `NEXT_PUBLIC_THEME=brutalist`). The live
+  preview skin was ported from there.
 
-## Identidad
+## Identity
 
-- **Canvas:** papel `#f4efe1` (fijo, ignora la paleta vía `!important`) con una
-  grilla de ingeniería tenue de 30px.
-- **Tinta:** casi negra `#141210`. **Pops:** azul eléctrico `#2f27e0` +
-  amarillo `#ffcf2e`.
-- **Tipografía:**
-  - display/headings: **Bricolage Grotesque** 700–800, tracking negativo,
-    sombra dura de color — `--font-display`
-  - tags/labels/botones: **Space Mono** en caps — `--font-mono`
+- **Canvas:** paper `#f4efe1` (fixed — ignores the palette via `!important`) with
+  a faint 30px engineering grid.
+- **Ink:** near-black `#141210`. **Pops:** electric blue `#2f27e0` + yellow
+  `#ffcf2e`.
+- **Typography:**
+  - display/headings: **Bricolage Grotesque** 700–800, negative tracking, hard
+    colored shadow — `--font-display`
+  - tags/labels/buttons: **Space Mono**, uppercase — `--font-mono`
   - body: **Archivo** — `--font-sans`
-- **Superficies:** cajas blancas sólidas, borde `2px` tinta, sombra dura
-  offset (`5px 5px 0`), sin blur. Botones azules que "se hunden" en hover.
-- **Esquinas:** rectas (`--r-*: 0`).
-- **Detalles:** eyebrow = tag mono amarillo con borde+sombra; `section-dark` =
-  bloque negro sólido; hero-amp azul con contorno; deck de países en bloques
-  azul/amarillo/papel; fotos encajadas con sombra dura.
-- **Se ocultan:** corazones flotantes / sobre cabezas, scrim del hero,
-  cursor-corazón.
+- **Surfaces:** solid white boxes, `2px` ink border, hard offset shadow
+  (`5px 5px 0`), no blur. Blue buttons that "press" on hover.
+- **Corners:** squared (`--r-*: 0`).
+- **Details:** eyebrow = yellow mono tag with border+shadow; `section-dark` =
+  solid black block; blue hero-amp with stroke; countries deck in
+  blue/yellow/paper blocks; photos boxed with a hard shadow.
+- **Hidden:** floating hearts / hearts above heads, hero scrim, heart cursor.
 
-## Fuentes (app/fonts.ts)
+## Fonts (app/fonts.ts)
 
 `bricolage` (`--font-bricolage`), `spaceMono` (`--font-space-mono`),
 `archivo` (`--font-archivo`).

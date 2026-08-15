@@ -1,31 +1,31 @@
-# Plantilla: `editorial`
+# Template: `editorial`
 
-**Fine-art claro y calmo** — "Tipografía grande, aire y calma." Un look de
-revista de bodas: crema cálido, tinta carbón, filetes finos, monocromo.
+**Light, calm fine-art** — "Big type, air and calm." A wedding-magazine look:
+warm cream, charcoal ink, hairline rules, monochrome.
 
 - **id:** `editorial` · **vibe:** `editorial`
-- **CSS:** bloque `[data-template="editorial"]` en `app/globals.css`.
-- **Preview standalone:** `public/template/editorial/` (fuente en
-  `templates/love-story/`, build con `NEXT_PUBLIC_THEME=editorial`). El skin del
-  preview vivo se portó de ahí.
+- **CSS:** `[data-template="editorial"]` block in `app/globals.css`.
+- **Standalone preview:** `public/template/editorial/` (source in
+  `templates/love-story/`, built with `NEXT_PUBLIC_THEME=editorial`). The live
+  preview skin was ported from there.
 
-## Identidad
+## Identity
 
-- **Canvas:** crema/greige `#f3f0ea` (fijo, ignora la paleta del usuario vía
-  `!important`). Un par de radiales cálidos en las esquinas.
-- **Tinta:** carbón `#2a251f`. Es monocromo — "accent" = carbón.
-- **Tipografía:** trío editorial —
+- **Canvas:** cream/greige `#f3f0ea` (fixed — ignores the user palette via
+  `!important`). A couple of warm radials in the corners.
+- **Ink:** charcoal `#2a251f`. It's monochrome — the "accent" is charcoal.
+- **Typography:** an editorial trio —
   - display/hero: **Parisienne** (script) — `--font-script`
-  - h2/h3/números: **Cormorant Garamond** (serif) — `--font-serif`
-  - eyebrows/botones/labels: **Montserrat** en caps con tracking `.22em` — `--font-sans`
-- **Superficies:** paneles claros PLANOS (sin blur/sombra), filetes de 1px.
-  Botones outline recto que se rellenan en hover.
-- **Esquinas:** rectas (`--r-*: 0`).
-- **Fotos:** casi monocromas (`grayscale(.9)`); hero en `grayscale(1)`.
-- **Se ocultan:** corazones flotantes, corazones sobre las cabezas, scrim del
-  hero, cursor-corazón. Emojis de contenido → monocromos.
+  - h2/h3/numbers: **Cormorant Garamond** (serif) — `--font-serif`
+  - eyebrows/buttons/labels: **Montserrat**, uppercase with `.22em` tracking — `--font-sans`
+- **Surfaces:** flat light panels (no blur/shadow), 1px hairline borders.
+  Squared outline buttons that fill on hover.
+- **Corners:** squared (`--r-*: 0`).
+- **Photos:** near-monochrome (`grayscale(.9)`); hero in `grayscale(1)`.
+- **Hidden:** floating hearts, hearts above the heads, hero scrim, heart cursor.
+  Content emojis → monochrome.
 
-## Fuentes (app/fonts.ts)
+## Fonts (app/fonts.ts)
 
 `montserrat` (`--font-montserrat`), `cormorant` (`--font-cormorant`),
 `parisienne` (`--font-parisienne`).

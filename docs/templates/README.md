@@ -1,68 +1,68 @@
 # Templates (skins) — `docs/templates/`
 
-Una **plantilla** es un *skin* del sitio del tenant: cambia tipografía, bordes,
-tratamiento de superficies y "sensación" del layout, manteniendo las MISMAS
-secciones, el mismo `content` y las fotos subidas. El usuario la elige en el
-chooser arriba del plan (`components/chat/TemplateChooser.tsx`) y se ve en vivo
-en el preview (upload + editor) y en el tenant publicado.
+A **template** is a *skin* of the tenant site: it changes typography, borders,
+surface treatment and the overall "feel" of the layout, while keeping the SAME
+sections, the same `content`, and the uploaded photos. The user picks it in the
+chooser above the plan (`components/chat/TemplateChooser.tsx`); it shows live in
+the preview (upload + editor) and on the published tenant.
 
-**Convención:** cada plantilla tiene un `.md` en esta carpeta. Al agregar una
-plantilla nueva, sumá su `.md` acá (mismo formato que los existentes).
+**Convention:** every template has a `.md` in this folder. When you add a new
+template, add its `.md` here (same shape as the existing ones).
 
-## Cómo funciona (task 2-B)
+## How it works (task 2-B)
 
-La plantilla es una dimensión del `Theme`, aparte de la paleta:
+The template is a dimension of `Theme`, separate from the palette:
 
 ```ts
 // lib/template.ts
 type Theme = { palette: PaletteId; template?: string; overrides?: Partial<Palette> }
 ```
 
-- Se **persiste** dentro de `draft.theme.template` (Convex). El estado vive en
-  `lib/use-conversation.ts` (`template` / `setTemplate`, calcado de `palette`),
-  con espejo en `localStorage[amooor_template]` para el flujo sin backend
+- **Persisted** inside `draft.theme.template` (Convex). State lives in
+  `lib/use-conversation.ts` (`template` / `setTemplate`, modelled on `palette`),
+  mirrored to `localStorage[amooor_template]` for the no-backend flow
   (`skip wizard`).
-- Se **aplica** como atributo `data-template="<id>"` en el root del render:
-  `<html>` en el tenant real (`app/layout.tsx`) y el `<div>` raíz del preview
-  (`components/wizard/PreviewSite.tsx`). Sin plantilla → base `romantic`.
-- El **CSS** de cada skin vive en `app/globals.css`, bajo `[data-template="<id>"]`.
-  `romantic` es la base (`:root`, sin bloque). Los 6 tokens de paleta que el
-  render inyecta inline sobre el mismo elemento (`--canvas`, `--canvas-soft`,
-  `--canvas-deep`, `--pink`, `--ink`, `--dark`) llevan `!important` en el bloque
-  del skin para ganarle al `style` inline.
-- Las **fuentes** se cargan en `app/fonts.ts` (un módulo compartido) y su
-  `.variable` viaja en el className del root (`fontVariables`), así el skin
-  rinde igual en escritorio (in-tree) y en el `<iframe>` celular (portal) de
-  `SitePreviewFrame`. Ojo: `font-family: var(--font-x), ...` es inválida entera
-  si `--font-x` no está definida (no cae al siguiente nombre) → hay que cargar
-  la fuente sí o sí.
+- **Applied** as a `data-template="<id>"` attribute on the render root:
+  `<html>` for the real tenant (`app/layout.tsx`) and the root `<div>` of the
+  preview (`components/wizard/PreviewSite.tsx`). No template → base `romantic`.
+- The **CSS** for each skin lives in `app/globals.css`, under
+  `[data-template="<id>"]`. `romantic` is the base (`:root`, no block). The 6
+  palette tokens the render injects inline on the same element (`--canvas`,
+  `--canvas-soft`, `--canvas-deep`, `--pink`, `--ink`, `--dark`) carry
+  `!important` in the skin block so they win over the inline `style`.
+- **Fonts** load in `app/fonts.ts` (a shared module) and their `.variable`
+  rides in the render root's className (`fontVariables`), so the skin renders the
+  same on desktop (in-tree) and inside the mobile `<iframe>` (portal) of
+  `SitePreviewFrame`. Note: `font-family: var(--font-x), ...` is invalid as a
+  whole if `--font-x` isn't defined (it does NOT fall through to the next name) —
+  so the font must be loaded, or the template won't render its typography.
 
-Enfoque actual = **style-skin** sobre el único `SECTION_REGISTRY`. NO hay
-componentes de sección por plantilla todavía; si en el futuro una variante
-necesita otro layout/estructura, ese es el salto a un multi-template real
-(cada uno implementando el contrato `TemplateManifest` de `lib/template.ts`) —
-mantené el invariante `id de sección == categoría` para no romper el scroll-sync
-del upload/editor.
+Current approach = **style-skin** over the single `SECTION_REGISTRY`. There are
+NO per-template section components yet; if a future variant needs a different
+layout/structure, that's the jump to a real multi-template system (each one
+implementing the `TemplateManifest` contract in `lib/template.ts`) — keep the
+`section id == category` invariant so the upload/editor scroll-sync doesn't break.
 
-## Checklist para agregar una plantilla nueva
+## Checklist to add a new template
 
-1. **Catálogo:** agregá su `TemplateOption` en `lib/templates-catalog.ts`
-   (`id`, `label`, `blurb`, `previewHref`, `vibe`). El `id` es la clave de todo.
-2. **Fuentes:** si trae familias nuevas, cargalas en `app/fonts.ts` y sumalas a
-   `fontVariables`.
-3. **CSS:** agregá el bloque `[data-template="<id>"] { … }` en `app/globals.css`
-   (junto a los otros skins). `!important` en los 6 tokens de paleta inline.
-4. **Preview standalone (opcional):** si querés el "ver" del card, exportá el
-   estático a `public/template/<id>/` (ver `app/template/<id>/page.tsx`).
-5. **Doc:** creá `docs/templates/<id>.md` (copiá el formato de acá).
-6. **Verificá:** `/comenzar` → `skip wizard` → elegí la plantilla → **Aprobar**
-   → el preview del upload debe verse distinto. `npx tsc --noEmit`.
+1. **Catalog:** add its `TemplateOption` in `lib/templates-catalog.ts`
+   (`id`, `label`, `blurb`, `previewHref`, `vibe`). The `id` is the key to
+   everything.
+2. **Fonts:** if it brings new families, load them in `app/fonts.ts` and add
+   them to `fontVariables`.
+3. **CSS:** add the `[data-template="<id>"] { … }` block in `app/globals.css`
+   (next to the other skins). `!important` on the 6 inline palette tokens.
+4. **Standalone preview (optional):** if you want the card's "view", export the
+   static build to `public/template/<id>/` (see `app/template/<id>/page.tsx`).
+5. **Doc:** create `docs/templates/<id>.md` (copy the shape used here).
+6. **Verify:** `/comenzar` → `skip wizard` → pick the template → **Aprobar** →
+   the upload preview should look different. `npx tsc --noEmit`.
 
-Nada más toca el pipeline: `data-template` fluye solo desde `theme.template` a
-través de `PreviewSite` / `app/layout.tsx`.
+Nothing else touches the pipeline: `data-template` flows on its own from
+`theme.template` through `PreviewSite` / `app/layout.tsx`.
 
-## Plantillas
+## Templates
 
-- [romantic](./romantic.md) — la base cálida (Puri & Ivi).
-- [editorial](./editorial.md) — fine-art claro, monocromo.
-- [brutalist](./brutalist.md) — neo-brutalista, bloques y contraste.
+- [romantic](./romantic.md) — the warm base (Puri & Ivi).
+- [editorial](./editorial.md) — light fine-art, monochrome.
+- [brutalist](./brutalist.md) — neo-brutalist, blocks and contrast.
