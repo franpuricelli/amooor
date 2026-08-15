@@ -46,7 +46,8 @@ export default function SitePreviewFrame({
     const compute = () => {
       raf = 0;
       const line = body.getBoundingClientRect().top + body.clientHeight * 0.3;
-      const secs = body.querySelectorAll<HTMLElement>("main section[id]");
+      // incluye el cierre (footer#closing), que no es un <section> del layout.
+      const secs = body.querySelectorAll<HTMLElement>("main section[id], footer[id]");
       let current: string | null = null;
       for (const el of secs) {
         if (el.getBoundingClientRect().top <= line) current = el.id;
@@ -69,9 +70,8 @@ export default function SitePreviewFrame({
   useEffect(() => {
     const body = bodyRef.current;
     if (!body || !scrollTo) return;
-    const el = body.querySelector<HTMLElement>(
-      `main section[id="${CSS.escape(scrollTo.cat)}"]`
-    );
+    // el cierre vive en footer#closing (fuera de <main>): matcheamos por id suelto.
+    const el = body.querySelector<HTMLElement>(`[id="${CSS.escape(scrollTo.cat)}"]`);
     if (!el) return;
     const top = el.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop;
     body.scrollTo({ top, behavior: "smooth" });

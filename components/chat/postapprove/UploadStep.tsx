@@ -32,6 +32,8 @@ interface SectionDesc {
   category: string;
   kind: SectionKind;
   title: string;
+  /** la intención de la sección del plan (qué muestra y por qué) */
+  intent: string;
   mode: Mode;
   /** el plan pensó esta sección para un video (se recomienda) */
   recommendVideo: boolean;
@@ -47,6 +49,7 @@ function buildSections(convo: UseConversation): SectionDesc[] {
       category,
       kind: section.kind,
       title: section.title,
+      intent: section.intent,
       mode: single ? "single" : "multi",
       recommendVideo: section.kind === "watch",
     });
@@ -155,19 +158,25 @@ export default function UploadStep({
     (convo.plan?.names ?? []).filter(Boolean).join(" & ") || "tu-sitio"
   );
 
+  // el cierre no es una <section> del layout: vive en footer#closing.
+  const scrollIdOf = (s: SectionDesc) => (s.kind === "closing" ? "closing" : s.category);
+
   // navegar a la sección i: resalta el rail y scrollea el preview hasta ella
   const goTo = useCallback(
     (i: number) => {
       if (i < 0 || i >= sections.length) return;
       setActive(i);
-      setScrollTarget((prev) => ({ cat: sections[i].category, nonce: (prev?.nonce ?? 0) + 1 }));
+      setScrollTarget((prev) => ({ cat: scrollIdOf(sections[i]), nonce: (prev?.nonce ?? 0) + 1 }));
     },
     [sections]
   );
   // preview → rail: al scrollear el preview, seguir la sección visible
   const onVisibleSection = useCallback(
     (id: string) => {
-      const i = sections.findIndex((s) => s.category === id);
+      const i =
+        id === "closing"
+          ? sections.findIndex((s) => s.kind === "closing")
+          : sections.findIndex((s) => s.category === id);
       if (i >= 0) setActive(i);
     },
     [sections]
@@ -383,12 +392,17 @@ function ActiveUploader({
   const single = section.mode === "single";
   const accept = "image/*,video/mp4,video/quicktime,video/webm";
 
-  const intent =
+  // copy = la intención de la sección del plan (qué es y qué mostrar). Si el plan no
+  // la trae, caemos a un texto por tipo de bloque.
+  const fallbackByKind =
     section.kind === "hero"
-      ? "La foto (o video) de portada, lo primero que se ve."
+      ? "La portada: la foto (o video) principal, lo primero que se ve."
       : section.kind === "closing"
-        ? "El dibujo o imagen del cierre (se da vuelta y revela tu mensaje)."
-        : "Subí fotos o un video. Arrastrá para reordenar: la primera aparece primero.";
+        ? "El cierre del sitio: una foto de ustedes para el final."
+        : section.kind === "gallery"
+          ? "Todas las fotos que quieras sumar al muro de recuerdos."
+          : "Las fotos (o un video) que cuentan esta parte de la historia.";
+  const desc = section.intent?.trim() || fallbackByKind;
 
   const pickFiles = () => fileRef.current?.click();
 
@@ -397,9 +411,15 @@ function ActiveUploader({
       <div className="pa-uploader-head">
         <div className="pa-uploader-headtext">
           <h2 className="pa-uploader-title">{section.title}</h2>
-          <p className="pa-uploader-sub">{intent}</p>
+          <p className="pa-uploader-sub">{desc}</p>
           {section.recommendVideo && (
-            <p className="pa-reco">Se recomienda un video en esta sección.</p>
+            <p className="pa-reco">📹 Se recomienda un video en esta sección.</p>
+          )}
+          {section.kind === "closing" && (
+            <p className="pa-reco">
+              ✏️ Con esta foto creamos un dibujo (estilo ilustración) para el cierre, que
+              se da vuelta y revela tu mensaje.
+            </p>
           )}
         </div>
       </div>

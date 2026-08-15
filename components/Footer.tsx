@@ -9,7 +9,7 @@ export default function Footer() {
   const content = useContent();
   const { footer, dates } = content;
   return (
-    <footer className="footer section-dark">
+    <footer id="closing" className="footer section-dark">
       <DrawingFlip />
       <h2 className="h2 reveal" style={{ "--reveal-delay": "0.08s" } as React.CSSProperties}>
         <EditableText path="footer.title" value={footer.title} />
