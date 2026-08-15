@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as account from "../account.js";
 import type * as assets from "../assets.js";
 import type * as audio from "../audio.js";
 import type * as drafts from "../drafts.js";
@@ -25,6 +26,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  account: typeof account;
   assets: typeof assets;
   audio: typeof audio;
   drafts: typeof drafts;

@@ -1698,6 +1698,19 @@
   width: 28px;
   height: 28px;
 }
+/* foto de perfil de Clerk → recortada en círculo (el <img> llega cuadrado) */
+.ch-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+/* signed-in: sólo el círculo, sin nombre → botón redondo simétrico */
+.ch-profile-btn.avatar-only {
+  padding: 0.25rem;
+  gap: 0;
+}
 .ch-profile-btn-label {
   white-space: nowrap;
 }
