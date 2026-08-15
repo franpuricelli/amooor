@@ -10,10 +10,16 @@ import { useLenis } from "lenis/react";
 import { EditableText } from "@/lib/edit-context";
 
 const COLS = 8;
+// Con pocas fotos, tantas columnas quedan cortas y el marquee se ve "colapsado"
+// (huecos negros al hacer loop). Reducimos columnas y repetimos cada columna
+// hasta este mínimo de tiles para que el alto siempre quede lleno.
+const MIN_PER_COL = 12;
 
 /**
- * Wall of love: 8 columns of memories drifting up/down in a loop (no infinite
- * page scroll). The CTA opens a full-screen overlay with every photo.
+ * Wall of love: columns of memories drifting up/down in a loop (no infinite
+ * page scroll). The number of columns adapts to how many photos there are so it
+ * never collapses with few images. The CTA opens a full-screen overlay with
+ * every photo.
  */
 export default function Galeria({ id }: { id: string }) {
   const { open } = useLightbox();
@@ -26,14 +32,22 @@ export default function Galeria({ id }: { id: string }) {
     () => allPhotos.map((p) => ({ src: full(p.cat, p.slug), thumb: thumb(p.cat, p.slug) })),
     [allPhotos, full, thumb]
   );
+  // Menos fotos → menos columnas (cada una más ancha y con más tiles).
+  const colCount = Math.max(1, Math.min(COLS, Math.ceil(allPhotos.length / 2)));
   const columns = useMemo(() => {
     const cols = Array.from(
-      { length: COLS },
+      { length: colCount },
       () => [] as { cat: string; slug: string; i: number }[]
     );
-    allPhotos.forEach((p, i) => cols[i % COLS].push({ ...p, i }));
-    return cols;
-  }, [allPhotos]);
+    allPhotos.forEach((p, i) => cols[i % colCount].push({ ...p, i }));
+    // Repetimos los tiles de cada columna hasta llenar el alto del marquee, así
+    // el loop no deja huecos cuando hay pocas fotos.
+    return cols.map((col) => {
+      if (col.length === 0) return col;
+      const times = Math.ceil(MIN_PER_COL / col.length);
+      return Array.from({ length: times }, () => col).flat();
+    });
+  }, [allPhotos, colCount]);
 
   // lock page scroll while the full-screen overlay is open
   useEffect(() => {
@@ -46,12 +60,16 @@ export default function Galeria({ id }: { id: string }) {
 
   const photoAria = (i: number) => fill(ui.photoAria, { n: i + 1, total: totalPhotos });
 
-  const tile = (p: { cat: string; slug: string; i: number }, extra?: number) => (
+  const tile = (
+    p: { cat: string; slug: string; i: number },
+    key: string,
+    interactive: boolean
+  ) => (
     <button
-      key={`${p.cat}/${p.slug}/${extra ?? 0}`}
+      key={key}
       className="wol-tile"
       onClick={() => open(items, p.i)}
-      tabIndex={extra ? -1 : 0}
+      tabIndex={interactive ? 0 : -1}
       aria-label={photoAria(p.i)}
     >
       <img src={thumb(p.cat, p.slug)} alt="" loading="lazy" decoding="async" />
@@ -67,7 +85,15 @@ export default function Galeria({ id }: { id: string }) {
       />
 
       <div className="wrap">
-        <div className="wol-marquee reveal">
+        <div
+          className="wol-marquee reveal"
+          style={
+            {
+              "--cols": colCount,
+              "--cols-m": Math.min(colCount, 4),
+            } as React.CSSProperties
+          }
+        >
           {columns.map((col, ci) => (
             <div
               key={ci}
@@ -76,9 +102,11 @@ export default function Galeria({ id }: { id: string }) {
             >
               <div className="wol-track">
                 {/* two copies for a seamless loop */}
-                <div className="wol-half">{col.map((p) => tile(p))}</div>
+                <div className="wol-half">
+                  {col.map((p, ti) => tile(p, `${p.cat}/${p.slug}/${ti}`, true))}
+                </div>
                 <div className="wol-half" aria-hidden>
-                  {col.map((p) => tile(p, 1))}
+                  {col.map((p, ti) => tile(p, `b/${p.cat}/${p.slug}/${ti}`, false))}
                 </div>
               </div>
             </div>

@@ -5,15 +5,17 @@ import { useContent } from "@/lib/tenant";
 
 /**
  * The closing video of the "watch" section. Two providers, chosen by data:
- *  - "tiktok": official TikTok blockquote embed (embed.js hydrates it into the
- *    real player; works most reliably on a deployed domain — see README).
- *  - "video": a self-hosted <video> (mp4/webm) from `content.watch.video.src`,
- *    the replacement path so a tenant can drop in their own clip.
+ *  - "video" (the default): a self-hosted <video> (mp4/webm) from
+ *    `content.watch.video.src` — the tenant's own uploaded clip. Renders nothing
+ *    until a clip exists, so the section never shows an empty player.
+ *  - "tiktok": kept for back-compat when a tenant pastes a TikTok link; the
+ *    official blockquote embed (embed.js hydrates it into the real player).
  */
-export default function TikTokEmbed() {
+export default function WatchVideo() {
   const v = useContent().watch.video;
 
-  if (v.provider === "video" && v.src) {
+  if (v.provider === "video") {
+    if (!v.src) return null;
     return (
       <video
         className="watch-video"
@@ -26,6 +28,7 @@ export default function TikTokEmbed() {
     );
   }
 
+  if (!v.videoId) return null;
   return (
     <>
       <blockquote

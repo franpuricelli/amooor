@@ -330,10 +330,10 @@ section {
   border-radius: 8px;
 }
 
-/* wall of love marquee: 8 drifting columns */
+/* wall of love marquee: drifting columns (count adapts to photo count) */
 .wol-marquee {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(var(--cols, 8), 1fr);
   gap: 0.5rem;
   height: min(86svh, 880px);
   overflow: hidden;
@@ -394,7 +394,7 @@ section {
 }
 @media (max-width: 860px) {
   .wol-marquee {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(var(--cols-m, 4), 1fr);
   }
   .wol-col:nth-child(n + 5) {
     display: none;
@@ -1330,12 +1330,12 @@ section {
   font-style: italic;
   margin-bottom: 3rem;
 }
-.tiktok-card {
+.watch-video-card {
   max-width: 640px;
   margin: 0 auto;
   padding: clamp(1.2rem, 3vw, 2rem);
 }
-.tiktok-label {
+.watch-video-label {
   text-align: center;
   font-weight: 650;
   color: var(--white-70);
