@@ -16,6 +16,8 @@
 
 import type { ReactElement } from "react";
 import EditorialTemplate from "./editorial/EditorialTemplate";
+import editorialEs from "./editorial/content";
+import editorialEn from "./editorial/content.en";
 import editorialPlain from "./editorial/content.plain";
 
 export type Locale = "es" | "en";
@@ -33,14 +35,21 @@ export const TEMPLATE_PREVIEWS: Record<string, TemplatePreview> = {
     name: "Historia",
     description:
       "Plantilla editorial narrativa para contar la historia de una pareja. Serif elegante, neutros cálidos y acento oliva.",
-    render: () => <EditorialTemplate content={editorialPlain} />,
+    render: (locale) => (
+      <EditorialTemplate content={locale === "en" ? editorialEn : editorialEs} />
+    ),
   },
   romantic: {
     slug: "romantic",
     name: "Romántica",
     description:
       "Misma estructura narrativa que Historia, con una piel romántica: fondos blush, acento rosa/vino y detalles en itálica.",
-    render: () => <EditorialTemplate content={editorialPlain} variant="romantic" />,
+    render: (locale) => (
+      <EditorialTemplate
+        content={locale === "en" ? editorialEn : editorialEs}
+        variant="romantic"
+      />
+    ),
   },
   plain: {
     slug: "plain",
