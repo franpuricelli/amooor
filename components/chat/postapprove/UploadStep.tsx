@@ -533,48 +533,83 @@ function ActiveUploader({
             </button>
           </div>
         </div>
-      ) : (
-        <>
-          <div
-            className={`pa-drop pa-drop-sm ${single ? "pa-drop-hero" : ""} ${dropZoneOver ? "over" : ""}`}
-            role="button"
-            tabIndex={0}
+      ) : photos.length === 0 && !video ? (
+        // vacío: el mismo componente que Multimedia del editor (mensaje + pill),
+        // pero acá también acepta arrastrar el archivo encima.
+        <div
+          className={`pa-media-empty pa-upload-empty ${dropZoneOver ? "over" : ""}`}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDropZoneOver(true);
+          }}
+          onDragLeave={() => setDropZoneOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDropZoneOver(false);
+            if (e.dataTransfer.files?.length) onFiles(e.dataTransfer.files);
+          }}
+        >
+          <p>
+            Todavía no hay {single ? "imagen" : "fotos"} en <b>{section.title}</b>.
+          </p>
+          <button
+            type="button"
+            className="pa-media-empty-add"
             onClick={pickFiles}
-            onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && pickFiles()}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDropZoneOver(true);
-            }}
-            onDragLeave={() => setDropZoneOver(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setDropZoneOver(false);
-              if (e.dataTransfer.files?.length) onFiles(e.dataTransfer.files);
-            }}
+            disabled={uploading}
           >
             {uploading ? (
               <span className="pa-drop-loading">
                 Subiendo <LoadDots />
               </span>
             ) : single ? (
-              "＋ Subí una foto o video"
+              "Elegir imagen o video"
             ) : (
-              "＋ Elegí o arrastrá fotos o un video"
+              "Agregar fotos o video"
             )}
-          </div>
-          <input
-            ref={fileRef}
-            type="file"
-            accept={accept}
-            multiple={!single}
-            hidden
-            onChange={(e) => {
-              if (e.target.files?.length) onFiles(e.target.files);
-              e.target.value = "";
-            }}
-          />
-        </>
+          </button>
+        </div>
+      ) : (
+        // ya hay fotos (multi): la zona para SEGUIR sumando, arriba de la grilla.
+        <div
+          className={`pa-drop pa-drop-sm ${dropZoneOver ? "over" : ""}`}
+          role="button"
+          tabIndex={0}
+          onClick={pickFiles}
+          onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && pickFiles()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDropZoneOver(true);
+          }}
+          onDragLeave={() => setDropZoneOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDropZoneOver(false);
+            if (e.dataTransfer.files?.length) onFiles(e.dataTransfer.files);
+          }}
+        >
+          {uploading ? (
+            <span className="pa-drop-loading">
+              Subiendo <LoadDots />
+            </span>
+          ) : (
+            "＋ Elegí o arrastrá más fotos o un video"
+          )}
+        </div>
       )}
+
+      {/* input único (sirve a la portada, el estado vacío y la zona de sumar más) */}
+      <input
+        ref={fileRef}
+        type="file"
+        accept={accept}
+        multiple={!single}
+        hidden
+        onChange={(e) => {
+          if (e.target.files?.length) onFiles(e.target.files);
+          e.target.value = "";
+        }}
+      />
 
       {/* grilla de fotos (multi) con número de orden + reorder */}
       {!single && photos.length > 0 && (
