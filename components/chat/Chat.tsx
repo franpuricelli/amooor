@@ -110,6 +110,9 @@ export default function Chat() {
   const [publishing, setPublishing] = useState(false);
   const [publishNotice, setPublishNotice] = useState<string | null>(null);
   const [publishErr, setPublishErr] = useState<string | null>(null);
+  // card "Publicado" (popover del header): thumbnail + Ver sitio / Publicar
+  const [pubCardOpen, setPubCardOpen] = useState(false);
+  const pubGroupRef = useRef<HTMLDivElement | null>(null);
   const publishStatus: DotStatus = publishing
     ? "busy"
     : siteStatus === "live"
@@ -238,14 +241,18 @@ export default function Chat() {
         const data = (await res.json()) as {
           status: "live" | "paused";
           subdomain: string;
+          url: string;
         };
         setSiteStatus(data.status);
         setSiteSub(data.subdomain);
         setPublishNotice(
           action === "pause" ? "Tu sitio quedó pausado." : "¡Tu sitio está publicado!"
         );
+        if (action === "publish") setPubCardOpen(true);
+        return data;
       } catch (e) {
         setPublishErr(e instanceof Error ? e.message : "Algo salió mal");
+        return null;
       } finally {
         setPublishing(false);
       }
@@ -253,10 +260,36 @@ export default function Chat() {
     [convo.token, publishing]
   );
 
+  // Publicar y abrir el sitio en una pestaña nueva. Abrimos la pestaña en blanco
+  // SINCRÓNICAMENTE dentro del click (así el navegador no la bloquea) y le
+  // seteamos la URL cuando el publish resuelve.
+  const publishAndOpen = useCallback(() => {
+    if (publishing) return;
+    const w = typeof window !== "undefined" ? window.open("", "_blank") : null;
+    void runPublish("publish").then((data) => {
+      const url = data?.url || (data?.subdomain ? `/s/${data.subdomain}` : null);
+      if (!w) return;
+      if (url) w.location.href = url;
+      else w.close();
+    });
+  }, [publishing, runPublish]);
+
   // Al entrar al editor (aprobado) traemos el estado del sitio (si ya existe).
   useEffect(() => {
     if (approved) void refreshSite();
   }, [approved, refreshSite]);
+
+  // Cerrar la card "Publicado" al hacer click afuera.
+  useEffect(() => {
+    if (!pubCardOpen) return;
+    const onDoc = (e: MouseEvent) => {
+      if (pubGroupRef.current && !pubGroupRef.current.contains(e.target as Node)) {
+        setPubCardOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [pubCardOpen]);
 
   const scrollToBottom = useCallback((smooth = true) => {
     const el = mainRef.current;
@@ -610,57 +643,70 @@ export default function Chat() {
           </ol>
         )}
         {approved ? (
-          <div className="pa-publish-group" style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            {siteSub && siteStatus !== "none" && (
-              <a
-                className="ch-save-btn"
-                href={`/s/${siteSub}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                title={
-                  siteStatus === "paused"
-                    ? "Tu sitio está pausado (fuera de línea)"
-                    : "Abrir tu sitio publicado"
-                }
-              >
-                {siteStatus === "paused" ? "Pausado" : "Ver sitio"}
-              </a>
-            )}
-            {siteStatus === "live" && (
+          <div className="pa-publish-group" ref={pubGroupRef}>
+            {siteStatus === "none" ? (
+              // primer publish → botón directo (abre el sitio en pestaña nueva)
               <button
                 type="button"
-                className="ch-save-btn"
-                onClick={() => runPublish("pause")}
+                className="ch-save-btn pa-publish-btn"
+                onClick={publishAndOpen}
                 disabled={publishing}
-                title="Pausar el sitio (queda fuera de línea)"
+                title="Publicar tu sitio"
               >
-                Pausar
+                <StatusDot status={publishStatus} />
+                {publishing ? "Publicando…" : "Publicar"}
+              </button>
+            ) : (
+              // ya publicado → abre la card con el thumbnail + acciones
+              <button
+                type="button"
+                className="ch-save-btn pa-publish-btn"
+                onClick={() => setPubCardOpen((o) => !o)}
+                title="Tu sitio publicado"
+              >
+                <StatusDot status={publishStatus} />
+                Publicado
               </button>
             )}
-            <button
-              type="button"
-              className="ch-save-btn pa-publish-btn"
-              onClick={() => runPublish("publish")}
-              disabled={publishing}
-              title={
-                publishing
-                  ? "Publicando…"
-                  : siteStatus === "live"
-                    ? "Actualizar el sitio con tus últimos cambios"
-                    : siteStatus === "paused"
-                      ? "Reactivar el sitio"
-                      : "Publicar tu sitio"
-              }
-            >
-              <StatusDot status={publishStatus} />
-              {publishing
-                ? "Publicando…"
-                : siteStatus === "live"
-                  ? "Actualizar"
-                  : siteStatus === "paused"
-                    ? "Reactivar"
-                    : "Publicar"}
-            </button>
+
+            {pubCardOpen && siteSub && siteStatus !== "none" && (
+              <div className="pa-pub-card" role="dialog" aria-label="Tu sitio publicado">
+                <a
+                  className="pa-pub-thumb"
+                  href={`/s/${siteSub}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Abrir tu sitio"
+                >
+                  <iframe
+                    src={`/s/${siteSub}`}
+                    title="Vista previa del sitio"
+                    tabIndex={-1}
+                    scrolling="no"
+                    aria-hidden="true"
+                  />
+                </a>
+                <div className="pa-pub-actions">
+                  <a
+                    className="ch-save-btn"
+                    href={`/s/${siteSub}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Ver sitio ↗
+                  </a>
+                  <button
+                    type="button"
+                    className="ch-save-btn pa-publish-btn"
+                    onClick={publishAndOpen}
+                    disabled={publishing}
+                    title="Actualizar y abrir tu sitio"
+                  >
+                    {publishing ? "Publicando…" : "Publicar"}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           // "Guardar" sólo tiene sentido sin sesión (pide login). Con sesión ya
