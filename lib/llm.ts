@@ -127,6 +127,56 @@ function safeParse(s: string): any | null {
   }
 }
 
+/** Espera `ms`, cancelable por el signal (rechaza si se aborta). */
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) return reject(new DOMException("Aborted", "AbortError"));
+    const t = setTimeout(resolve, ms);
+    signal?.addEventListener(
+      "abort",
+      () => {
+        clearTimeout(t);
+        reject(new DOMException("Aborted", "AbortError"));
+      },
+      { once: true }
+    );
+  });
+}
+
+/** ms a esperar tras un 429: usa Retry-After si viene, si no backoff (1s, 2s, 4s…). */
+function retryAfterMs(res: Response, attempt: number): number {
+  const secs = Number.parseInt(res.headers.get("retry-after") ?? "", 10);
+  if (Number.isFinite(secs) && secs > 0) return secs * 1000;
+  return Math.min(1000 * 2 ** attempt, 8000);
+}
+
+/**
+ * POST a Moonshot con reintentos ante 429 (el org tiene un tope de RPM muy bajo, y un
+ * turno dispara varias llamadas). Espera lo que sugiere Retry-After (o un backoff
+ * exponencial) y reintenta con el mismo body; el resto de los status se devuelven tal
+ * cual para que cada caller los maneje.
+ */
+async function kimiFetch(
+  p: KimiProvider,
+  body: unknown,
+  signal?: AbortSignal,
+  retries = 3
+): Promise<Response> {
+  const init: RequestInit = {
+    method: "POST",
+    headers: p.headers,
+    body: JSON.stringify(body),
+    signal,
+  };
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(p.url, init);
+    if (res.status !== 429 || attempt >= retries) return res;
+    // 429 = tope de RPM de la org: soltamos el body y reintentamos tras esperar.
+    await res.body?.cancel().catch(() => {});
+    await sleep(retryAfterMs(res, attempt), signal);
+  }
+}
+
 // ── turno agéntico: razona (thinking) + puede buscar en la web ($web_search) ──
 export type AgentEvent =
   | { type: "activity"; activity: Activity }
@@ -192,12 +242,7 @@ export async function* runAgentTurn(
     if (!useThinking) body.top_p = 0.95;
     if (tools) body.tools = tools;
 
-    const res = await fetch(p.url, {
-      method: "POST",
-      headers: p.headers,
-      body: JSON.stringify(body),
-      signal,
-    });
+    const res = await kimiFetch(p, body, signal);
     if (!res.ok || !res.body) {
       throw new Error(`Kimi ${res.status}: ${await res.text().catch(() => "")}`);
     }
@@ -362,12 +407,7 @@ async function assessChecklist(
       false,
       250
     );
-    const res = await fetch(p.url, {
-      method: "POST",
-      headers: p.headers,
-      body: JSON.stringify(body),
-      signal,
-    });
+    const res = await kimiFetch(p, body, signal);
     if (!res.ok) return { satisfied: false, missing: [] };
     const data = await res.json();
     const text = data?.choices?.[0]?.message?.content;
@@ -444,12 +484,7 @@ export async function synthesizePlan(
     ? buildBody(p, [{ role: "system", content: system }, ...messages], "instant", false, 3500)
     : buildBody(p, [{ role: "system", content: system }, ...messages], "deep", false);
 
-  const res = await fetch(p.url, {
-    method: "POST",
-    headers: p.headers,
-    body: JSON.stringify(body),
-    signal,
-  });
+  const res = await kimiFetch(p, body, signal);
   if (!res.ok) {
     throw new Error(`Kimi plan ${res.status}: ${await res.text().catch(() => "")}`);
   }
@@ -488,12 +523,7 @@ export async function editSiteContent(
     3500
   );
 
-  const res = await fetch(p.url, {
-    method: "POST",
-    headers: p.headers,
-    body: JSON.stringify(body),
-    signal,
-  });
+  const res = await kimiFetch(p, body, signal);
   if (!res.ok) {
     throw new Error(`Kimi site ${res.status}: ${await res.text().catch(() => "")}`);
   }
