@@ -190,19 +190,21 @@ export default function EditStep({
     (id: string, sw?: Swatch) => {
       const overrides: Partial<Palette> | undefined =
         sw && id.startsWith("custom-") ? sw.palette : undefined;
-      onTheme({ palette: id as PaletteId, overrides });
+      // preservá la plantilla elegida (task 2-B): el theme guardado la lleva.
+      onTheme({ palette: id as PaletteId, template: theme.template, overrides });
       convo.setPalette(id, overrides);
       if (token && isConvexConfigured()) {
         void convexClient().mutation(api.drafts.save, {
           token,
           theme: {
             palette: id,
+            ...(theme.template ? { template: theme.template } : {}),
             ...(overrides ? { overrides: overrides as Record<string, string> } : {}),
           },
         });
       }
     },
-    [onTheme, convo, token]
+    [onTheme, convo, token, theme.template]
   );
 
   const toolbar = (

@@ -43,6 +43,7 @@ export const orderStatus = v.union(
 /** Theme de un tenant: id de paleta + overrides opcionales (ver lib/theme.ts). */
 export const themeValidator = v.object({
   palette: v.string(),
+  template: v.optional(v.string()), // plantilla/skin elegida (task 2-B, ver lib/template.ts)
   overrides: v.optional(v.record(v.string(), v.string())),
 });
 
