@@ -171,8 +171,11 @@ export default function EditStep({
   const rebind = useCallback(async () => {
     if (!token || !isConvexConfigured()) return;
     try {
-      const rows = await convexClient().query(api.photos.listDraftPhotos, { draftToken: token });
-      const next = parseContent(rebindMedia(content, mediaFromPhotos(rows))) as Content;
+      const [rows, audioRow] = await Promise.all([
+        convexClient().query(api.photos.listDraftPhotos, { draftToken: token }),
+        convexClient().query(api.audio.getDraftAudio, { draftToken: token }),
+      ]);
+      const next = parseContent(rebindMedia(content, mediaFromPhotos(rows, audioRow?.src))) as Content;
       onContent(next);
       await convexClient().mutation(api.drafts.save, { token, content: next, status: "ready" });
     } catch (e) {

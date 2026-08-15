@@ -20,7 +20,7 @@ import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { planSectionSlugs, planToWizardState } from "@/lib/plan-to-state";
 import { generateContent, mediaFromPhotos } from "@/lib/generate";
-import { uploadImage, uploadVideo } from "@/lib/media-client";
+import { uploadImage, uploadVideo, uploadAudio } from "@/lib/media-client";
 import { slugifyCouple } from "@/lib/subdomain";
 import type { SectionKind } from "@/lib/plan";
 import type { Theme } from "@/lib/template";
@@ -87,6 +87,10 @@ export default function UploadStep({
   const sections = useMemo(() => buildSections(convo), [convo]);
   const [rows, setRows] = useState<Doc<"draftPhotos">[]>([]);
   const [videos, setVideos] = useState<Doc<"draftVideos">[]>([]);
+  // música de fondo del sitio (mp3 opcional que toca el ❤ del navbar)
+  const [audio, setAudio] = useState<Doc<"draftAudio"> | null>(null);
+  const [audioBusy, setAudioBusy] = useState(false);
+  const audioRef = useRef<HTMLInputElement | null>(null);
   const [active, setActive] = useState(0);
   const [pending, setPending] = useState<Record<string, number>>({});
   const [err, setErr] = useState<string | null>(null);
@@ -98,12 +102,14 @@ export default function UploadStep({
     if (!token || !isConvexConfigured()) return;
     try {
       const c = convexClient();
-      const [p, v] = await Promise.all([
+      const [p, v, a] = await Promise.all([
         c.query(api.photos.listDraftPhotos, { draftToken: token }),
         c.query(api.videos.listDraftVideos, { draftToken: token }),
+        c.query(api.audio.getDraftAudio, { draftToken: token }),
       ]);
       setRows(p);
       setVideos(v);
+      setAudio(a);
     } catch (e) {
       console.error("[upload] refresh falló:", e);
     }
@@ -140,9 +146,10 @@ export default function UploadStep({
           thumbUrl: r.thumbUrl,
           fullUrl: r.fullUrl,
           order: r.order,
-        }))
+        })),
+        audio?.src
       ),
-    [rows]
+    [rows, audio]
   );
   const previewContent = useMemo(() => {
     if (!convo.plan) return null;
@@ -238,6 +245,38 @@ export default function UploadStep({
     await refresh();
   };
 
+  // ── música de fondo (mp3): subir / quitar ───────────────────────────────────
+  const pickAudio = () => audioRef.current?.click();
+  const onAudioFile = useCallback(
+    (file: File) => {
+      setErr(null);
+      setAudioBusy(true);
+      (async () => {
+        try {
+          await uploadAudio(file, token);
+        } catch (e) {
+          setErr((e as Error).message);
+        } finally {
+          setAudioBusy(false);
+          await refresh();
+        }
+      })();
+    },
+    [token, refresh]
+  );
+  const removeAudio = useCallback(async () => {
+    if (!isConvexConfigured()) return;
+    setAudioBusy(true);
+    try {
+      await convexClient().mutation(api.audio.deleteDraftAudio, { draftToken: token });
+    } catch (e) {
+      console.error("[upload] quitar música falló:", e);
+    } finally {
+      setAudioBusy(false);
+      await refresh();
+    }
+  }, [token, refresh]);
+
   const reorder = async (cat: string, from: number, to: number) => {
     const arr = photosOf(cat);
     if (from === to || from < 0 || to < 0 || from >= arr.length || to >= arr.length) return;
@@ -312,6 +351,54 @@ export default function UploadStep({
               );
             })}
           </ul>
+
+          {/* música de fondo del sitio: el mp3 que toca el ❤ del navbar al abrir */}
+          <div className="pa-rail-music">
+            <p className="pa-rail-music-title">Música de fondo</p>
+            <p className="pa-rail-music-sub">
+              Un MP3 que suena al abrir el sitio, en el ❤ del navbar.
+            </p>
+            {audio ? (
+              <div className="pa-rail-music-has">
+                <div className="pa-rail-music-file">
+                  <span className="pa-rail-music-name" title={audio.filename || undefined}>
+                    🎵 {audio.filename || "tu-cancion.mp3"}
+                  </span>
+                  <button
+                    type="button"
+                    className="pa-rail-music-x"
+                    aria-label="Quitar la música"
+                    onClick={removeAudio}
+                    disabled={audioBusy}
+                  >
+                    ✕
+                  </button>
+                </div>
+                {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                <audio className="pa-rail-music-player" src={audio.src} controls preload="none" />
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="pa-rail-music-add"
+                onClick={pickAudio}
+                disabled={audioBusy}
+              >
+                {audioBusy ? <LoadDots /> : "＋ Subir MP3"}
+              </button>
+            )}
+            <input
+              ref={audioRef}
+              type="file"
+              accept="audio/mpeg,audio/mp3,.mp3"
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) onAudioFile(f);
+                e.target.value = "";
+              }}
+            />
+          </div>
         </nav>
 
         {/* izquierda: el uploader de la sección activa (una a la vez) */}

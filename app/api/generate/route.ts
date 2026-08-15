@@ -73,7 +73,12 @@ export async function POST(req: NextRequest) {
 
   // Genera el content (determinista + mejora IA opcional).
   const rows = await c.query(api.photos.listDraftPhotos, { draftToken });
-  const media = rows.length ? mediaFromPhotos(rows) : undefined;
+  // Música de fondo subida (mp3 del navbar) → content.media.audioUrl.
+  const audioRow = await c.query(api.audio.getDraftAudio, { draftToken });
+  const media =
+    rows.length || audioRow
+      ? mediaFromPhotos(rows, audioRow?.src)
+      : undefined;
 
   // Rama chat-first: si el draft tiene `intakePlan` aprobado y NO tiene answers
   // del wizard viejo, generamos desde el plan (Plan → WizardState). Si no, se

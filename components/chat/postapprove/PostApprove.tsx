@@ -96,10 +96,11 @@ export default function PostApprove({
     }
     if (convo.token && isConvexConfigured()) {
       try {
-        const rows = await convexClient().query(api.photos.listDraftPhotos, {
-          draftToken: convo.token,
-        });
-        const next = parseContent(rebindMedia(content, mediaFromPhotos(rows)));
+        const [rows, audioRow] = await Promise.all([
+          convexClient().query(api.photos.listDraftPhotos, { draftToken: convo.token }),
+          convexClient().query(api.audio.getDraftAudio, { draftToken: convo.token }),
+        ]);
+        const next = parseContent(rebindMedia(content, mediaFromPhotos(rows, audioRow?.src)));
         setContent(next as Content);
         await convexClient().mutation(api.drafts.save, {
           token: convo.token,

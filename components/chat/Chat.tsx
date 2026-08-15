@@ -510,7 +510,7 @@ export default function Chat() {
               return (
                 <li
                   key={st.key}
-                  className={`ch-step ${done ? "done" : ""} ${on ? "on" : ""} ${nav ? "nav" : ""}`}
+                  className={`ch-step ${done ? "done" : ""} ${on ? "on" : ""} ${nav ? "stepnav" : ""}`}
                   aria-current={on ? "step" : undefined}
                   {...(nav
                     ? {
