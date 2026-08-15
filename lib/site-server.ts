@@ -8,7 +8,7 @@ import "server-only";
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { cache } from "react";
-import { headers, cookies } from "next/headers";
+import { headers } from "next/headers";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 import { content as defaultContent, type Content } from "@/lib/content";
@@ -26,12 +26,17 @@ const DEFAULT_SITE: ResolvedSite = {
   found: false,
 };
 
-/** El host del request. En preview (sin dominio propio) la cookie `amooor_tenant`
- *  fuerza un subdominio — la setea `/api/preview?tenant=<sub>`. */
+/** El "host" con el que resolvemos el tenant. En un dominio real cada sitio vive
+ *  en su subdominio (`<slug>.amooor.com`) y alcanza con el header Host. En el host
+ *  único del deploy (sin wildcard, p.ej. `*.vercel.app`) servimos el tenant por
+ *  PATH: `/s/<slug>` → devolvemos `<slug>`. El pathname llega como `x-amooor-path`
+ *  (lo inyecta middleware.ts). Evitamos una cookie global: secuestraría toda la
+ *  app (landing/comenzar) hasta que expire. Ver app/s/[slug]/page.tsx. */
 export async function currentHost(): Promise<string | null> {
-  const preview = (await cookies()).get("amooor_tenant")?.value;
-  if (preview) return preview;
   const h = await headers();
+  const path = h.get("x-amooor-path") ?? "";
+  const m = path.match(/^\/s\/([^/?#]+)/);
+  if (m) return decodeURIComponent(m[1]).trim().toLowerCase();
   return h.get("host");
 }
 
