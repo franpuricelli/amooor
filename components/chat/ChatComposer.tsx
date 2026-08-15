@@ -20,7 +20,16 @@ const WAVE_BARS = 28;
 export interface SendOpts {
   attachments?: Attachment[];
   refs?: string[];
+  quotes?: string[];
   converse?: boolean;
+}
+
+function QuoteGlyph() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M7 7C4.8 8 3.6 9.9 3.6 12.4V17h5v-5H6.1c0-1.5.6-2.6 2-3.3L7 7zm9 0c-2.2 1-3.4 2.9-3.4 5.4V17h5v-5h-2.5c0-1.5.6-2.6 2-3.3L16 7z" />
+    </svg>
+  );
 }
 
 function LinkGlyph() {
@@ -114,6 +123,7 @@ export default function ChatComposer({
   const [err, setErr] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [refs, setRefs] = useState<string[]>([]);
+  const [quotes, setQuotes] = useState<string[]>([]);
   const [showDeepen, setShowDeepen] = useState(true);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionIdx, setMentionIdx] = useState(0);
@@ -146,26 +156,20 @@ export default function ChatComposer({
     });
   }, [registerInsert]);
 
-  // "Responder" sobre una selección del agente → cita el fragmento en el composer.
+  // "Responder" sobre una selección del agente → el fragmento entra como CHIP
+  // rosado (como un adjunto), no como texto dentro del input.
   useEffect(() => {
     if (!registerQuote) return;
     registerQuote((quoted: string) => {
-      const block = quoted
-        .split("\n")
-        .map((l) => `> ${l}`)
-        .join("\n");
-      setText((prev) => (prev.trim() ? `${prev.replace(/\n+$/, "")}\n\n` : "") + `${block}\n\n`);
-      requestAnimationFrame(() => {
-        const ta = taRef.current;
-        if (!ta) return;
-        ta.focus();
-        ta.selectionStart = ta.selectionEnd = ta.value.length;
-        autoGrow();
-      });
+      const clean = quoted.replace(/\s+/g, " ").trim();
+      if (!clean) return;
+      setQuotes((prev) => (prev.includes(clean) ? prev : [...prev, clean]));
+      requestAnimationFrame(() => taRef.current?.focus());
     });
   }, [registerQuote]);
 
-  const hasContent = !!text.trim() || attachments.length > 0 || refs.length > 0;
+  const hasContent =
+    !!text.trim() || attachments.length > 0 || refs.length > 0 || quotes.length > 0;
 
   // ── autocompletar "@" ────────────────────────────────────────────────────────
   const mentionList = mentions ?? [];
@@ -208,6 +212,8 @@ export default function ChatComposer({
     if (!hasContent || disabled) return;
     const t = text.trim();
     const parts = [t];
+    if (quotes.length)
+      parts.push(`Respondo a: ${quotes.map((q) => `"${q}"`).join(" · ")}.`);
     if (refs.length) parts.push(`Referencias: ${refs.map((r) => `@${r}`).join(", ")}.`);
     if (attachments.length)
       parts.push(`Adjunté como referencia: ${attachments.map((a) => a.name).join(", ")}.`);
@@ -215,10 +221,12 @@ export default function ChatComposer({
     onSend(payload, {
       ...(attachments.length ? { attachments } : {}),
       ...(refs.length ? { refs } : {}),
+      ...(quotes.length ? { quotes } : {}),
     });
     setText("");
     setAttachments([]);
     setRefs([]);
+    setQuotes([]);
     setErr(null);
     setMentionQuery(null);
     requestAnimationFrame(() => {
@@ -487,6 +495,23 @@ export default function ChatComposer({
         </button>
 
         <div className="ch-input-col">
+          {quotes.length > 0 && (
+            <div className="ch-refs">
+              {quotes.map((q, i) => (
+                <span className="ch-quote-chip" key={`q-${i}`} title={q}>
+                  <QuoteGlyph />
+                  <span className="ch-quote-text">{q}</span>
+                  <button
+                    type="button"
+                    aria-label="Quitar cita"
+                    onClick={() => setQuotes((prev) => prev.filter((_, x) => x !== i))}
+                  >
+                    <CloseIcon />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
           {refs.length > 0 && (
             <div className="ch-refs">
               {refs.map((r) => (

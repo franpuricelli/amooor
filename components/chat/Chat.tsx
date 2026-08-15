@@ -16,6 +16,7 @@ import { parsePlan } from "@/lib/plan";
 import { PURIVI_PLAN, SKIP_WIZARD_TRIGGER } from "@/lib/demo-plan";
 import { parseDeepen, deriveShared } from "@/lib/chat-format";
 import type { Swatch } from "@/lib/palette-gen";
+import { DEFAULT_TEMPLATE_ID, TEMPLATE_STORAGE_KEY } from "@/lib/templates-catalog";
 import ChatMessages from "./ChatMessages";
 import ChatComposer, { type SendOpts } from "./ChatComposer";
 import PlanCard from "./PlanCard";
@@ -32,6 +33,7 @@ const STAGES = [
   { key: "fotos", label: "Fotos" },
   { key: "sitio", label: "Tu sitio" },
 ] as const;
+
 
 function StepCheck() {
   return (
@@ -101,15 +103,37 @@ export default function Chat() {
   const [paStep, setPaStep] = useState<Step | null>(null);
   const [refining, setRefining] = useState(false);
   const [refLabels, setRefLabels] = useState<Record<string, string>>({});
+  // task 2-A: elección de plantilla (el chooser vive arriba del plan mismo).
+  const [template, setTemplate] = useState<string>(DEFAULT_TEMPLATE_ID);
   const mainRef = useRef<HTMLDivElement | null>(null);
   const atBottomRef = useRef(true);
   const insertRef = useRef<((t: string) => void) | null>(null);
   const quoteRef = useRef<((t: string) => void) | null>(null);
   const openProfileRef = useRef<(() => void) | null>(null);
+  // PostApprove registra acá cómo saltar a un paso (para volver a "Fotos")
+  const paGotoRef = useRef<((s: Step) => void) | null>(null);
+  const registerPaGoto = useCallback((fn: (s: Step) => void) => {
+    paGotoRef.current = fn;
+  }, []);
   // correcciones de supuestos pendientes de avisarle al agente en el próximo refine
   const correctionsRef = useRef<string[]>([]);
 
   const hasPlan = !!convo.plan && !approved;
+
+  // restaurar la plantilla elegida (persistida en localStorage)
+  useEffect(() => {
+    try {
+      const tpl = window.localStorage.getItem(TEMPLATE_STORAGE_KEY);
+      if (tpl) setTemplate(tpl);
+    } catch {}
+  }, []);
+
+  const selectTemplate = useCallback((id: string) => {
+    setTemplate(id);
+    try {
+      window.localStorage.setItem(TEMPLATE_STORAGE_KEY, id);
+    } catch {}
+  }, []);
 
   // nombres editables de las referencias (persisten en localStorage)
   useEffect(() => {
@@ -332,7 +356,8 @@ export default function Chat() {
       }
 
       const converse = opts?.converse ?? false;
-      const refine = !converse && hasPlan; // plan a la vista → cada mensaje refina
+      // plan a la vista → cada mensaje refina (el plan se muestra directo, sin gate).
+      const refine = !converse && hasPlan;
       setError(null);
       // Con un plan a la vista (refine o converse), lo colapsamos y la nueva
       // conversación va DEBAJO — así el usuario ve lo que escribe el agente y el
@@ -345,6 +370,7 @@ export default function Chat() {
         content: text,
         ...(opts?.attachments?.length ? { attachments: opts.attachments } : {}),
         ...(opts?.refs?.length ? { refs: opts.refs } : {}),
+        ...(opts?.quotes?.length ? { quotes: opts.quotes } : {}),
       };
       const base = [...convo.messages, userMsg];
       convo.setMessages(() => base);
@@ -453,6 +479,21 @@ export default function Chat() {
       ? 3
       : 2;
 
+  // Navegación por el stepper: solo se puede VOLVER a una etapa ya completada.
+  //  Historia/Plan → salir del post-approve (el plan vuelve a la vista; la media
+  //  queda guardada en el draft y se recarga al re-aprobar). Fotos → volver a la
+  //  subida desde el editor (rebind, sin regenerar). No permitimos saltar adelante.
+  const goToStage = (i: number) => {
+    if (i >= stageIndex) return;
+    if (approved) {
+      if (i <= 1) setApproved(false); // → Plan / Historia
+      else if (i === 2) paGotoRef.current?.("upload"); // Tu sitio → Fotos
+    } else if (i === 0) {
+      // ya estamos en el plan: llevamos la charla (arriba) a la vista
+      mainRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   return (
     <div className={`ch-root mk-root ${approved ? "ch-editing" : ""}`}>
       <header className="ch-top">
@@ -464,11 +505,27 @@ export default function Chat() {
             {STAGES.map((st, i) => {
               const done = i < stageIndex;
               const on = i === stageIndex;
+              // una etapa completada es clickeable para volver a ella
+              const nav = done;
               return (
                 <li
                   key={st.key}
-                  className={`ch-step ${done ? "done" : ""} ${on ? "on" : ""}`}
+                  className={`ch-step ${done ? "done" : ""} ${on ? "on" : ""} ${nav ? "stepnav" : ""}`}
                   aria-current={on ? "step" : undefined}
+                  {...(nav
+                    ? {
+                        role: "button",
+                        tabIndex: 0,
+                        title: `Volver a ${st.label}`,
+                        onClick: () => goToStage(i),
+                        onKeyDown: (e: React.KeyboardEvent) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            goToStage(i);
+                          }
+                        },
+                      }
+                    : {})}
                 >
                   <span
                     className={`ch-step-dot ${on && (sending || thinking) ? "busy" : ""}`}
@@ -518,7 +575,7 @@ export default function Chat() {
       </header>
 
       {approved ? (
-        <PostApprove convo={convo} onStep={setPaStep} />
+        <PostApprove convo={convo} onStep={setPaStep} registerGoto={registerPaGoto} />
       ) : (
       <>
       <div className="ch-main" ref={mainRef} onScroll={onScroll}>
@@ -560,6 +617,8 @@ export default function Chat() {
                   />
                   <PlanCard
                     plan={convo.plan}
+                    template={template}
+                    onTemplate={selectTemplate}
                     palette={convo.palette}
                     customPalettes={convo.customPalettes}
                     onPalette={applyPalette}
@@ -588,6 +647,8 @@ export default function Chat() {
                   {hasPlan && convo.plan && (
                     <PlanCard
                       plan={convo.plan}
+                      template={template}
+                      onTemplate={selectTemplate}
                       palette={convo.palette}
                       customPalettes={convo.customPalettes}
                       onPalette={applyPalette}

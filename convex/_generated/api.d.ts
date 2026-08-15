@@ -9,6 +9,7 @@
  */
 
 import type * as assets from "../assets.js";
+import type * as audio from "../audio.js";
 import type * as drafts from "../drafts.js";
 import type * as generate from "../generate.js";
 import type * as http from "../http.js";
@@ -25,6 +26,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   assets: typeof assets;
+  audio: typeof audio;
   drafts: typeof drafts;
   generate: typeof generate;
   http: typeof http;

@@ -171,8 +171,11 @@ export default function EditStep({
   const rebind = useCallback(async () => {
     if (!token || !isConvexConfigured()) return;
     try {
-      const rows = await convexClient().query(api.photos.listDraftPhotos, { draftToken: token });
-      const next = parseContent(rebindMedia(content, mediaFromPhotos(rows))) as Content;
+      const [rows, audioRow] = await Promise.all([
+        convexClient().query(api.photos.listDraftPhotos, { draftToken: token }),
+        convexClient().query(api.audio.getDraftAudio, { draftToken: token }),
+      ]);
+      const next = parseContent(rebindMedia(content, mediaFromPhotos(rows, audioRow?.src))) as Content;
       onContent(next);
       await convexClient().mutation(api.drafts.save, { token, content: next, status: "ready" });
     } catch (e) {
@@ -262,19 +265,24 @@ export default function EditStep({
           </button>
         </nav>
 
-        {/* flujo (izquierda) */}
+        {/* flujo (izquierda). Chat y Multimedia quedan SIEMPRE montados y se
+            alternan con display:none — así el hilo del chat no se pierde al
+            cambiar a Multimedia (su estado vive en ChatFlow). */}
         <div className={`pa-flow ${mobilePane === "flow" ? "show" : ""}`}>
-          {tool === "chat" ? (
-            <ChatFlow token={token} content={content} onContent={onContent} />
-          ) : (
-            <MediaFlow
-              convo={convo}
-              focus={mediaFocus}
-              scrollCat={previewCat}
-              onPickSection={pickSection}
-              onRebind={rebind}
-            />
-          )}
+          <ChatFlow
+            token={token}
+            content={content}
+            onContent={onContent}
+            visible={tool === "chat"}
+          />
+          <MediaFlow
+            convo={convo}
+            focus={mediaFocus}
+            scrollCat={previewCat}
+            onPickSection={pickSection}
+            onRebind={rebind}
+            visible={tool === "media"}
+          />
         </div>
 
         {/* preview FIJO (derecha) — superficie de edición inline */}
@@ -299,10 +307,13 @@ function ChatFlow({
   token,
   content,
   onContent,
+  visible,
 }: {
   token: string;
   content: Content;
   onContent: (c: Content) => void;
+  /** montado siempre; se oculta con display:none cuando no es la herramienta activa */
+  visible: boolean;
 }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [sending, setSending] = useState(false);
@@ -411,7 +422,7 @@ function ChatFlow({
   );
 
   return (
-    <div className="pa-chat">
+    <div className={`pa-chat ${visible ? "" : "pa-hidden"}`}>
       <div className="pa-chat-scroll">
         {messages.length === 0 ? (
           <div className="pa-chat-hint">
@@ -442,6 +453,7 @@ function MediaFlow({
   scrollCat,
   onPickSection,
   onRebind,
+  visible,
 }: {
   convo: UseConversation;
   focus: MediaFocus | null;
@@ -450,6 +462,8 @@ function MediaFlow({
   /** al elegir una sección acá, pedirle al preview que scrollee hasta ella */
   onPickSection: (cat: string) => void;
   onRebind: () => Promise<void>;
+  /** montado siempre; se oculta con display:none cuando no es la herramienta activa */
+  visible: boolean;
 }) {
   const token = convo.token;
   const sections = (convo.plan ? planSectionSlugs(convo.plan) : [])
@@ -530,7 +544,8 @@ function MediaFlow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, active]);
 
-  if (!sections.length) return <div className="pa-empty">No hay secciones.</div>;
+  if (!sections.length)
+    return <div className={`pa-empty ${visible ? "" : "pa-hidden"}`}>No hay secciones.</div>;
   const s = sections[active];
   const photos = rows.filter((r) => r.category === s.category).sort((a, b) => a.order - b.order);
   const countFor = (cat: string) => rows.filter((r) => r.category === cat).length;
@@ -601,7 +616,7 @@ function MediaFlow({
     : undefined;
 
   return (
-    <div className="pa-media">
+    <div className={`pa-media ${visible ? "" : "pa-hidden"}`}>
       <div className="pa-media-head">
         {/* drawer de sección (una sola opción visible; se despliega al tocar) */}
         <div className="pa-media-drawer" ref={drawerRef}>

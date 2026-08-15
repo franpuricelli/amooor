@@ -28,10 +28,13 @@ export type Step = "upload" | "build" | "edit";
 export default function PostApprove({
   convo,
   onStep,
+  registerGoto,
 }: {
   convo: UseConversation;
   /** avisa el paso actual al header (para el stepper de etapas) */
   onStep?: (step: Step | null) => void;
+  /** expone al header cómo saltar a un paso (p.ej. volver a "Fotos" = upload) */
+  registerGoto?: (fn: (step: Step) => void) => void;
 }) {
   const [step, setStep] = useState<Step | null>(null); // null = hidratando
   const [content, setContent] = useState<Content | null>(null);
@@ -40,6 +43,12 @@ export default function PostApprove({
   useEffect(() => {
     onStep?.(step);
   }, [step, onStep]);
+
+  // el stepper del header puede pedir "volver a Fotos": vamos al paso de subida
+  // (con content = rebind, sin regenerar; ver finishUpload).
+  useEffect(() => {
+    registerGoto?.((s) => setStep(s));
+  }, [registerGoto]);
 
   // ── restauración del paso al montar ─────────────────────────────────────────
   useEffect(() => {
@@ -87,10 +96,11 @@ export default function PostApprove({
     }
     if (convo.token && isConvexConfigured()) {
       try {
-        const rows = await convexClient().query(api.photos.listDraftPhotos, {
-          draftToken: convo.token,
-        });
-        const next = parseContent(rebindMedia(content, mediaFromPhotos(rows)));
+        const [rows, audioRow] = await Promise.all([
+          convexClient().query(api.photos.listDraftPhotos, { draftToken: convo.token }),
+          convexClient().query(api.audio.getDraftAudio, { draftToken: convo.token }),
+        ]);
+        const next = parseContent(rebindMedia(content, mediaFromPhotos(rows, audioRow?.src)));
         setContent(next as Content);
         await convexClient().mutation(api.drafts.save, {
           token: convo.token,

@@ -72,3 +72,36 @@ export async function uploadVideo(
   }
   return (await res.json()) as { src: string; slug: string };
 }
+
+/**
+ * Sube la música de fondo (mp3) a Convex `_storage` y la registra. Uno por draft
+ * (reemplaza el anterior). Devuelve la `src` de entrega (/track/<slug>.mp3), que
+ * termina en content.media.audioUrl (el ❤ del navbar la reproduce).
+ */
+export async function uploadAudio(
+  file: File,
+  draftToken: string
+): Promise<{ src: string; slug: string }> {
+  const r1 = await fetch("/api/upload/audio", { method: "POST" });
+  if (!r1.ok) throw new Error("No se pudo iniciar la subida de la música.");
+  const { uploadURL } = await r1.json();
+
+  const up = await fetch(uploadURL, {
+    method: "POST",
+    headers: { "content-type": file.type || "audio/mpeg" },
+    body: file,
+  });
+  if (!up.ok) throw new Error("La subida de la música falló.");
+  const { storageId } = await up.json();
+
+  const res = await fetch("/api/upload/audio/complete", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ draftToken, storageId, filename: file.name }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error((data && data.error) || "No se pudo registrar la música.");
+  }
+  return (await res.json()) as { src: string; slug: string };
+}

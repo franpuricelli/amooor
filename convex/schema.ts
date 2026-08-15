@@ -156,6 +156,22 @@ export default defineSchema({
     .index("by_draft", ["draftToken"])
     .index("by_slug", ["slug"]),
 
+  // Música de fondo subida contra un draft (opcional): el mp3 que suena al abrir
+  // el sitio (lo toca el ❤ del navbar, MusicToggle). Igual que los videos, vive en
+  // Convex file storage (`_storage`) y se sirve por `convex/http.ts` en
+  // `/track/<slug>.mp3`. Uno por draft (se reemplaza). `src` = URL ya resuelta
+  // (.convex.site) que termina en content.media.audioUrl.
+  draftAudio: defineTable({
+    draftToken: v.string(),
+    slug: v.string(),
+    storageId: v.id("_storage"),
+    src: v.string(),
+    filename: v.optional(v.string()), // nombre original del mp3 subido
+    createdAt: v.number(),
+  })
+    .index("by_draft", ["draftToken"])
+    .index("by_slug", ["slug"]),
+
   // Pagos (Rebill, WP-4). Un order por intento de compra de un draft.
   orders: defineTable({
     draftToken: v.string(),

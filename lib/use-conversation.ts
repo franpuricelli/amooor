@@ -28,6 +28,8 @@ export interface Message {
   attachments?: Attachment[];
   /** referencias (@objeto) que el usuario seleccionó — chips azules */
   refs?: string[];
+  /** fragmentos citados con "Responder" sobre el texto del agente — chips rosados */
+  quotes?: string[];
 }
 
 function ensureToken(): string {
@@ -55,6 +57,7 @@ function parseMessages(data: unknown): Message[] {
       ...(Array.isArray(m.activities) ? { activities: m.activities } : {}),
       ...(Array.isArray(m.attachments) ? { attachments: m.attachments } : {}),
       ...(Array.isArray(m.refs) ? { refs: m.refs } : {}),
+      ...(Array.isArray(m.quotes) ? { quotes: m.quotes } : {}),
     }));
 }
 

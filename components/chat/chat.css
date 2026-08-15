@@ -71,6 +71,19 @@
   font-weight: 600;
   white-space: nowrap;
 }
+/* etapa ya completada = clickeable (volver atrás). Token propio ("stepnav", no
+   "nav") para no chocar con el .nav global del navbar del sitio (position:fixed). */
+.ch-step.stepnav {
+  cursor: pointer;
+}
+.ch-step.stepnav:hover .ch-step-label {
+  color: var(--mk-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.ch-step.stepnav:hover .ch-step-dot {
+  border-color: var(--mk-rose-btn);
+}
 /* conector entre etapas (hairline) */
 .ch-step + .ch-step::before {
   content: "";
@@ -469,6 +482,138 @@
   border-radius: var(--mk-r-xl);
   padding: clamp(1.1rem, 4vw, 1.6rem);
   box-shadow: 0 30px 70px -40px rgba(42, 10, 24, 0.35);
+}
+
+/* ── chooser de estilo (task 2-A): plantilla, arriba del plan (dentro del PlanCard) ── */
+.ch-choice-block {
+  margin-top: 1.3rem;
+}
+.ch-choice-block-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.7rem;
+}
+.ch-choice-block-title {
+  font-size: 0.74rem;
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mk-ink-3);
+  margin: 0;
+}
+.ch-tpl-all {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--mk-rose-text);
+  text-decoration: none;
+}
+.ch-tpl-all:hover {
+  text-decoration: underline;
+}
+
+/* grilla de plantillas (frame grande, tipo el wireframe: preview + ver) */
+.ch-tpl-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.8rem;
+}
+.ch-tpl-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.55rem;
+  background: var(--mk-bg);
+  border: 1.5px solid var(--mk-line);
+  border-radius: var(--mk-r-lg);
+  cursor: pointer;
+  transition: border-color 0.14s, box-shadow 0.14s, transform 0.14s;
+}
+.ch-tpl-card:hover {
+  border-color: var(--mk-rose);
+  transform: translateY(-2px);
+}
+.ch-tpl-card.on {
+  border-color: var(--mk-rose);
+  box-shadow: 0 0 0 3px var(--mk-rose-soft);
+}
+.ch-tpl-preview {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--mk-r-md);
+  overflow: hidden;
+  background: var(--mk-card);
+  border: 1px solid var(--mk-line-soft);
+}
+/* preview REAL: el export standalone escalado como miniatura no interactiva
+   (el click lo captura el .ch-tpl-card; el iframe queda inerte). */
+.ch-tpl-shot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 333.33%;
+  height: 333.33%;
+  border: 0;
+  transform: scale(0.3);
+  transform-origin: top left;
+  pointer-events: none;
+}
+.ch-tpl-view {
+  position: absolute;
+  right: 0.4rem;
+  bottom: 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--mk-ink);
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid var(--mk-line);
+  border-radius: 999px;
+  text-decoration: none;
+  backdrop-filter: blur(4px);
+}
+.ch-tpl-view:hover {
+  color: var(--mk-rose-text);
+  border-color: var(--mk-rose);
+}
+.ch-tpl-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0 0.15rem 0.15rem;
+}
+.ch-tpl-name {
+  font-weight: 650;
+  font-size: 0.92rem;
+  color: var(--mk-ink);
+}
+.ch-tpl-blurb {
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--mk-ink-3);
+}
+
+/* "ver todos" DEBAJO de la grilla de plantillas */
+.ch-tpl-all-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.7rem;
+}
+
+@media (max-width: 560px) {
+  .ch-tpl-grid {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 /* plan anterior colapsado mientras se arma el nuevo (durante un refinamiento) */
 .ch-plan.collapsed {
@@ -1829,6 +1974,59 @@
   margin-bottom: 0.4rem;
 }
 
+/* cita de "Responder" → chip rosado (como un adjunto), no texto en el input */
+.ch-quote-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 100%;
+  padding: 0.3rem 0.4rem 0.3rem 0.55rem;
+  border-radius: 8px;
+  background: var(--mk-rose-soft);
+  border: 1px solid var(--mk-rose);
+  color: var(--mk-rose-text);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.ch-quote-chip svg {
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+.ch-quote-chip.sm {
+  padding: 0.18rem 0.5rem 0.18rem 0.4rem;
+  font-size: 0.78rem;
+  max-width: 260px;
+}
+.ch-quote-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 240px;
+  font-weight: 550;
+  font-style: italic;
+}
+.ch-quote-chip button {
+  display: inline-flex;
+  flex-shrink: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 0.1rem;
+  border-radius: 50%;
+  opacity: 0.7;
+}
+.ch-quote-chip button:hover {
+  opacity: 1;
+}
+.ch-bubble-quotes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-bottom: 0.4rem;
+}
+
 /* transición suave chat → audio */
 .ch-rec-in {
   animation: ch-rec-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -2245,7 +2443,13 @@
 
 /* ═══ Phase 1 — Upload ═══════════════════════════════════════════════════════ */
 .pa-up {
-  flex-direction: row;
+  flex-direction: column;
+}
+/* cuerpo de dos paneles: rail + uploader (izq) · preview vivo (der) */
+.pa-up-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
 }
 .pa-rail {
   flex: 0 0 240px;
@@ -2321,8 +2525,89 @@
   display: inline-flex;
 }
 
-.pa-panel {
+/* música de fondo del sitio: bloque al pie del rail (mp3 del ❤ del navbar) */
+.pa-rail-music {
+  margin-top: 1.1rem;
+  padding: 0.9rem 0.4rem 0.3rem;
+  border-top: 1px solid var(--mk-line-soft);
+}
+.pa-rail-music-title {
+  font-size: 0.74rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mk-ink-3);
+  margin: 0 0.3rem 0.3rem;
+}
+.pa-rail-music-sub {
+  font-size: 0.76rem;
+  line-height: 1.35;
+  color: var(--mk-ink-3);
+  margin: 0 0.3rem 0.7rem;
+}
+.pa-rail-music-add {
+  width: 100%;
+  border: 1px dashed var(--mk-line);
+  background: var(--mk-card);
+  color: var(--mk-ink-2);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  padding: 0.6rem;
+  border-radius: var(--mk-r-md);
+  cursor: pointer;
+  transition: border-color 0.13s, color 0.13s;
+}
+.pa-rail-music-add:hover:not(:disabled) {
+  border-color: var(--mk-rose);
+  color: var(--mk-rose-text);
+}
+.pa-rail-music-add:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+.pa-rail-music-has {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.pa-rail-music-file {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 0.3rem;
+}
+.pa-rail-music-name {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.84rem;
+  color: var(--mk-ink);
+}
+.pa-rail-music-x {
+  flex-shrink: 0;
+  border: 0;
+  background: transparent;
+  color: var(--mk-ink-3);
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.2rem;
+  border-radius: 6px;
+}
+.pa-rail-music-x:hover:not(:disabled) {
+  color: var(--mk-rose-text);
+  background: var(--mk-rose-soft);
+}
+.pa-rail-music-player {
+  width: 100%;
+  height: 34px;
+}
+
+.pa-panel {
+  flex: 0 0 clamp(320px, 42%, 500px);
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -2332,6 +2617,14 @@
   overflow-y: auto;
   padding: clamp(1rem, 4vw, 2rem);
 }
+/* preview vivo del sitio (columna derecha) */
+.pa-up-preview {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  padding: clamp(0.6rem, 2vw, 1rem);
+}
 .pa-cta {
   flex-shrink: 0;
   display: flex;
@@ -2339,7 +2632,6 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 0.8rem clamp(1rem, 4vw, 2rem);
-  border-top: 1px solid var(--mk-line-soft);
   background: var(--mk-bg);
 }
 .pa-cta-progress {
@@ -2347,11 +2639,24 @@
   color: var(--mk-ink-2);
 }
 
+/* el uploader de la sección activa (una a la vez) */
 .pa-uploader {
-  max-width: 640px;
+  max-width: 720px;
 }
 .pa-uploader-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
   margin-bottom: 1rem;
+}
+.pa-uploader-headtext {
+  min-width: 0;
+}
+@media (max-width: 620px) {
+  .pa-sketch {
+    display: none;
+  }
 }
 .pa-uploader-title {
   font-family: var(--mk-serif);
@@ -2392,6 +2697,16 @@
 .pa-drop-hero {
   min-height: 220px;
   font-size: 1rem;
+}
+/* botón de subida compacto (task 3): más chico que el bloque grande original */
+.pa-drop-sm {
+  padding: 0.7rem 1rem;
+  font-size: 0.9rem;
+  border-radius: var(--mk-r-md);
+}
+.pa-drop-sm.pa-drop-hero {
+  min-height: 96px;
+  font-size: 0.92rem;
 }
 .pa-hint {
   margin: 0.7rem 0 0;
@@ -2658,7 +2973,6 @@
   flex: 0 0 40%;
   max-width: 480px;
   min-width: 0;
-  border-right: 1px solid var(--mk-line-soft);
   display: flex;
   min-height: 0;
 }
@@ -2755,6 +3069,59 @@
   align-items: center;
   gap: 0.6rem;
   flex-shrink: 0;
+}
+/* toggle escritorio ↔ celular en la barra del navegador del preview */
+.pa-frame-devices {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  padding: 2px;
+  border-radius: 999px;
+  background: var(--mk-bg);
+  box-shadow: inset 0 0 0 1px var(--mk-line-soft);
+}
+.pa-frame-device {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 24px;
+  border: 0;
+  background: transparent;
+  color: var(--mk-ink-3);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.13s, color 0.13s;
+}
+.pa-frame-device:hover {
+  color: var(--mk-ink);
+}
+.pa-frame-device.on {
+  background: var(--mk-card);
+  color: var(--mk-rose-text);
+  box-shadow: 0 1px 3px rgba(42, 10, 24, 0.14);
+}
+
+/* vista celular: el sitio se renderiza dentro de un <iframe> angosto (marco de
+   teléfono) centrado sobre un fondo tenue. El iframe = viewport real → el sitio
+   muestra su layout mobile de verdad. El scroll es interno del teléfono. */
+.pa-frame-body.is-mobile {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  padding: 1.1rem;
+  background: var(--mk-bg-alt);
+}
+.pa-mobile-iframe {
+  flex: 0 0 auto;
+  width: 390px;
+  max-width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 20px;
+  background: var(--mk-bg);
+  box-shadow: 0 24px 60px -30px rgba(42, 10, 24, 0.55), 0 0 0 1px var(--mk-line-soft);
 }
 .pa-tool-palette {
   display: flex;
@@ -2886,6 +3253,10 @@
   .pa-up {
     flex-direction: column;
   }
+  .pa-up-body {
+    flex-direction: column;
+    min-height: 0;
+  }
   .pa-rail {
     flex: 0 0 auto;
     border-right: 0;
@@ -2906,6 +3277,14 @@
     border: 1px solid var(--mk-line);
     border-radius: 999px;
     padding: 0.5rem 0.8rem;
+  }
+  /* en mobile el rail es una barra horizontal: la música va compacta debajo */
+  .pa-rail-music {
+    margin-top: 0.7rem;
+    padding: 0.6rem 0.2rem 0;
+  }
+  .pa-rail-music-sub {
+    display: none;
   }
 
   .pa-mobilebar {
@@ -3081,6 +3460,10 @@
   box-shadow: inset 0 0 0 1.5px var(--mk-rose);
 }
 /* flujo izquierdo (chat o multimedia) */
+/* herramienta inactiva del editor (Chat/Multimedia quedan montadas, se ocultan) */
+.pa-hidden {
+  display: none !important;
+}
 .pa-flow {
   flex: 0 0 40%;
   max-width: 460px;
@@ -3449,6 +3832,16 @@
 .pa-media-empty-add:hover:not(:disabled) {
   border-color: var(--mk-rose);
   color: var(--mk-rose-text);
+  background: var(--mk-rose-soft);
+}
+/* mismo componente en la subida (UploadStep): un poco más de aire + feedback al
+   arrastrar un archivo encima */
+.pa-upload-empty {
+  padding: 2.4rem 1rem;
+  border-radius: var(--mk-r-lg);
+  transition: background 0.14s;
+}
+.pa-upload-empty.over {
   background: var(--mk-rose-soft);
 }
 

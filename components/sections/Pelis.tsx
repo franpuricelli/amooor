@@ -1,16 +1,23 @@
 "use client";
 
 import SectionHead from "@/components/SectionHead";
-import TikTokEmbed from "@/components/TikTokEmbed";
+import WatchVideo from "@/components/WatchVideo";
 import { fill } from "@/lib/content";
 import { useContent } from "@/lib/tenant";
 import { EditableText } from "@/lib/edit-context";
 
+// Cuántos títulos "sueltos" se muestran en la grilla (el resto queda en el
+// "…y las que faltan"). Mantiene la sección compacta sin importar cuántos cargue
+// el tenant.
+const GRID_MAX = 10;
+
 export default function Pelis({ id }: { id: string }) {
   const { watch } = useContent();
   const list = watch.list;
+  const video = watch.video;
   const featured = list.filter((m) => m.note);
-  const rest = list.filter((m) => !m.note);
+  const rest = list.filter((m) => !m.note).slice(0, GRID_MAX);
+  const hasVideo = video.provider === "video" ? Boolean(video.src) : Boolean(video.videoId);
 
   return (
     <section id={id} className="section-pad section-dark sheet-top">
@@ -49,10 +56,12 @@ export default function Pelis({ id }: { id: string }) {
         <p className="watch-more reveal">{watch.moreLabel}</p>
 
         {/* the never-ending movie */}
-        <div className="tiktok-card glass-card reveal">
-          <p className="tiktok-label">{watch.video.label}</p>
-          <TikTokEmbed />
-        </div>
+        {hasVideo && (
+          <div className="watch-video-card glass-card reveal">
+            <p className="watch-video-label">{video.label}</p>
+            <WatchVideo />
+          </div>
+        )}
       </div>
     </section>
   );

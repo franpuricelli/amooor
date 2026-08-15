@@ -6,6 +6,7 @@ import { parsePlan } from "@/lib/plan";
 import { planToWizardState, planSectionSlugs } from "@/lib/plan-to-state";
 import { generateContent, mediaFromPhotos } from "@/lib/generate";
 import { enhanceNarrative } from "@/lib/ai";
+import { stylizeClosingDrawing, isFalImage } from "@/lib/fal";
 import { parseContent, type Theme } from "@/lib/template";
 import { slugifyCouple, isReserved } from "@/lib/subdomain";
 import { PLANS, type PlanId } from "@/lib/pricing";
@@ -21,6 +22,10 @@ import { sendPurchaseThanks, sendSiteReady } from "@/lib/email";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// El content ya hace un pass de LLM (enhanceNarrative) y ahora, si hay foto de
+// cierre, una edición image-to-image en FAL (gpt-image-2, ~20-60s). Subimos el
+// límite para que no corte. (Vercel: Pro admite hasta 300; Hobby cap 60.)
+export const maxDuration = 300;
 
 const APP_DOMAIN = process.env.NEXT_PUBLIC_APP_DOMAIN ?? "amooor.com";
 
@@ -68,7 +73,12 @@ export async function POST(req: NextRequest) {
 
   // Genera el content (determinista + mejora IA opcional).
   const rows = await c.query(api.photos.listDraftPhotos, { draftToken });
-  const media = rows.length ? mediaFromPhotos(rows) : undefined;
+  // Música de fondo subida (mp3 del navbar) → content.media.audioUrl.
+  const audioRow = await c.query(api.audio.getDraftAudio, { draftToken });
+  const media =
+    rows.length || audioRow
+      ? mediaFromPhotos(rows, audioRow?.src)
+      : undefined;
 
   // Rama chat-first: si el draft tiene `intakePlan` aprobado y NO tiene answers
   // del wizard viejo, generamos desde el plan (Plan → WizardState). Si no, se
@@ -103,12 +113,28 @@ export async function POST(req: NextRequest) {
   content = await enhanceNarrative(content, state);
 
   // Imagen del cierre (el "dibujo" que se da vuelta) → content.drawing.src.
+  // La foto real subida se convierte al estilo del dibujo hecho a mano vía FAL
+  // (image-to-image). Si FAL no está configurado o falla, cae a la foto tal cual.
   if (closingCategory) {
     const closingPhoto = rows
       .filter((r) => r.category === closingCategory)
       .sort((a, b) => a.order - b.order)[0];
     if (closingPhoto) {
-      content.drawing = { ...content.drawing, src: closingPhoto.fullUrl };
+      // En finalize reusa el resultado ya estilizado del preview (no re-llama a FAL).
+      const prior = (draft.content as { drawing?: { src?: string } } | undefined)
+        ?.drawing?.src;
+      let src = closingPhoto.fullUrl;
+      if (mode === "finalize" && isFalImage(prior)) {
+        src = prior!;
+      } else {
+        const styleUrl =
+          process.env.FAL_DRAWING_STYLE_URL ??
+          new URL(content.drawing.src, req.nextUrl.origin).toString();
+        src =
+          (await stylizeClosingDrawing({ photoUrl: closingPhoto.fullUrl, styleUrl })) ??
+          closingPhoto.fullUrl;
+      }
+      content.drawing = { ...content.drawing, src };
     }
   }
 
