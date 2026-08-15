@@ -3529,58 +3529,33 @@
   gap: 8px;
   align-items: center;
 }
-/* pill "Publicado" (abre la card) + ícono de pausa translúcido a la derecha */
+/* ícono de pausa translúcido, AFUERA del pill "Publicado" y a su izquierda */
 .pa-pub-trigger {
   display: inline-flex;
   align-items: center;
-  background: var(--mk-ink);
-  color: var(--mk-card);
-  border-radius: 999px;
-  transition: background 0.15s;
+  gap: 6px;
 }
-.pa-pub-trigger:hover {
-  background: #000;
-}
-.pa-pub-trigger-main,
-.pa-pub-trigger-pause {
+.pa-pub-pause {
   border: 0;
   background: transparent;
-  color: inherit;
-  font: inherit;
-  font-size: 0.82rem;
-  font-weight: 600;
+  color: var(--mk-ink);
+  padding: 4px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-}
-.pa-pub-trigger-main {
-  gap: 0.45rem;
-  padding: 0.4rem 0.5rem 0.4rem 0.9rem;
-}
-.pa-pub-trigger-pause {
-  padding: 0.4rem 0.72rem 0.4rem 0.5rem;
-  opacity: 0.45; /* translúcido; se resalta al hover (con tooltip vía title) */
+  opacity: 0.28; /* translúcido sobre el fondo crema; el hover lo resalta */
   transition: opacity 0.15s;
 }
-.pa-pub-trigger-pause:hover {
-  opacity: 1;
+.pa-pub-pause:hover {
+  opacity: 0.72;
 }
-.pa-pub-trigger-pause:disabled {
+.pa-pub-pause:disabled {
   cursor: default;
-  opacity: 0.3;
+  opacity: 0.2;
 }
-/* la burbuja de estado vive sobre el pill oscuro: gris "idle" claro, verde ready */
-.pa-pub-trigger .pa-dot {
-  background: rgba(255, 255, 255, 0.55);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
-}
-.pa-pub-trigger .pa-dot.busy {
-  background: #f2b529;
-  box-shadow: none;
-}
-.pa-pub-trigger .pa-dot.ready {
-  background: #2ec27e;
-  box-shadow: none;
+.pa-pub-pause svg {
+  width: 18px;
+  height: 18px;
 }
 .pa-pub-card {
   position: absolute;

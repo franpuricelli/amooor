@@ -666,29 +666,29 @@ export default function Chat() {
                 {publishing ? "Publicando…" : "Publicar"}
               </button>
             ) : (
-              // ya publicado → pill que abre la card, con ícono de pausa (live)
+              // ya publicado → ícono de pausa translúcido (afuera, a la izq) + pill
               <div className="pa-pub-trigger">
+                {siteStatus === "live" && (
+                  <button
+                    type="button"
+                    className="pa-pub-pause"
+                    onClick={() => void runPublish("pause")}
+                    disabled={publishing}
+                    title="Pausar el sitio — queda fuera de línea hasta que lo publiques de nuevo"
+                    aria-label="Pausar el sitio"
+                  >
+                    <PauseIcon />
+                  </button>
+                )}
                 <button
                   type="button"
-                  className="pa-pub-trigger-main"
+                  className="ch-save-btn pa-publish-btn"
                   onClick={() => setPubCardOpen((o) => !o)}
                   title="Tu sitio publicado"
                 >
                   <StatusDot status={publishStatus} />
                   {siteStatus === "paused" ? "Pausado" : "Publicado"}
                 </button>
-                {siteStatus === "live" && (
-                  <button
-                    type="button"
-                    className="pa-pub-trigger-pause"
-                    onClick={() => void runPublish("pause")}
-                    disabled={publishing}
-                    title="Pausar el sitio — queda fuera de línea hasta que lo actualices"
-                    aria-label="Pausar el sitio"
-                  >
-                    <PauseIcon />
-                  </button>
-                )}
               </div>
             )}
 
@@ -723,9 +723,17 @@ export default function Chat() {
                     className="ch-save-btn pa-publish-btn"
                     onClick={publishAndOpen}
                     disabled={publishing}
-                    title="Actualizar y abrir tu sitio"
+                    title={
+                      siteStatus === "paused"
+                        ? "Publicar de nuevo y abrir tu sitio"
+                        : "Actualizar y abrir tu sitio"
+                    }
                   >
-                    {publishing ? "Publicando…" : "Actualizar"}
+                    {publishing
+                      ? "Publicando…"
+                      : siteStatus === "paused"
+                        ? "Publicar"
+                        : "Actualizar"}
                   </button>
                 </div>
               </div>
