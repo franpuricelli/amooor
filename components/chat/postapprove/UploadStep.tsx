@@ -2,14 +2,15 @@
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  UploadStep.tsx — Phase 1: subida de media sección por sección.
-//  Rail de secciones (del plan) + uploader de la sección activa. Cambios de UX:
-//   - Subidas NO bloqueantes: podés cambiar de sección y seguir cargando; cada
-//     sección muestra puntitos que saltan mientras sube.
-//   - Cualquier sección acepta FOTOS o VIDEO (se recomienda video donde el plan lo
-//     pensó, kind "watch"). hero/closing = un solo slot de imagen.
-//   - Grilla reordenable (drag) con NÚMERO de orden visible; la primera va primero.
-//   - CTA contextual: "Siguiente" hasta la última sección, después "Crear mi sitio"
-//     (sin flecha; design-system: CTA sin ícono).
+//  Layout de dos paneles (como el editor):
+//   - IZQUIERDA: rail de secciones + el uploader de UNA sección a la vez (la
+//     activa). Subidas NO bloqueantes: podés cambiar de sección y seguir cargando.
+//   - DERECHA: el PREVIEW VIVO del sitio (SitePreviewFrame), generado de forma
+//     determinista desde el plan + las fotos ya subidas + la paleta elegida. Al
+//     navegar una sección (rail o "Siguiente") el preview scrollea hasta ella, y al
+//     scrollear el preview se resalta la sección en el rail.
+//   - hero/closing = un solo slot de imagen; el resto acepta varias fotos o video.
+//   - Mobile: una pill "Previsualizar" alterna el uploader ↔ el preview.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -17,9 +18,14 @@ import type { UseConversation } from "@/lib/use-conversation";
 import { convexClient, isConvexConfigured } from "@/lib/convex-browser";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
-import { planSectionSlugs } from "@/lib/plan-to-state";
+import { planSectionSlugs, planToWizardState } from "@/lib/plan-to-state";
+import { generateContent, mediaFromPhotos } from "@/lib/generate";
 import { uploadImage, uploadVideo } from "@/lib/media-client";
+import { slugifyCouple } from "@/lib/subdomain";
 import type { SectionKind } from "@/lib/plan";
+import type { Theme } from "@/lib/template";
+import type { PaletteId } from "@/lib/theme";
+import SitePreviewFrame from "./SitePreviewFrame";
 
 type Mode = "single" | "multi";
 interface SectionDesc {
@@ -79,21 +85,14 @@ export default function UploadStep({
   const [rows, setRows] = useState<Doc<"draftPhotos">[]>([]);
   const [videos, setVideos] = useState<Doc<"draftVideos">[]>([]);
   const [active, setActive] = useState(0);
-  const [ready, setReady] = useState(false);
   const [pending, setPending] = useState<Record<string, number>>({});
   const [err, setErr] = useState<string | null>(null);
-  // scroll-sync (como el paso de multimedia del editor): todas las secciones se
-  // apilan en un scroller; al scrollear se resalta la sección visible en el rail,
-  // y al tocar el rail se scrollea hasta esa sección.
-  const scrollRef = useRef<HTMLDivElement | null>(null);
-  const sectionEls = useRef<Record<string, HTMLElement | null>>({});
-  const rafRef = useRef(0);
+  const [mobilePane, setMobilePane] = useState<"upload" | "preview">("upload");
+  // pedido de scroll para el preview (nonce fuerza re-scroll a la misma sección)
+  const [scrollTarget, setScrollTarget] = useState<{ cat: string; nonce: number } | null>(null);
 
   const refresh = useCallback(async () => {
-    if (!token || !isConvexConfigured()) {
-      setReady(true);
-      return;
-    }
+    if (!token || !isConvexConfigured()) return;
     try {
       const c = convexClient();
       const [p, v] = await Promise.all([
@@ -104,8 +103,6 @@ export default function UploadStep({
       setVideos(v);
     } catch (e) {
       console.error("[upload] refresh falló:", e);
-    } finally {
-      setReady(true);
     }
   }, [token]);
 
@@ -126,33 +123,55 @@ export default function UploadStep({
     [photosOf, videoOf]
   );
 
-  // scroll-spy: la sección cuyo tope pasó la línea de referencia (30% del alto
-  // visible) es la activa. rAF para no recalcular en cada píxel.
-  const onScroll = useCallback(() => {
-    if (rafRef.current) return;
-    rafRef.current = requestAnimationFrame(() => {
-      rafRef.current = 0;
-      const cont = scrollRef.current;
-      if (!cont) return;
-      const line = cont.getBoundingClientRect().top + cont.clientHeight * 0.3;
-      let current = 0;
-      sections.forEach((sec, i) => {
-        const el = sectionEls.current[sec.category];
-        if (el && el.getBoundingClientRect().top <= line) current = i;
-      });
-      setActive(current);
-    });
-  }, [sections]);
+  // ── preview vivo (derecha) ──────────────────────────────────────────────────
+  //  Content determinista desde el plan + las fotos ya subidas + la paleta. Sin
+  //  fotos, cae al template de muestra; a medida que subís, tus fotos lo llenan.
+  //  Los ids de sección del layout generado = las categorías del rail → el scroll
+  //  y el resaltado quedan sincronizados.
+  const media = useMemo(
+    () =>
+      mediaFromPhotos(
+        rows.map((r) => ({
+          category: r.category,
+          cloudflareId: r.cloudflareId,
+          thumbUrl: r.thumbUrl,
+          fullUrl: r.fullUrl,
+          order: r.order,
+        }))
+      ),
+    [rows]
+  );
+  const previewContent = useMemo(() => {
+    if (!convo.plan) return null;
+    return generateContent({ state: planToWizardState(convo.plan, convo.palette), media });
+  }, [convo.plan, convo.palette, media]);
+  const theme: Theme = useMemo(() => {
+    const overrides = convo.palette.startsWith("custom-")
+      ? convo.customPalettes.find((s) => s.id === convo.palette)?.palette
+      : undefined;
+    return { palette: convo.palette as PaletteId, overrides };
+  }, [convo.palette, convo.customPalettes]);
+  const subdomain = slugifyCouple(
+    (convo.plan?.names ?? []).filter(Boolean).join(" & ") || "tu-sitio"
+  );
 
-  // rail / "Siguiente" → scrollear el panel hasta la sección i (y resaltarla)
-  const goTo = useCallback((i: number) => {
-    const cont = scrollRef.current;
-    const el = sectionEls.current[sections[i]?.category];
-    if (!cont || !el) return;
-    setActive(i);
-    const top = el.getBoundingClientRect().top - cont.getBoundingClientRect().top + cont.scrollTop;
-    cont.scrollTo({ top: Math.max(0, top - 8), behavior: "smooth" });
-  }, [sections]);
+  // navegar a la sección i: resalta el rail y scrollea el preview hasta ella
+  const goTo = useCallback(
+    (i: number) => {
+      if (i < 0 || i >= sections.length) return;
+      setActive(i);
+      setScrollTarget((prev) => ({ cat: sections[i].category, nonce: (prev?.nonce ?? 0) + 1 }));
+    },
+    [sections]
+  );
+  // preview → rail: al scrollear el preview, seguir la sección visible
+  const onVisibleSection = useCallback(
+    (id: string) => {
+      const i = sections.findIndex((s) => s.category === id);
+      if (i >= 0) setActive(i);
+    },
+    [sections]
+  );
 
   // ── subida NO bloqueante ────────────────────────────────────────────────────
   const bump = (cat: string, d: number) =>
@@ -237,129 +256,102 @@ export default function UploadStep({
 
   const withMedia = sections.filter((s) => countOf(s) > 0).length;
   const isLast = active === sections.length - 1;
+  const s = sections[active];
 
   return (
     <div className="pa-root pa-up">
-      <nav className="pa-rail" aria-label="Secciones">
-        <p className="pa-rail-title">Tu sitio, por secciones</p>
-        <ul className="pa-rail-list">
-          {sections.map((sec, i) => {
-            const n = countOf(sec);
-            const loading = (pending[sec.category] ?? 0) > 0;
-            return (
-              <li key={sec.category}>
-                <button
-                  type="button"
-                  className={`pa-rail-row ${i === active ? "on" : ""}`}
-                  onClick={() => goTo(i)}
-                >
-                  <span className="pa-rail-label">{sec.title}</span>
-                  {loading ? (
-                    <LoadDots />
-                  ) : (
-                    <>
-                      {n > 0 && <span className="pa-badge">{n}</span>}
-                      {n > 0 && (
-                        <span className="pa-rail-check" aria-label="con media">
-                          <Check />
-                        </span>
-                      )}
-                    </>
-                  )}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+      {/* pill mobile para alternar uploader ↔ preview */}
+      <div className="pa-mobilebar">
+        <button
+          type="button"
+          className="pa-preview-toggle"
+          onClick={() => setMobilePane((p) => (p === "upload" ? "preview" : "upload"))}
+        >
+          {mobilePane === "upload" ? "Previsualizar" : "Volver a subir"}
+        </button>
+      </div>
 
-      <div className="pa-panel">
-        <div className="pa-panel-scroll pa-up-scroll" ref={scrollRef} onScroll={onScroll}>
-          {sections.map((sec) => (
+      <div className="pa-up-body">
+        <nav className="pa-rail" aria-label="Secciones">
+          <p className="pa-rail-title">Tu sitio, por secciones</p>
+          <ul className="pa-rail-list">
+            {sections.map((sec, i) => {
+              const n = countOf(sec);
+              const loading = (pending[sec.category] ?? 0) > 0;
+              return (
+                <li key={sec.category}>
+                  <button
+                    type="button"
+                    className={`pa-rail-row ${i === active ? "on" : ""}`}
+                    onClick={() => goTo(i)}
+                  >
+                    <span className="pa-rail-label">{sec.title}</span>
+                    {loading ? (
+                      <LoadDots />
+                    ) : (
+                      <>
+                        {n > 0 && <span className="pa-badge">{n}</span>}
+                        {n > 0 && (
+                          <span className="pa-rail-check" aria-label="con media">
+                            <Check />
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        {/* izquierda: el uploader de la sección activa (una a la vez) */}
+        <div className={`pa-panel pa-pane-left ${mobilePane === "upload" ? "show" : ""}`}>
+          <div className="pa-panel-scroll">
             <ActiveUploader
-              key={sec.category}
-              section={sec}
-              registerEl={(el) => {
-                sectionEls.current[sec.category] = el;
-              }}
-              photos={photosOf(sec.category)}
-              video={videoOf(sec.category)}
-              uploading={(pending[sec.category] ?? 0) > 0}
-              onFiles={(files) => uploadFiles(files, sec.category, sec.mode === "single")}
+              key={s.category}
+              section={s}
+              photos={photosOf(s.category)}
+              video={videoOf(s.category)}
+              uploading={(pending[s.category] ?? 0) > 0}
+              onFiles={(files) => uploadFiles(files, s.category, s.mode === "single")}
               onDelete={del}
               onDeleteVideo={delVideo}
-              onReorder={(from, to) => reorder(sec.category, from, to)}
+              onReorder={(from, to) => reorder(s.category, from, to)}
             />
-          ))}
-          {err && <div className="ch-error">{err}</div>}
+            {err && <div className="ch-error">{err}</div>}
+          </div>
+
+          <div className="pa-cta">
+            <span className="pa-cta-progress">
+              {withMedia} de {sections.length} secciones con media
+            </span>
+            {isLast ? (
+              <button type="button" className="ch-btn primary" onClick={onCreate}>
+                {hasBuild ? "Volver al editor" : "Crear mi sitio"}
+              </button>
+            ) : (
+              <button type="button" className="ch-btn primary" onClick={() => goTo(active + 1)}>
+                Siguiente
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="pa-cta">
-          <span className="pa-cta-progress">
-            {withMedia} de {sections.length} secciones con media
-          </span>
-          {isLast ? (
-            <button type="button" className="ch-btn primary" onClick={onCreate}>
-              {hasBuild ? "Volver al editor" : "Crear mi sitio"}
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="ch-btn primary"
-              onClick={() => goTo(Math.min(active + 1, sections.length - 1))}
-            >
-              Siguiente
-            </button>
+        {/* derecha: el preview vivo del sitio */}
+        <div className={`pa-up-preview pa-pane-right ${mobilePane === "preview" ? "show" : ""}`}>
+          {previewContent && (
+            <SitePreviewFrame
+              content={previewContent}
+              theme={theme}
+              subdomain={subdomain}
+              scrollTo={scrollTarget}
+              onVisibleSection={onVisibleSection}
+            />
           )}
         </div>
       </div>
     </div>
-  );
-}
-
-// ── ilustración estática de la sección del template (para saber dónde va la
-//    media). Es un esquema por tipo de bloque, no el sitio real. ────────────────
-function SectionSketch({ kind }: { kind: SectionKind }) {
-  return (
-    <span className={`pa-sketch kind-${kind}`} aria-hidden>
-      {kind === "hero" ? (
-        <>
-          <span className="pa-sketch-photo tall" />
-          <span className="pa-sketch-overlay">
-            <span className="pa-sketch-line lg" />
-            <span className="pa-sketch-line sm" />
-          </span>
-        </>
-      ) : kind === "closing" ? (
-        <span className="pa-sketch-flip">
-          <span className="pa-sketch-photo" />
-          <span className="pa-sketch-heart">♥</span>
-        </span>
-      ) : kind === "watch" ? (
-        <span className="pa-sketch-video">
-          <span className="pa-sketch-play">▶</span>
-        </span>
-      ) : kind === "story" || kind === "travel" || kind === "moments" ? (
-        <span className="pa-sketch-split">
-          <span className="pa-sketch-photo" />
-          <span className="pa-sketch-col">
-            <span className="pa-sketch-line lg" />
-            <span className="pa-sketch-line" />
-            <span className="pa-sketch-line sm" />
-          </span>
-        </span>
-      ) : (
-        // gallery (y fallback)
-        <span className="pa-sketch-grid">
-          <span />
-          <span />
-          <span />
-          <span />
-          <span />
-          <span />
-        </span>
-      )}
-    </span>
   );
 }
 
@@ -369,7 +361,6 @@ function ActiveUploader({
   photos,
   video,
   uploading,
-  registerEl,
   onFiles,
   onDelete,
   onDeleteVideo,
@@ -379,8 +370,6 @@ function ActiveUploader({
   photos: Doc<"draftPhotos">[];
   video: Doc<"draftVideos"> | null;
   uploading: boolean;
-  /** registra el elemento raíz de la sección para el scroll-sync del rail */
-  registerEl: (el: HTMLElement | null) => void;
   onFiles: (files: FileList | File[]) => void;
   onDelete: (id: Id<"draftPhotos">) => void;
   onDeleteVideo: (id: Id<"draftVideos">) => void;
@@ -392,7 +381,7 @@ function ActiveUploader({
   const [dropZoneOver, setDropZoneOver] = useState(false);
 
   const single = section.mode === "single";
-  const accept = single ? "image/*,video/mp4,video/quicktime,video/webm" : "image/*,video/mp4,video/quicktime,video/webm";
+  const accept = "image/*,video/mp4,video/quicktime,video/webm";
 
   const intent =
     section.kind === "hero"
@@ -404,7 +393,7 @@ function ActiveUploader({
   const pickFiles = () => fileRef.current?.click();
 
   return (
-    <div className="pa-uploader" data-cat={section.category} ref={registerEl}>
+    <div className="pa-uploader" data-cat={section.category}>
       <div className="pa-uploader-head">
         <div className="pa-uploader-headtext">
           <h2 className="pa-uploader-title">{section.title}</h2>
@@ -413,8 +402,6 @@ function ActiveUploader({
             <p className="pa-reco">Se recomienda un video en esta sección.</p>
           )}
         </div>
-        {/* dónde va esta sección en el template (esquema estático) */}
-        <SectionSketch kind={section.kind} />
       </div>
 
       {single && (photos[0] || video) ? (

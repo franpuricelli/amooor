@@ -47,5 +47,8 @@ export const TEMPLATE_OPTIONS: TemplateOption[] = [
 
 export const DEFAULT_TEMPLATE_ID = TEMPLATE_OPTIONS[0].id;
 
+/** Galería con TODAS las plantillas (destino de "ver todos" en el chooser). */
+export const TEMPLATES_GALLERY_HREF = "/template";
+
 /** clave de localStorage donde guardamos la plantilla elegida (scaffold). */
 export const TEMPLATE_STORAGE_KEY = "amooor_template";

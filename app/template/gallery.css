@@ -1,0 +1,151 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   gallery.css — /template (la galería de TODAS las plantillas). Autocontenida:
+   redeclara los tokens --mk-* (espejo de chat.css / marketing.css) porque esta
+   ruta no importa esos estilos. Prefijo .tpl-.
+   ───────────────────────────────────────────────────────────────────────────── */
+.tpl-gallery {
+  --mk-bg: #faf4f0;
+  --mk-bg-alt: #f3e7e4;
+  --mk-card: #fffcfa;
+  --mk-ink: #2a0a18;
+  --mk-ink-2: rgba(42, 10, 24, 0.62);
+  --mk-ink-3: rgba(42, 10, 24, 0.4);
+  --mk-line: rgba(42, 10, 24, 0.12);
+  --mk-line-soft: rgba(42, 10, 24, 0.08);
+  --mk-rose: #ff5c99;
+  --mk-rose-text: #c02c68;
+  --mk-rose-soft: #ffe4ee;
+  --mk-serif: var(--font-fraunces, Georgia, "Times New Roman", serif);
+  --mk-r-lg: 18px;
+  --mk-r-md: 12px;
+
+  min-height: 100dvh;
+  background: var(--mk-bg);
+  color: var(--mk-ink);
+  font-family: var(--font-sans, "Inter", -apple-system, sans-serif);
+  -webkit-font-smoothing: antialiased;
+  padding: clamp(1.4rem, 5vw, 3.5rem) clamp(1rem, 5vw, 3rem) 4rem;
+}
+
+.tpl-gallery-head {
+  max-width: 1100px;
+  margin: 0 auto 2rem;
+}
+.tpl-back {
+  display: inline-block;
+  color: var(--mk-ink-2);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 550;
+  margin-bottom: 1.2rem;
+}
+.tpl-back:hover {
+  color: var(--mk-rose-text);
+}
+.tpl-gallery-title {
+  font-family: var(--mk-serif);
+  font-weight: 600;
+  font-size: clamp(1.9rem, 5vw, 3rem);
+  line-height: 1.05;
+  margin: 0 0 0.5rem;
+}
+.tpl-gallery-sub {
+  color: var(--mk-ink-2);
+  font-size: clamp(0.98rem, 2vw, 1.12rem);
+  max-width: 46ch;
+  margin: 0;
+}
+
+.tpl-gallery-grid {
+  list-style: none;
+  margin: 0 auto;
+  padding: 0;
+  max-width: 1100px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: clamp(1.2rem, 3vw, 2rem);
+}
+
+.tpl-card {
+  display: flex;
+  flex-direction: column;
+}
+/* marco tipo navegador con el export real escalado como thumbnail */
+.tpl-card-frame {
+  position: relative;
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  background: var(--mk-card);
+  border: 1px solid var(--mk-line);
+  border-radius: var(--mk-r-lg);
+  overflow: hidden;
+  box-shadow: 0 24px 60px -40px rgba(42, 10, 24, 0.4);
+  transition: transform 0.16s, box-shadow 0.16s, border-color 0.16s;
+}
+.tpl-card-frame:hover {
+  transform: translateY(-3px);
+  border-color: var(--mk-rose);
+  box-shadow: 0 34px 70px -38px rgba(192, 44, 104, 0.45);
+}
+.tpl-card-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.55rem 0.8rem;
+  background: var(--mk-bg-alt);
+  border-bottom: 1px solid var(--mk-line-soft);
+}
+.tpl-card-bar i {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: rgba(42, 10, 24, 0.18);
+}
+.tpl-card-shot {
+  position: relative;
+  display: block;
+  height: 300px;
+  overflow: hidden;
+  background: #fff;
+}
+/* el export es un sitio completo: lo agrandamos y lo escalamos para que entre
+   como miniatura no interactiva (el click lo captura el <a> contenedor). */
+.tpl-card-shot iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 285.7%;
+  height: 285.7%;
+  border: 0;
+  transform: scale(0.35);
+  transform-origin: top left;
+  pointer-events: none;
+}
+.tpl-card-open {
+  position: absolute;
+  right: 0.7rem;
+  bottom: 0.7rem;
+  background: var(--mk-card);
+  color: var(--mk-ink);
+  border: 1px solid var(--mk-line);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  box-shadow: 0 8px 20px -12px rgba(42, 10, 24, 0.5);
+}
+.tpl-card-meta {
+  padding: 0.9rem 0.3rem 0;
+}
+.tpl-card-name {
+  font-family: var(--mk-serif);
+  font-weight: 600;
+  font-size: 1.25rem;
+  margin: 0 0 0.15rem;
+}
+.tpl-card-blurb {
+  color: var(--mk-ink-2);
+  font-size: 0.94rem;
+  margin: 0;
+}

@@ -11,7 +11,11 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { Swatch } from "@/lib/palette-gen";
-import { TEMPLATE_OPTIONS, type TemplateOption } from "@/lib/templates-catalog";
+import {
+  TEMPLATE_OPTIONS,
+  TEMPLATES_GALLERY_HREF,
+  type TemplateOption,
+} from "@/lib/templates-catalog";
 import PalettePicker from "./PalettePicker";
 
 /** mini-mock del sitio dentro del card — solo estético, varía por "vibe". */
@@ -77,7 +81,7 @@ export default function PreChoice({
           <h3 className="ch-choice-block-title">Plantilla</h3>
           <a
             className="ch-tpl-all"
-            href={TEMPLATE_OPTIONS[0].previewHref}
+            href={TEMPLATES_GALLERY_HREF}
             target="_blank"
             rel="noreferrer"
           >

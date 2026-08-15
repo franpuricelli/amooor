@@ -2510,7 +2510,13 @@
 
 /* ═══ Phase 1 — Upload ═══════════════════════════════════════════════════════ */
 .pa-up {
-  flex-direction: row;
+  flex-direction: column;
+}
+/* cuerpo de dos paneles: rail + uploader (izq) · preview vivo (der) */
+.pa-up-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
 }
 .pa-rail {
   flex: 0 0 240px;
@@ -2587,15 +2593,24 @@
 }
 
 .pa-panel {
-  flex: 1;
+  flex: 0 0 clamp(320px, 42%, 500px);
   min-width: 0;
   display: flex;
   flex-direction: column;
+  border-right: 1px solid var(--mk-line-soft);
 }
 .pa-panel-scroll {
   flex: 1;
   overflow-y: auto;
   padding: clamp(1rem, 4vw, 2rem);
+}
+/* preview vivo del sitio (columna derecha) */
+.pa-up-preview {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  padding: clamp(0.6rem, 2vw, 1rem);
 }
 .pa-cta {
   flex-shrink: 0;
@@ -2612,15 +2627,9 @@
   color: var(--mk-ink-2);
 }
 
-/* cada sección apilada en el scroller (scroll-sync con el rail) */
+/* el uploader de la sección activa (una a la vez) */
 .pa-uploader {
   max-width: 720px;
-  scroll-margin-top: 1rem;
-}
-.pa-up-scroll .pa-uploader:not(:last-of-type) {
-  margin-bottom: 1.6rem;
-  padding-bottom: 1.6rem;
-  border-bottom: 1px solid var(--mk-line-soft);
 }
 .pa-uploader-head {
   display: flex;
@@ -2631,106 +2640,6 @@
 }
 .pa-uploader-headtext {
   min-width: 0;
-}
-/* ilustración estática de la sección del template */
-.pa-sketch {
-  flex-shrink: 0;
-  width: 92px;
-  height: 68px;
-  border-radius: var(--mk-r-md);
-  border: 1px solid var(--mk-line);
-  background: var(--mk-card);
-  overflow: hidden;
-  position: relative;
-  display: flex;
-  padding: 7px;
-  gap: 5px;
-}
-.pa-sketch-photo {
-  flex: 1;
-  border-radius: 4px;
-  background: linear-gradient(135deg, var(--mk-rose) 0%, var(--mk-rose-soft) 100%);
-}
-.pa-sketch-photo.tall {
-  position: absolute;
-  inset: 0;
-  border-radius: 0;
-}
-.pa-sketch-overlay {
-  position: relative;
-  z-index: 1;
-  margin-top: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  width: 100%;
-}
-.pa-sketch-line {
-  height: 5px;
-  width: 70%;
-  border-radius: 3px;
-  background: var(--mk-line);
-}
-.pa-sketch-overlay .pa-sketch-line {
-  background: rgba(255, 255, 255, 0.9);
-}
-.pa-sketch-line.lg {
-  height: 7px;
-  width: 85%;
-}
-.pa-sketch-line.sm {
-  width: 45%;
-}
-.pa-sketch-split {
-  display: flex;
-  gap: 5px;
-  width: 100%;
-}
-.pa-sketch-split .pa-sketch-photo {
-  flex: 0 0 42%;
-}
-.pa-sketch-col {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 4px;
-}
-.pa-sketch-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-auto-rows: 1fr;
-  gap: 4px;
-  width: 100%;
-}
-.pa-sketch-grid span {
-  border-radius: 3px;
-  background: linear-gradient(135deg, var(--mk-rose) 0%, var(--mk-rose-soft) 100%);
-}
-.pa-sketch-video {
-  width: 100%;
-  border-radius: 4px;
-  background: var(--mk-ink);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.pa-sketch-play {
-  color: #fff;
-  font-size: 0.7rem;
-}
-.pa-sketch-flip {
-  position: relative;
-  width: 100%;
-  border-radius: 4px;
-  background: linear-gradient(135deg, var(--mk-rose) 0%, var(--mk-rose-soft) 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.pa-sketch-heart {
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 0.95rem;
 }
 @media (max-width: 620px) {
   .pa-sketch {
@@ -3279,6 +3188,10 @@
 @media (max-width: 860px) {
   .pa-up {
     flex-direction: column;
+  }
+  .pa-up-body {
+    flex-direction: column;
+    min-height: 0;
   }
   .pa-rail {
     flex: 0 0 auto;
