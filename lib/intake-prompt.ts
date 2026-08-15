@@ -13,7 +13,9 @@
 export const HIDDEN_CHECKLIST = [
   "quiénes son los dos: nombres y la PERSONALIDAD de cada uno (qué los hace ser ellos)",
   "el arco general de la relación: cómo se conocieron (a grandes rasgos) y dónde están hoy",
-  "2 o 3 momentos importantes que sirvan de hilo conductor de la historia",
+  "si la persona ya tiene una idea de la estructura/secciones que quiere, o prefiere que se la propongamos",
+  "material para cada sección que aplique del template: historia (cómo se conocieron), viajes si los hay, momentos/rituales del día a día, pelis o series que los definen, y el mensaje final del cierre",
+  "los momentos importantes que sirvan de hilo conductor; en relaciones de varios años, un momento o hito destacado por cada año o etapa (no un puñado suelto)",
   "el tono / vibe emocional que quieren transmitir",
   "la ocasión o propósito del sitio",
   "qué momentos o secciones quieren destacar",
@@ -27,9 +29,15 @@ YA hay suficiente material GENERAL para proponer un plan de sitio.
 Hay suficiente cuando se entiende, a grandes rasgos:
 ${HIDDEN_CHECKLIST.map((c) => `- ${c}`).join("\n")}
 
-No exijas detalle fino: alcanza con el hilo conductor, la personalidad de ambos,
-un par de momentos importantes, el tono y la ocasión. Preferí avanzar antes que
-sobre-preguntar.
+Escalá la exigencia según cuánto hace que están juntos:
+- relación corta o nueva (hasta ~1 año): no exijas detalle fino. Alcanza con el hilo
+  conductor, la personalidad de ambos, un par de momentos, el tono y la ocasión.
+  Preferí avanzar antes que sobre-preguntar.
+- relación de varios años: esperá material más rico antes de darte por satisfecho.
+  Tiene que haber un momento o hito destacado por cada año o etapa (no un puñado
+  suelto), y material para las secciones que apliquen (historia, viajes, momentos y
+  rituales, pelis, cierre). Si para una relación larga la charla cubre solo unos pocos
+  momentos, todavía NO alcanza: seguí (marcá lo que falta en "missing").
 
 Devolvé SOLO un objeto JSON válido, sin markdown ni texto extra, con esta forma:
 {"satisfied": true|false, "missing": ["ítem que todavía falta", ...]}`;
