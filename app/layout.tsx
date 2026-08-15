@@ -1,30 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Caveat, Fraunces } from "next/font/google";
 import "./globals.css";
+import { fontVariables } from "./fonts";
 import { resolvePalette, paletteVars } from "@/lib/theme";
 import { TenantProvider } from "@/lib/tenant";
 import { resolveSite } from "@/lib/site-server";
-
-const inter = Inter({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-inter",
-});
-
-const caveat = Caveat({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-caveat",
-});
-
-// Fraunces — the editorial serif that carries the display headings and the
-// italic emphasis (Wispr Flow-style typography) on the marketing landing.
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-fraunces",
-  axes: ["opsz", "SOFT"],
-});
 
 // Metadata + viewport are per-tenant: they read the same (request-cached) site
 // as the layout, so each host gets its own title/OG/theme-color.
@@ -62,7 +41,10 @@ export default async function RootLayout({
   return (
     <html
       lang={content.site.locale}
-      className={`${inter.variable} ${caveat.variable} ${fraunces.variable}`}
+      className={fontVariables}
+      // la plantilla elegida re-estiliza el sitio vía CSS `[data-template]`
+      // (app/globals.css). Sin ella → base "romantic".
+      data-template={theme.template ?? "romantic"}
       style={paletteStyle}
     >
       <body>

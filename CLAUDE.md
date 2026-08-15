@@ -49,14 +49,22 @@ State persists in a Convex **draft** (token in `localStorage`,
 `lib/use-conversation.ts`): `conversation`, `intakePlan`, `theme`, `content`,
 `status`.
 
-## Palette / theme
+## Palette / theme / template
 
-`Theme = { palette: PaletteId; overrides?: Partial<Palette> }` (`lib/template.ts`).
-`resolvePalette()` / `paletteVars()` in `lib/theme.ts` expand it into the 13
-CSS-var tokens every site color reads. Custom palettes derive from one hex
-(`lib/palette-gen.ts:paletteFromHex`) and the full `Palette` must ride in
-`theme.overrides` — otherwise `resolvePalette` falls back to the default and the
-custom color silently does nothing.
+`Theme = { palette: PaletteId; template?: string; overrides?: Partial<Palette> }`
+(`lib/template.ts`). `resolvePalette()` / `paletteVars()` in `lib/theme.ts` expand
+the palette into the 13 CSS-var tokens every site color reads. Custom palettes
+derive from one hex (`lib/palette-gen.ts:paletteFromHex`) and the full `Palette`
+must ride in `theme.overrides` — otherwise `resolvePalette` falls back to the
+default and the custom color silently does nothing.
+
+`template` is the chosen **skin** (task 2-B): applied as `data-template="<id>"` on
+the render root (`app/layout.tsx` for tenants, `PreviewSite` for the preview),
+re-styling typography/surfaces via `[data-template]` blocks in `app/globals.css`.
+Fonts load in `app/fonts.ts` (`fontVariables`). Persisted in `draft.theme.template`
+(state in `lib/use-conversation.ts`, mirrors `palette`). Base = `romantic` (no
+block). **Adding a template:** follow `docs/templates/README.md` and add a
+`docs/templates/<id>.md`.
 
 ## Media upload (3 hops)
 
@@ -110,6 +118,8 @@ dev `hallowed-kookabura-859` · prod `canny-pheasant-391` (project `amoor`).
 ## References (docs/)
 
 - `design-system-landing.md` — the landing's visual system (`.mk-`).
+- `templates/README.md` — the template-skin system + how to add one; a
+  `templates/<id>.md` per template.
 - `PLAN.md`, `fase-1..5-*.md` — product plan and phases.
 - `deploy-vercel.md` — deploy.
 - `session-learnings.md` — per-session episode log (debugging narratives, open items).

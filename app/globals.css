@@ -1750,3 +1750,460 @@ section {
     margin-top: 0;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TEMPLATE SKINS (task 2-B) — la plantilla elegida re-estiliza el sitio.
+
+   Portado de templates/love-story (los exports standalone), re-scopeado de
+   `html[data-theme="X"]` → `[data-template="X"]`. Ese atributo lo pone el root
+   del render: `<html>` en el tenant real (app/layout.tsx) y el <div> raíz del
+   preview (components/wizard/PreviewSite.tsx). "romantic" es la base de arriba
+   (no necesita bloque). Cada plantilla se documenta en docs/templates/<id>.md;
+   AL AGREGAR UNA NUEVA PLANTILLA, sumá su bloque acá + su .md.
+
+   Los 6 tokens que PreviewSite/layout inyectan inline sobre el MISMO elemento
+   (--canvas/-soft/-deep, --pink, --ink, --dark) llevan !important para ganarle
+   al style inline; el resto son selectores de descendientes (sin inline) y no lo
+   necesitan. Las fuentes se cargan en app/fonts.ts.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── EDITORIAL — fine-art claro: crema cálido, tinta carbón, filetes finos,
+   trío tipográfico Parisienne / Cormorant / Montserrat. ─────────────────────── */
+[data-template="editorial"] {
+  /* canvas — crema/greige (gana al inline) */
+  --canvas: #f3f0ea !important;
+  --canvas-soft: #eae5dc !important;
+  --canvas-deep: #e6e0d6 !important;
+  /* monocromo: el "accent" es carbón */
+  --pink: #2a251f !important;
+  --ink: #2a251f !important;
+  --ink-70: rgba(42, 37, 31, 0.66);
+  --ink-50: rgba(42, 37, 31, 0.46);
+  /* "blanco sobre oscuro" → "carbón sobre claro" (la base usa --white p/ texto) */
+  --white: #2a251f;
+  --white-70: rgba(42, 37, 31, 0.66);
+  --white-45: rgba(42, 37, 31, 0.46);
+  /* superficies — paneles claros planos + filetes (sin blur de glass) */
+  --dark: #e7e1d7 !important;
+  --glass: #f7f4ee;
+  --glass-strong: #efeae1;
+  --glass-border: rgba(42, 37, 31, 0.16);
+  --glass-border-soft: rgba(42, 37, 31, 0.1);
+  /* fuentes */
+  --font-sans: var(--font-montserrat), "Montserrat", -apple-system, sans-serif;
+  --font-serif: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  --font-script: var(--font-parisienne), "Parisienne", "Snell Roundhand", cursive;
+  /* esquinas rectas */
+  --r-xl: 0;
+  --r-lg: 0;
+  --r-md: 0;
+  /* el root del render hace de lienzo (el preview no tiene <body> propio) */
+  min-height: 100%;
+  font-family: var(--font-sans);
+  color: var(--ink);
+  font-weight: 400;
+  background: var(--canvas);
+  background-image: radial-gradient(60% 50% at 8% -8%, #faf8f3 0%, transparent 60%),
+    radial-gradient(50% 45% at 100% 0%, #efe9df 0%, transparent 55%);
+}
+/* paneles claros planos — sin blur ni sombra pesada */
+[data-template="editorial"] .glass,
+[data-template="editorial"] .glass-card {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  color: var(--ink);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+}
+/* bloques crema/greige alternados, filetes arriba+abajo, sin glow rosa */
+[data-template="editorial"] .section-dark {
+  background: var(--dark);
+  background-image: none;
+  color: var(--ink);
+  border-top: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--glass-border);
+}
+[data-template="editorial"] .section-dark .lede {
+  color: var(--ink-70);
+}
+/* eyebrows → mayúsculas anchas con filete corto (sin pill) */
+[data-template="editorial"] .eyebrow {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--ink-70);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+[data-template="editorial"] .eyebrow::before {
+  content: "";
+  width: 26px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.55;
+}
+/* chips → tono sobre tono con filete */
+[data-template="editorial"] .chip {
+  background: rgba(42, 37, 31, 0.04);
+  border: 1px solid var(--glass-border-soft);
+  color: var(--ink);
+}
+[data-template="editorial"] .chip-btn:hover {
+  background: rgba(42, 37, 31, 0.07);
+  border-color: var(--glass-border);
+}
+/* botones → outline recto, tinta sobre crema, se rellena en hover */
+[data-template="editorial"] .btn {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--ink);
+}
+[data-template="editorial"] .btn:hover {
+  background: var(--ink);
+  color: var(--canvas);
+}
+[data-template="editorial"] ::selection {
+  background: var(--ink);
+  color: var(--canvas);
+}
+/* fotografía casi monocroma */
+[data-template="editorial"] .tile img {
+  filter: grayscale(0.9) contrast(1.02) brightness(1.01);
+}
+[data-template="editorial"] .hero-bg {
+  filter: grayscale(1);
+}
+[data-template="editorial"] .tile:focus-visible {
+  outline-color: var(--ink);
+}
+/* HERO — fondo claro, script carbón, sin scrim ni corazones flotantes */
+[data-template="editorial"] .hero-scrim,
+[data-template="editorial"] .hearts,
+[data-template="editorial"] .head-hearts,
+[data-template="editorial"] .cursor-heart,
+[data-template="editorial"] .heart-cursor {
+  display: none !important;
+}
+[data-template="editorial"] .hero .display {
+  color: var(--ink);
+  text-shadow: none;
+}
+[data-template="editorial"] .hero .lede {
+  color: var(--ink-70);
+  text-shadow: none;
+}
+/* deck de países → escalones greige + filete, sin rosa */
+[data-template="editorial"] .pais-panel {
+  box-shadow: 0 -14px 34px -22px rgba(0, 0, 0, 0.18);
+  border-top: 1px solid var(--glass-border);
+}
+[data-template="editorial"] .pais-panel:nth-child(3n + 1) {
+  background: linear-gradient(180deg, #eee9e0 0%, #e7e1d7 100%);
+}
+[data-template="editorial"] .pais-panel:nth-child(3n + 2) {
+  background: linear-gradient(180deg, #e9e3d9 0%, #e2dbd0 100%);
+}
+[data-template="editorial"] .pais-panel:nth-child(3n) {
+  background: linear-gradient(180deg, #f1ece3 0%, #eae4da 100%);
+}
+/* collage polaroid → passe-partout carbón fino + sombra suave */
+[data-template="editorial"] .collage-tile {
+  border: 1px solid rgba(42, 37, 31, 0.16);
+  box-shadow: 0 14px 34px -20px rgba(42, 37, 31, 0.3);
+}
+/* acentos que eran rosa → carbón (monocromo) */
+[data-template="editorial"] .nav-heart,
+[data-template="editorial"] .hero-amp,
+[data-template="editorial"] .watch-feature-note,
+[data-template="editorial"] .lightbox-grid-toggle {
+  color: var(--ink);
+  text-shadow: none;
+}
+/* tipografía editorial */
+[data-template="editorial"] .display {
+  font-family: var(--font-script);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.12;
+}
+[data-template="editorial"] .hero-amp {
+  font-family: var(--font-script);
+}
+[data-template="editorial"] .h2,
+[data-template="editorial"] .h3,
+[data-template="editorial"] .stats-num {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+[data-template="editorial"] .h2 {
+  line-height: 1.06;
+}
+[data-template="editorial"] .eyebrow,
+[data-template="editorial"] .btn,
+[data-template="editorial"] .stats-kicker,
+[data-template="editorial"] .stats-label,
+[data-template="editorial"] .person-artists-label,
+[data-template="editorial"] .kind-pill {
+  font-family: var(--font-sans);
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-weight: 500;
+}
+/* esquinas rectas en todos los elementos con radio */
+[data-template="editorial"] .eyebrow,
+[data-template="editorial"] .chip,
+[data-template="editorial"] .btn,
+[data-template="editorial"] .nav-inner,
+[data-template="editorial"] .nav-badge,
+[data-template="editorial"] .person-pill,
+[data-template="editorial"] .lang-switch,
+[data-template="editorial"] .lang-switch button,
+[data-template="editorial"] .kind-pill,
+[data-template="editorial"] .watch-chip,
+[data-template="editorial"] .lightbox-caption,
+[data-template="editorial"] .artist-row img,
+[data-template="editorial"] .kind-dot,
+[data-template="editorial"] .lightbox-btn,
+[data-template="editorial"] .wall-mini .tile,
+[data-template="editorial"] .wol-tile,
+[data-template="editorial"] .collage-tile,
+[data-template="editorial"] .flag,
+[data-template="editorial"] .pais-panel,
+[data-template="editorial"] .pais-panel .flag,
+[data-template="editorial"] .sheet-top,
+[data-template="editorial"] .lightbox-strip-thumb,
+[data-template="editorial"] .lightbox-grid-tile {
+  border-radius: 0;
+}
+/* emojis de contenido → monocromos para que entren en la paleta editorial */
+[data-template="editorial"] .flag-emoji,
+[data-template="editorial"] .moment-title span[aria-hidden],
+[data-template="editorial"] .person-traits .chip span[aria-hidden],
+[data-template="editorial"] .stats-chips .chip {
+  filter: grayscale(1);
+  opacity: 0.8;
+}
+
+/* ── BRUTALIST — neo-brutalista: papel cálido, tinta casi negra, azul eléctrico
+   + amarillo, Bricolage Grotesque, Space Mono, bordes 2px, sombras duras. ───── */
+[data-template="brutalist"] {
+  --canvas: #f4efe1 !important;
+  --canvas-soft: #efe8d6 !important;
+  --canvas-deep: #eae2cd !important;
+  --pink: #2f27e0 !important; /* accent → azul eléctrico */
+  --ink: #141210 !important;
+  --ink-70: rgba(20, 18, 16, 0.72);
+  --ink-50: rgba(20, 18, 16, 0.5);
+  /* mantené white para el único bloque oscuro (section-dark) */
+  --white: #ffffff;
+  --white-70: rgba(255, 255, 255, 0.74);
+  --white-45: rgba(255, 255, 255, 0.5);
+  --dark: #141210 !important; /* section-dark → bloque negro sólido */
+  --glass: #ffffff;
+  --glass-strong: #ffffff;
+  --glass-border: #141210;
+  --glass-border-soft: #141210;
+  --pop: #2f27e0;
+  --pop-yellow: #ffcf2e;
+  --border: 2px solid var(--ink);
+  --shadow: 5px 5px 0 var(--ink);
+  --font-sans: var(--font-archivo), "Archivo", system-ui, sans-serif;
+  --font-display: var(--font-bricolage), "Bricolage Grotesque", system-ui, sans-serif;
+  --font-mono: var(--font-space-mono), "Space Mono", ui-monospace, monospace;
+  --r-xl: 0;
+  --r-lg: 0;
+  --r-md: 0;
+  min-height: 100%;
+  font-family: var(--font-sans);
+  color: var(--ink);
+  /* papel + grilla de ingeniería tenue */
+  background: var(--canvas);
+  background-image: linear-gradient(rgba(20, 18, 16, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 18, 16, 0.05) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+/* display / headings → grotesque robusta */
+[data-template="brutalist"] .display {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 0.94;
+  color: var(--ink);
+  text-shadow: 5px 5px 0 var(--pop);
+}
+[data-template="brutalist"] .hero-amp {
+  color: var(--pop);
+  -webkit-text-stroke: 2px var(--ink);
+}
+[data-template="brutalist"] .h2,
+[data-template="brutalist"] .h3,
+[data-template="brutalist"] .stats-num {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+[data-template="brutalist"] .stats-num {
+  color: var(--pop);
+}
+/* tag-labels mono */
+[data-template="brutalist"] .btn,
+[data-template="brutalist"] .stats-kicker,
+[data-template="brutalist"] .stats-label,
+[data-template="brutalist"] .person-artists-label,
+[data-template="brutalist"] .story-kicker,
+[data-template="brutalist"] .kind-pill,
+[data-template="brutalist"] .chip {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-weight: 700;
+}
+/* eyebrow → tag mono amarillo con sombra dura (no una pill de glass) */
+[data-template="brutalist"] .eyebrow {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--pop-yellow);
+  border: var(--border);
+  box-shadow: 3px 3px 0 var(--ink);
+  padding: 0.5rem 0.85rem;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+/* paneles → cajas blancas sólidas, borde grueso, sombra dura, sin blur */
+[data-template="brutalist"] .glass,
+[data-template="brutalist"] .glass-card {
+  background: #fff;
+  color: var(--ink);
+  border: var(--border);
+  box-shadow: var(--shadow);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+[data-template="brutalist"] .chip {
+  background: #fff;
+  color: var(--ink);
+  border: var(--border);
+}
+[data-template="brutalist"] .chip-btn:hover {
+  background: var(--pop-yellow);
+  transform: translate(-1px, -1px);
+}
+/* botones → bloque azul eléctrico que "se hunde" en hover */
+[data-template="brutalist"] .btn {
+  background: var(--pop);
+  color: #fff;
+  border: var(--border);
+  box-shadow: 4px 4px 0 var(--ink);
+  letter-spacing: 0.04em;
+}
+[data-template="brutalist"] .btn:hover {
+  background: var(--pop);
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+/* section-dark → bloque negro sólido, sin glow rosa */
+[data-template="brutalist"] .section-dark {
+  background: var(--dark);
+  background-image: none;
+  color: #fff;
+  border-top: var(--border);
+  border-bottom: var(--border);
+}
+/* fotos → encajadas con sombra dura, contraste punchy */
+[data-template="brutalist"] .tile {
+  border: var(--border);
+  box-shadow: var(--shadow);
+  background: var(--canvas-soft);
+}
+[data-template="brutalist"] .tile img {
+  filter: contrast(1.06) saturate(1.05);
+}
+[data-template="brutalist"] .tile:focus-visible {
+  outline-color: var(--pop);
+}
+[data-template="brutalist"] .collage-tile {
+  border: var(--border);
+  box-shadow: var(--shadow);
+}
+/* deck de países → bloques azul/amarillo/papel, borde superior grueso */
+[data-template="brutalist"] .pais-panel {
+  border-top: 3px solid var(--ink);
+  box-shadow: 0 -10px 0 -6px var(--ink);
+}
+[data-template="brutalist"] .pais-panel:nth-child(3n + 1) {
+  background: #cfe0ff;
+}
+[data-template="brutalist"] .pais-panel:nth-child(3n + 2) {
+  background: #ffe9a3;
+}
+[data-template="brutalist"] .pais-panel:nth-child(3n) {
+  background: var(--canvas);
+}
+/* acentos que eran rosa → azul eléctrico */
+[data-template="brutalist"] .nav-heart,
+[data-template="brutalist"] .watch-feature-note,
+[data-template="brutalist"] .lightbox-grid-toggle {
+  color: var(--pop);
+}
+/* HERO — fondo papel, display tinta, sin scrim / corazones */
+[data-template="brutalist"] .hero-scrim,
+[data-template="brutalist"] .hearts,
+[data-template="brutalist"] .head-hearts,
+[data-template="brutalist"] .cursor-heart {
+  display: none !important;
+}
+[data-template="brutalist"] .hero .display {
+  color: var(--ink);
+}
+[data-template="brutalist"] .hero .lede {
+  color: var(--ink);
+  text-shadow: none;
+  font-weight: 500;
+}
+[data-template="brutalist"] ::selection {
+  background: var(--pop);
+  color: #fff;
+}
+/* esquinas rectas en todos lados */
+[data-template="brutalist"] .eyebrow,
+[data-template="brutalist"] .chip,
+[data-template="brutalist"] .btn,
+[data-template="brutalist"] .nav-inner,
+[data-template="brutalist"] .nav-badge,
+[data-template="brutalist"] .person-pill,
+[data-template="brutalist"] .lang-switch,
+[data-template="brutalist"] .lang-switch button,
+[data-template="brutalist"] .kind-pill,
+[data-template="brutalist"] .watch-chip,
+[data-template="brutalist"] .lightbox-caption,
+[data-template="brutalist"] .artist-row img,
+[data-template="brutalist"] .kind-dot,
+[data-template="brutalist"] .lightbox-btn,
+[data-template="brutalist"] .wall-mini .tile,
+[data-template="brutalist"] .wol-tile,
+[data-template="brutalist"] .collage-tile,
+[data-template="brutalist"] .flag,
+[data-template="brutalist"] .pais-panel,
+[data-template="brutalist"] .pais-panel .flag,
+[data-template="brutalist"] .sheet-top,
+[data-template="brutalist"] .lightbox-strip-thumb,
+[data-template="brutalist"] .lightbox-grid-tile {
+  border-radius: 0;
+}
+/* language switch — mono, tinta */
+[data-template="brutalist"] .lang-switch button {
+  color: var(--ink-50);
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+[data-template="brutalist"] .lang-switch button.on {
+  color: var(--pop);
+}
+[data-template="brutalist"] .lang-sep {
+  color: var(--ink-50);
+}

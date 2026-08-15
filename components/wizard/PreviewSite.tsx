@@ -14,6 +14,7 @@ import { TenantProvider } from "@/lib/tenant";
 import { EditProvider, type EditAPI } from "@/lib/edit-context";
 import { SECTION_REGISTRY } from "@/components/sections/registry";
 import { resolvePalette, paletteVars } from "@/lib/theme";
+import { fontVariables } from "@/app/fonts";
 import type { Content } from "@/lib/content";
 import type { Theme } from "@/lib/template";
 
@@ -55,8 +56,16 @@ export default function PreviewSite({
     </TenantProvider>
   );
 
+  // La plantilla elegida (task 2-B) se aplica como `[data-template]` sobre este
+  // root: su CSS (app/globals.css) re-estiliza tipografía/bordes/tratamiento. Las
+  // vars de fuente viajan con el div, así el skin rinde igual en escritorio
+  // (in-tree) y en el <iframe> celular (portal) de SitePreviewFrame.
   return (
-    <div style={paletteStyle}>
+    <div
+      className={fontVariables}
+      data-template={theme.template ?? "romantic"}
+      style={paletteStyle}
+    >
       {edit ? <EditProvider value={edit}>{tree}</EditProvider> : tree}
     </div>
   );
