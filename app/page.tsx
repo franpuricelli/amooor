@@ -45,8 +45,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  const { found } = await resolveSite();
-  if (found) return <SiteApp />;
+  const { found, theme } = await resolveSite();
+  if (found) return <SiteApp template={theme.template} />;
 
   return <Landing content={marketing} />;
 }

@@ -45,7 +45,7 @@ export default function TemplatesGalleryPage() {
               </span>
               <span className="tpl-card-shot">
                 <iframe
-                  src={`${t.previewHref}/index.html`}
+                  src={t.previewIsRoute ? t.previewHref : `${t.previewHref}/index.html`}
                   title={`Plantilla ${t.label}`}
                   loading="lazy"
                   scrolling="no"

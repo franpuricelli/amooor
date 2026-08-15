@@ -66,3 +66,6 @@ Nothing else touches the pipeline: `data-template` flows on its own from
 - [romantic](./romantic.md) — the warm base (Puri & Ivi).
 - [editorial](./editorial.md) — light fine-art, monochrome.
 - [brutalist](./brutalist.md) — neo-brutalist, blocks and contrast.
+- [matcha](./matcha.md) — a **different structure** (story timeline / travel /
+  wall of love), not a skin; renders via `MatchaSite` + the content adapter. See
+  also `components/templates/editorial.md`.

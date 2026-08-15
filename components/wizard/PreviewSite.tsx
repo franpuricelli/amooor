@@ -13,6 +13,7 @@ import Footer from "@/components/Footer";
 import { TenantProvider } from "@/lib/tenant";
 import { EditProvider, type EditAPI } from "@/lib/edit-context";
 import { SECTION_REGISTRY } from "@/components/sections/registry";
+import MatchaSite from "@/components/templates/MatchaSite";
 import { resolvePalette, paletteVars } from "@/lib/theme";
 import { fontVariables } from "@/app/fonts";
 import type { Content } from "@/lib/content";
@@ -34,25 +35,34 @@ export default function PreviewSite({
 }) {
   const paletteStyle = paletteVars(resolvePalette(theme)) as React.CSSProperties;
 
+  // "Matcha" is a different structure (not a [data-template] skin): render the
+  // whole story page from the same content via the adapter, inside the tenant
+  // provider so useContent()/usePhotos() resolve this draft's copy + photos.
+  const isMatcha = theme.template === "matcha";
+
   const tree = (
     <TenantProvider content={content}>
-      {/* Dentro de un frame con scroll propio (.pa-frame-body) desactivamos Lenis y
-          usamos el scroll nativo: Lenis con `root` toma el scroll del documento y
-          pelea con ese contenedor anidado (el trackpad rompe el scroll). */}
-      <SmoothScroll enabled={!edit && !framed}>
-        <LightboxProvider>
-          <RevealInit />
-          <main>
-            {content.layout
-              .filter((s) => s.enabled)
-              .map((s) => {
-                const Section = SECTION_REGISTRY[s.type];
-                return Section ? <Section key={s.id} id={s.id} /> : null;
-              })}
-          </main>
-          <Footer />
-        </LightboxProvider>
-      </SmoothScroll>
+      {isMatcha ? (
+        <MatchaSite />
+      ) : (
+        /* Dentro de un frame con scroll propio (.pa-frame-body) desactivamos Lenis y
+           usamos el scroll nativo: Lenis con `root` toma el scroll del documento y
+           pelea con ese contenedor anidado (el trackpad rompe el scroll). */
+        <SmoothScroll enabled={!edit && !framed}>
+          <LightboxProvider>
+            <RevealInit />
+            <main>
+              {content.layout
+                .filter((s) => s.enabled)
+                .map((s) => {
+                  const Section = SECTION_REGISTRY[s.type];
+                  return Section ? <Section key={s.id} id={s.id} /> : null;
+                })}
+            </main>
+            <Footer />
+          </LightboxProvider>
+        </SmoothScroll>
+      )}
     </TenantProvider>
   );
 

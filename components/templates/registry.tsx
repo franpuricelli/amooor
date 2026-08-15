@@ -30,30 +30,21 @@ export interface TemplatePreview {
 }
 
 export const TEMPLATE_PREVIEWS: Record<string, TemplatePreview> = {
-  editorial: {
-    slug: "editorial",
-    name: "Historia",
+  // "Matcha" — the story-structure template (its own option in the gallery,
+  // distinct from the love-story skins romantic/editorial/brutalist). The
+  // standalone preview shows the Puri & Ivi example (cream + matcha-green).
+  matcha: {
+    slug: "matcha",
+    name: "Matcha",
     description:
-      "Plantilla editorial narrativa para contar la historia de una pareja. Serif elegante, neutros cálidos y acento oliva.",
+      "Su historia completa: línea de tiempo, viajes, mural de fotos y dedicatoria. Neutros cálidos y acento verde matcha.",
     render: (locale) => (
       <EditorialTemplate content={locale === "en" ? editorialEn : editorialEs} />
     ),
   },
-  romantic: {
-    slug: "romantic",
-    name: "Romántica",
-    description:
-      "Misma estructura narrativa que Historia, con una piel romántica: fondos blush, acento rosa/vino y detalles en itálica.",
-    render: (locale) => (
-      <EditorialTemplate
-        content={locale === "en" ? editorialEn : editorialEs}
-        variant="romantic"
-      />
-    ),
-  },
   plain: {
     slug: "plain",
-    name: "Historia (plantilla vacía)",
+    name: "Matcha (plantilla vacía)",
     description:
       "El esqueleto del template: misma estructura y diseño, con copy placeholder y sin fotos (bloques neutros). Para ver el diseño sin el contenido de una pareja.",
     render: () => <EditorialTemplate content={editorialPlain} />,

@@ -47,7 +47,7 @@ export default function TemplateChooser({
                 <span className="ch-tpl-preview">
                   <iframe
                     className="ch-tpl-shot"
-                    src={`${t.previewHref}/index.html`}
+                    src={t.previewIsRoute ? t.previewHref : `${t.previewHref}/index.html`}
                     title={`Plantilla ${t.label}`}
                     loading="lazy"
                     scrolling="no"
