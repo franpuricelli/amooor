@@ -89,7 +89,7 @@ export default function SitePreviewFrame({
         {toolbar && <div className="pa-frame-tools">{toolbar}</div>}
       </div>
       <div className="pa-frame-body" ref={bodyRef}>
-        <PreviewSite content={content} theme={theme} edit={edit} />
+        <PreviewSite content={content} theme={theme} edit={edit} framed />
       </div>
     </div>
   );

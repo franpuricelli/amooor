@@ -21,20 +21,24 @@ export default function PreviewSite({
   content,
   theme,
   edit,
+  framed = false,
 }: {
   content: Content;
   theme: Theme;
   /** si viene, el sitio se renderiza en modo edición (copy editable + click imagen) */
   edit?: EditAPI;
+  /** el preview vive dentro de un contenedor con scroll propio (SitePreviewFrame):
+   *  desactiva Lenis para usar el scroll nativo del contenedor. */
+  framed?: boolean;
 }) {
   const paletteStyle = paletteVars(resolvePalette(theme)) as React.CSSProperties;
 
   const tree = (
     <TenantProvider content={content}>
-      {/* En el editor (edit presente) el preview vive en un contenedor con scroll
-          propio (.pa-frame-body): desactivamos Lenis y usamos el scroll nativo,
-          si no el trackpad sobre el preview rompe el scroll. */}
-      <SmoothScroll enabled={!edit}>
+      {/* Dentro de un frame con scroll propio (.pa-frame-body) desactivamos Lenis y
+          usamos el scroll nativo: Lenis con `root` toma el scroll del documento y
+          pelea con ese contenedor anidado (el trackpad rompe el scroll). */}
+      <SmoothScroll enabled={!edit && !framed}>
         <LightboxProvider>
           <RevealInit />
           <main>
