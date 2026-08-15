@@ -16,9 +16,11 @@ import { parsePlan } from "@/lib/plan";
 import { PURIVI_PLAN, SKIP_WIZARD_TRIGGER } from "@/lib/demo-plan";
 import { parseDeepen, deriveShared } from "@/lib/chat-format";
 import type { Swatch } from "@/lib/palette-gen";
+import { DEFAULT_TEMPLATE_ID, TEMPLATE_STORAGE_KEY } from "@/lib/templates-catalog";
 import ChatMessages from "./ChatMessages";
 import ChatComposer, { type SendOpts } from "./ChatComposer";
 import PlanCard from "./PlanCard";
+import PreChoice from "./PreChoice";
 import ProfileMenu from "./ProfileMenu";
 import SharedPanel from "./SharedPanel";
 import SelectionReply from "./SelectionReply";
@@ -32,6 +34,16 @@ const STAGES = [
   { key: "fotos", label: "Fotos" },
   { key: "sitio", label: "Tu sitio" },
 ] as const;
+
+/** "Puri e Ivi" / "Ana y Leo" — "e" antes de sonido i, "y" en el resto. */
+function coupleLabel(names: string[]): string | null {
+  const clean = names.map((n) => n.trim()).filter(Boolean).slice(0, 2);
+  if (clean.length < 2) return clean[0] ?? null;
+  const [a, b] = clean;
+  const norm = b.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const conj = norm.startsWith("i") || norm.startsWith("hi") ? "e" : "y";
+  return `${a} ${conj} ${b}`;
+}
 
 function StepCheck() {
   return (
@@ -101,6 +113,9 @@ export default function Chat() {
   const [paStep, setPaStep] = useState<Step | null>(null);
   const [refining, setRefining] = useState(false);
   const [refLabels, setRefLabels] = useState<Record<string, string>>({});
+  // task 2-A: elección de plantilla + confirmación del chooser (antes del plan).
+  const [template, setTemplate] = useState<string>(DEFAULT_TEMPLATE_ID);
+  const [choiceMade, setChoiceMade] = useState(false);
   const mainRef = useRef<HTMLDivElement | null>(null);
   const atBottomRef = useRef(true);
   const insertRef = useRef<((t: string) => void) | null>(null);
@@ -110,6 +125,27 @@ export default function Chat() {
   const correctionsRef = useRef<string[]>([]);
 
   const hasPlan = !!convo.plan && !approved;
+  // El chooser (plantilla + paleta) se muestra cuando ya hay plan pero el usuario
+  // todavía no confirmó su elección; una vez confirmado, se revela el PlanCard.
+  const showPreChoice = hasPlan && !choiceMade;
+
+  // restaurar la elección del chooser (por token, para no re-mostrarlo al recargar)
+  useEffect(() => {
+    if (!convo.token) return;
+    try {
+      const done = window.localStorage.getItem(`amooor_prechoice_${convo.token}`);
+      if (done === "1") setChoiceMade(true);
+      const tpl = window.localStorage.getItem(TEMPLATE_STORAGE_KEY);
+      if (tpl) setTemplate(tpl);
+    } catch {}
+  }, [convo.token]);
+
+  const selectTemplate = useCallback((id: string) => {
+    setTemplate(id);
+    try {
+      window.localStorage.setItem(TEMPLATE_STORAGE_KEY, id);
+    } catch {}
+  }, []);
 
   // nombres editables de las referencias (persisten en localStorage)
   useEffect(() => {
@@ -187,6 +223,18 @@ export default function Chat() {
     atBottomRef.current = b;
     setAtBottom(b);
   }, []);
+
+  // Confirmar el chooser (plantilla + paleta) → se revela el PlanCard.
+  const confirmChoice = useCallback(() => {
+    setChoiceMade(true);
+    try {
+      if (convo.token)
+        window.localStorage.setItem(`amooor_prechoice_${convo.token}`, "1");
+    } catch {}
+    atBottomRef.current = true;
+    setAtBottom(true);
+    requestAnimationFrame(() => scrollToBottom(true));
+  }, [convo.token, scrollToBottom]);
 
   // Auto-scroll SOLO si el usuario ya está abajo (no lo arrancamos si scrolleó arriba).
   // Incluimos `sending`: al terminar el stream aparecen las opciones/chips y hay que
@@ -332,13 +380,15 @@ export default function Chat() {
       }
 
       const converse = opts?.converse ?? false;
-      const refine = !converse && hasPlan; // plan a la vista → cada mensaje refina
+      // plan a la vista Y elección confirmada → cada mensaje refina. Mientras el
+      // chooser está abierto no refinamos (el plan todavía no se mostró).
+      const refine = !converse && hasPlan && choiceMade;
       setError(null);
       // Con un plan a la vista (refine o converse), lo colapsamos y la nueva
       // conversación va DEBAJO — así el usuario ve lo que escribe el agente y el
       // plan no ocupa toda la pantalla. Se re-expande al terminar / al llegar el
       // plan nuevo.
-      if (hasPlan) setRefining(true);
+      if (hasPlan && choiceMade) setRefining(true);
 
       const userMsg: Message = {
         role: "user",
@@ -398,7 +448,7 @@ export default function Chat() {
         setRefining(false);
       }
     },
-    [sending, convo, hasPlan, consumeSSE, scrollToBottom]
+    [sending, convo, hasPlan, choiceMade, consumeSSE, scrollToBottom]
   );
 
   const empty = convo.messages.length === 0 && !convo.plan && !approved;
@@ -425,7 +475,7 @@ export default function Chat() {
       onSend={send}
       disabled={sending}
       centered={centered}
-      mode={hasPlan ? "plan" : "chat"}
+      mode={hasPlan && choiceMade ? "plan" : "chat"}
       busy={sending}
       planBusy={sending}
       onApprove={() => setApproved(true)}
@@ -585,7 +635,19 @@ export default function Chat() {
                     thinking={thinking}
                     onOption={send}
                   />
-                  {hasPlan && convo.plan && (
+                  {showPreChoice && convo.plan && (
+                    <PreChoice
+                      coupleLabel={coupleLabel(convo.plan.names ?? [])}
+                      template={template}
+                      onTemplate={selectTemplate}
+                      palette={convo.palette}
+                      customPalettes={convo.customPalettes}
+                      onPalette={applyPalette}
+                      onCreatePalette={convo.addCustomPalette}
+                      onContinue={confirmChoice}
+                    />
+                  )}
+                  {hasPlan && !showPreChoice && convo.plan && (
                     <PlanCard
                       plan={convo.plan}
                       palette={convo.palette}

@@ -45,8 +45,9 @@ tenido que suponer para completarlo.`;
 // ── Saludo (Q14) + ideas de arranque — lo consume la UI (components/chat) ──────
 /** Apertura específica de historia de amor. */
 export const GREETING_TITLE = "Contame la historia de ustedes dos.";
-/** Subline del saludo. */
-export const GREETING_SUBLINE = "Escribí o grabá un audio, yo me encargo del resto.";
+/** Subline del saludo: explica el camino (contás → armamos el plan → lo creamos). */
+export const GREETING_SUBLINE =
+  "Contame su historia, armamos juntos el plan de tu sitio y lo creamos.";
 
 /** Ideas de por dónde arrancar (cards de la pantalla vacía). `icon` lo mapea la UI. */
 export const STARTER_IDEAS: { icon: string; label: string; prompt: string }[] = [

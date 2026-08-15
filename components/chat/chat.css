@@ -470,6 +470,218 @@
   padding: clamp(1.1rem, 4vw, 1.6rem);
   box-shadow: 0 30px 70px -40px rgba(42, 10, 24, 0.35);
 }
+
+/* ── chooser (task 2-A): plantilla + paleta, ANTES del plan ─────────────────── */
+.ch-prechoice {
+  margin-top: 1.4rem;
+  background: var(--mk-card);
+  border: 1px solid var(--mk-line);
+  border-radius: var(--mk-r-xl);
+  padding: clamp(1.1rem, 4vw, 1.6rem);
+  box-shadow: 0 30px 70px -40px rgba(42, 10, 24, 0.35);
+}
+.ch-prechoice-head {
+  margin-bottom: 1.2rem;
+}
+.ch-prechoice-title {
+  font-family: var(--mk-serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.4rem, 4vw, 1.85rem);
+  line-height: 1.1;
+  color: var(--mk-ink);
+  margin: 0 0 0.35rem;
+}
+.ch-prechoice-sub {
+  color: var(--mk-ink-2);
+  line-height: 1.5;
+  margin: 0;
+  font-size: 0.94rem;
+}
+.ch-choice-block {
+  margin-top: 1.3rem;
+}
+.ch-choice-block-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.7rem;
+}
+.ch-choice-block-title {
+  font-size: 0.74rem;
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mk-ink-3);
+  margin: 0;
+}
+.ch-tpl-all {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--mk-rose-text);
+  text-decoration: none;
+}
+.ch-tpl-all:hover {
+  text-decoration: underline;
+}
+
+/* grilla de plantillas (frame grande, tipo el wireframe: preview + ver) */
+.ch-tpl-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.8rem;
+}
+.ch-tpl-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.55rem;
+  background: var(--mk-bg);
+  border: 1.5px solid var(--mk-line);
+  border-radius: var(--mk-r-lg);
+  cursor: pointer;
+  transition: border-color 0.14s, box-shadow 0.14s, transform 0.14s;
+}
+.ch-tpl-card:hover {
+  border-color: var(--mk-rose);
+  transform: translateY(-2px);
+}
+.ch-tpl-card.on {
+  border-color: var(--mk-rose);
+  box-shadow: 0 0 0 3px var(--mk-rose-soft);
+}
+.ch-tpl-preview {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--mk-r-md);
+  overflow: hidden;
+  background: var(--mk-card);
+  border: 1px solid var(--mk-line-soft);
+}
+.ch-tpl-view {
+  position: absolute;
+  right: 0.4rem;
+  bottom: 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--mk-ink);
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid var(--mk-line);
+  border-radius: 999px;
+  text-decoration: none;
+  backdrop-filter: blur(4px);
+}
+.ch-tpl-view:hover {
+  color: var(--mk-rose-text);
+  border-color: var(--mk-rose);
+}
+.ch-tpl-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0 0.15rem 0.15rem;
+}
+.ch-tpl-name {
+  font-weight: 650;
+  font-size: 0.92rem;
+  color: var(--mk-ink);
+}
+.ch-tpl-blurb {
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--mk-ink-3);
+}
+
+/* mini-mock del sitio (solo estético) */
+.ch-tpl-mock {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 9px;
+}
+.ch-tpl-mock-hero {
+  height: 42%;
+  border-radius: 5px;
+  background: linear-gradient(135deg, var(--mk-rose) 0%, var(--mk-rose-soft) 100%);
+}
+.ch-tpl-mock-line {
+  height: 5px;
+  width: 70%;
+  border-radius: 3px;
+  background: var(--mk-line);
+}
+.ch-tpl-mock-line.lg {
+  height: 8px;
+  width: 52%;
+  background: var(--mk-ink-3);
+}
+.ch-tpl-mock-grid {
+  margin-top: auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+.ch-tpl-mock-grid span {
+  aspect-ratio: 1;
+  border-radius: 3px;
+  background: var(--mk-bg-alt);
+}
+/* variantes de vibe: cambian densidad/forma para que se vean distintas */
+.ch-tpl-mock.vibe-editorial {
+  padding: 12px;
+  gap: 8px;
+}
+.ch-tpl-mock.vibe-editorial .ch-tpl-mock-hero {
+  height: 30%;
+  background: var(--mk-bg-alt);
+}
+.ch-tpl-mock.vibe-editorial .ch-tpl-mock-line.lg {
+  height: 11px;
+  width: 78%;
+}
+.ch-tpl-mock.vibe-brutalist {
+  gap: 4px;
+}
+.ch-tpl-mock.vibe-brutalist .ch-tpl-mock-hero {
+  height: 46%;
+  border-radius: 0;
+  background: var(--mk-ink);
+}
+.ch-tpl-mock.vibe-brutalist .ch-tpl-mock-line,
+.ch-tpl-mock.vibe-brutalist .ch-tpl-mock-grid span {
+  border-radius: 0;
+}
+.ch-tpl-mock.vibe-brutalist .ch-tpl-mock-line.lg {
+  background: var(--mk-ink);
+}
+
+.ch-prechoice .ch-palette {
+  margin: 0;
+}
+.ch-prechoice-cta {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.4rem;
+}
+
+@media (max-width: 560px) {
+  .ch-tpl-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
 /* plan anterior colapsado mientras se arma el nuevo (durante un refinamiento) */
 .ch-plan.collapsed {
   padding: 0.7rem 0.95rem;
@@ -2347,11 +2559,130 @@
   color: var(--mk-ink-2);
 }
 
+/* cada sección apilada en el scroller (scroll-sync con el rail) */
 .pa-uploader {
-  max-width: 640px;
+  max-width: 720px;
+  scroll-margin-top: 1rem;
+}
+.pa-up-scroll .pa-uploader:not(:last-of-type) {
+  margin-bottom: 1.6rem;
+  padding-bottom: 1.6rem;
+  border-bottom: 1px solid var(--mk-line-soft);
 }
 .pa-uploader-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
   margin-bottom: 1rem;
+}
+.pa-uploader-headtext {
+  min-width: 0;
+}
+/* ilustración estática de la sección del template */
+.pa-sketch {
+  flex-shrink: 0;
+  width: 92px;
+  height: 68px;
+  border-radius: var(--mk-r-md);
+  border: 1px solid var(--mk-line);
+  background: var(--mk-card);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  padding: 7px;
+  gap: 5px;
+}
+.pa-sketch-photo {
+  flex: 1;
+  border-radius: 4px;
+  background: linear-gradient(135deg, var(--mk-rose) 0%, var(--mk-rose-soft) 100%);
+}
+.pa-sketch-photo.tall {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+}
+.pa-sketch-overlay {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+.pa-sketch-line {
+  height: 5px;
+  width: 70%;
+  border-radius: 3px;
+  background: var(--mk-line);
+}
+.pa-sketch-overlay .pa-sketch-line {
+  background: rgba(255, 255, 255, 0.9);
+}
+.pa-sketch-line.lg {
+  height: 7px;
+  width: 85%;
+}
+.pa-sketch-line.sm {
+  width: 45%;
+}
+.pa-sketch-split {
+  display: flex;
+  gap: 5px;
+  width: 100%;
+}
+.pa-sketch-split .pa-sketch-photo {
+  flex: 0 0 42%;
+}
+.pa-sketch-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+.pa-sketch-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: 1fr;
+  gap: 4px;
+  width: 100%;
+}
+.pa-sketch-grid span {
+  border-radius: 3px;
+  background: linear-gradient(135deg, var(--mk-rose) 0%, var(--mk-rose-soft) 100%);
+}
+.pa-sketch-video {
+  width: 100%;
+  border-radius: 4px;
+  background: var(--mk-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pa-sketch-play {
+  color: #fff;
+  font-size: 0.7rem;
+}
+.pa-sketch-flip {
+  position: relative;
+  width: 100%;
+  border-radius: 4px;
+  background: linear-gradient(135deg, var(--mk-rose) 0%, var(--mk-rose-soft) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pa-sketch-heart {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.95rem;
+}
+@media (max-width: 620px) {
+  .pa-sketch {
+    display: none;
+  }
 }
 .pa-uploader-title {
   font-family: var(--mk-serif);
@@ -2392,6 +2723,16 @@
 .pa-drop-hero {
   min-height: 220px;
   font-size: 1rem;
+}
+/* botón de subida compacto (task 3): más chico que el bloque grande original */
+.pa-drop-sm {
+  padding: 0.7rem 1rem;
+  font-size: 0.9rem;
+  border-radius: var(--mk-r-md);
+}
+.pa-drop-sm.pa-drop-hero {
+  min-height: 96px;
+  font-size: 0.92rem;
 }
 .pa-hint {
   margin: 0.7rem 0 0;
@@ -3081,6 +3422,10 @@
   box-shadow: inset 0 0 0 1.5px var(--mk-rose);
 }
 /* flujo izquierdo (chat o multimedia) */
+/* herramienta inactiva del editor (Chat/Multimedia quedan montadas, se ocultan) */
+.pa-hidden {
+  display: none !important;
+}
 .pa-flow {
   flex: 0 0 40%;
   max-width: 460px;

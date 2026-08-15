@@ -82,7 +82,12 @@ export default function UploadStep({
   const [ready, setReady] = useState(false);
   const [pending, setPending] = useState<Record<string, number>>({});
   const [err, setErr] = useState<string | null>(null);
-  const didInit = useRef(false);
+  // scroll-sync (como el paso de multimedia del editor): todas las secciones se
+  // apilan en un scroller; al scrollear se resalta la sección visible en el rail,
+  // y al tocar el rail se scrollea hasta esa sección.
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const sectionEls = useRef<Record<string, HTMLElement | null>>({});
+  const rafRef = useRef(0);
 
   const refresh = useCallback(async () => {
     if (!token || !isConvexConfigured()) {
@@ -121,13 +126,33 @@ export default function UploadStep({
     [photosOf, videoOf]
   );
 
-  useEffect(() => {
-    if (!ready || didInit.current || !sections.length) return;
-    didInit.current = true;
-    const idx = sections.findIndex((s) => countOf(s) === 0);
-    setActive(idx >= 0 ? idx : 0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, sections]);
+  // scroll-spy: la sección cuyo tope pasó la línea de referencia (30% del alto
+  // visible) es la activa. rAF para no recalcular en cada píxel.
+  const onScroll = useCallback(() => {
+    if (rafRef.current) return;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = 0;
+      const cont = scrollRef.current;
+      if (!cont) return;
+      const line = cont.getBoundingClientRect().top + cont.clientHeight * 0.3;
+      let current = 0;
+      sections.forEach((sec, i) => {
+        const el = sectionEls.current[sec.category];
+        if (el && el.getBoundingClientRect().top <= line) current = i;
+      });
+      setActive(current);
+    });
+  }, [sections]);
+
+  // rail / "Siguiente" → scrollear el panel hasta la sección i (y resaltarla)
+  const goTo = useCallback((i: number) => {
+    const cont = scrollRef.current;
+    const el = sectionEls.current[sections[i]?.category];
+    if (!cont || !el) return;
+    setActive(i);
+    const top = el.getBoundingClientRect().top - cont.getBoundingClientRect().top + cont.scrollTop;
+    cont.scrollTo({ top: Math.max(0, top - 8), behavior: "smooth" });
+  }, [sections]);
 
   // ── subida NO bloqueante ────────────────────────────────────────────────────
   const bump = (cat: string, d: number) =>
@@ -211,7 +236,6 @@ export default function UploadStep({
   }
 
   const withMedia = sections.filter((s) => countOf(s) > 0).length;
-  const s = sections[active];
   const isLast = active === sections.length - 1;
 
   return (
@@ -227,7 +251,7 @@ export default function UploadStep({
                 <button
                   type="button"
                   className={`pa-rail-row ${i === active ? "on" : ""}`}
-                  onClick={() => setActive(i)}
+                  onClick={() => goTo(i)}
                 >
                   <span className="pa-rail-label">{sec.title}</span>
                   {loading ? (
@@ -250,18 +274,23 @@ export default function UploadStep({
       </nav>
 
       <div className="pa-panel">
-        <div className="pa-panel-scroll">
-          <ActiveUploader
-            key={s.category}
-            section={s}
-            photos={photosOf(s.category)}
-            video={videoOf(s.category)}
-            uploading={(pending[s.category] ?? 0) > 0}
-            onFiles={(files) => uploadFiles(files, s.category, s.mode === "single")}
-            onDelete={del}
-            onDeleteVideo={delVideo}
-            onReorder={(from, to) => reorder(s.category, from, to)}
-          />
+        <div className="pa-panel-scroll pa-up-scroll" ref={scrollRef} onScroll={onScroll}>
+          {sections.map((sec) => (
+            <ActiveUploader
+              key={sec.category}
+              section={sec}
+              registerEl={(el) => {
+                sectionEls.current[sec.category] = el;
+              }}
+              photos={photosOf(sec.category)}
+              video={videoOf(sec.category)}
+              uploading={(pending[sec.category] ?? 0) > 0}
+              onFiles={(files) => uploadFiles(files, sec.category, sec.mode === "single")}
+              onDelete={del}
+              onDeleteVideo={delVideo}
+              onReorder={(from, to) => reorder(sec.category, from, to)}
+            />
+          ))}
           {err && <div className="ch-error">{err}</div>}
         </div>
 
@@ -277,7 +306,7 @@ export default function UploadStep({
             <button
               type="button"
               className="ch-btn primary"
-              onClick={() => setActive((a) => Math.min(a + 1, sections.length - 1))}
+              onClick={() => goTo(Math.min(active + 1, sections.length - 1))}
             >
               Siguiente
             </button>
@@ -288,12 +317,59 @@ export default function UploadStep({
   );
 }
 
+// ── ilustración estática de la sección del template (para saber dónde va la
+//    media). Es un esquema por tipo de bloque, no el sitio real. ────────────────
+function SectionSketch({ kind }: { kind: SectionKind }) {
+  return (
+    <span className={`pa-sketch kind-${kind}`} aria-hidden>
+      {kind === "hero" ? (
+        <>
+          <span className="pa-sketch-photo tall" />
+          <span className="pa-sketch-overlay">
+            <span className="pa-sketch-line lg" />
+            <span className="pa-sketch-line sm" />
+          </span>
+        </>
+      ) : kind === "closing" ? (
+        <span className="pa-sketch-flip">
+          <span className="pa-sketch-photo" />
+          <span className="pa-sketch-heart">♥</span>
+        </span>
+      ) : kind === "watch" ? (
+        <span className="pa-sketch-video">
+          <span className="pa-sketch-play">▶</span>
+        </span>
+      ) : kind === "story" || kind === "travel" || kind === "moments" ? (
+        <span className="pa-sketch-split">
+          <span className="pa-sketch-photo" />
+          <span className="pa-sketch-col">
+            <span className="pa-sketch-line lg" />
+            <span className="pa-sketch-line" />
+            <span className="pa-sketch-line sm" />
+          </span>
+        </span>
+      ) : (
+        // gallery (y fallback)
+        <span className="pa-sketch-grid">
+          <span />
+          <span />
+          <span />
+          <span />
+          <span />
+          <span />
+        </span>
+      )}
+    </span>
+  );
+}
+
 // ── uploader de una sección ────────────────────────────────────────────────────
 function ActiveUploader({
   section,
   photos,
   video,
   uploading,
+  registerEl,
   onFiles,
   onDelete,
   onDeleteVideo,
@@ -303,6 +379,8 @@ function ActiveUploader({
   photos: Doc<"draftPhotos">[];
   video: Doc<"draftVideos"> | null;
   uploading: boolean;
+  /** registra el elemento raíz de la sección para el scroll-sync del rail */
+  registerEl: (el: HTMLElement | null) => void;
   onFiles: (files: FileList | File[]) => void;
   onDelete: (id: Id<"draftPhotos">) => void;
   onDeleteVideo: (id: Id<"draftVideos">) => void;
@@ -326,13 +404,17 @@ function ActiveUploader({
   const pickFiles = () => fileRef.current?.click();
 
   return (
-    <div className="pa-uploader">
+    <div className="pa-uploader" data-cat={section.category} ref={registerEl}>
       <div className="pa-uploader-head">
-        <h2 className="pa-uploader-title">{section.title}</h2>
-        <p className="pa-uploader-sub">{intent}</p>
-        {section.recommendVideo && (
-          <p className="pa-reco">Se recomienda un video en esta sección.</p>
-        )}
+        <div className="pa-uploader-headtext">
+          <h2 className="pa-uploader-title">{section.title}</h2>
+          <p className="pa-uploader-sub">{intent}</p>
+          {section.recommendVideo && (
+            <p className="pa-reco">Se recomienda un video en esta sección.</p>
+          )}
+        </div>
+        {/* dónde va esta sección en el template (esquema estático) */}
+        <SectionSketch kind={section.kind} />
       </div>
 
       {single && (photos[0] || video) ? (
@@ -360,7 +442,7 @@ function ActiveUploader({
       ) : (
         <>
           <div
-            className={`pa-drop ${single ? "pa-drop-hero" : ""} ${dropZoneOver ? "over" : ""}`}
+            className={`pa-drop pa-drop-sm ${single ? "pa-drop-hero" : ""} ${dropZoneOver ? "over" : ""}`}
             role="button"
             tabIndex={0}
             onClick={pickFiles}
