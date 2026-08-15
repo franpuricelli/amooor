@@ -2041,6 +2041,59 @@
   margin-bottom: 0.4rem;
 }
 
+/* cita de "Responder" → chip rosado (como un adjunto), no texto en el input */
+.ch-quote-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 100%;
+  padding: 0.3rem 0.4rem 0.3rem 0.55rem;
+  border-radius: 8px;
+  background: var(--mk-rose-soft);
+  border: 1px solid var(--mk-rose);
+  color: var(--mk-rose-text);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.ch-quote-chip svg {
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+.ch-quote-chip.sm {
+  padding: 0.18rem 0.5rem 0.18rem 0.4rem;
+  font-size: 0.78rem;
+  max-width: 260px;
+}
+.ch-quote-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 240px;
+  font-weight: 550;
+  font-style: italic;
+}
+.ch-quote-chip button {
+  display: inline-flex;
+  flex-shrink: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 0.1rem;
+  border-radius: 50%;
+  opacity: 0.7;
+}
+.ch-quote-chip button:hover {
+  opacity: 1;
+}
+.ch-bubble-quotes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-bottom: 0.4rem;
+}
+
 /* transición suave chat → audio */
 .ch-rec-in {
   animation: ch-rec-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;

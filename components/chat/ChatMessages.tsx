@@ -62,14 +62,28 @@ export default function ChatMessages({
           const imgs = (m.attachments ?? []).filter((a) => a.kind === "image" && a.url);
           const files = (m.attachments ?? []).filter((a) => a.kind !== "image");
           const refs = m.refs ?? [];
+          const quotes = m.quotes ?? [];
           // sacamos del texto las notas auto-generadas (se muestran como chips/thumbs)
           const body = m.content
+            .replace(/^\s*Respondo a:.*$/gim, "")
             .replace(/^\s*Referencias:.*$/gim, "")
             .replace(/^\s*Adjunté como referencia:.*$/gim, "")
             .trim();
           return (
             <div className="ch-msg user" key={i}>
               <div className="ch-bubble">
+                {quotes.length > 0 && (
+                  <div className="ch-bubble-quotes">
+                    {quotes.map((q, qi) => (
+                      <span key={qi} className="ch-quote-chip sm" title={q}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                          <path d="M7 7C4.8 8 3.6 9.9 3.6 12.4V17h5v-5H6.1c0-1.5.6-2.6 2-3.3L7 7zm9 0c-2.2 1-3.4 2.9-3.4 5.4V17h5v-5h-2.5c0-1.5.6-2.6 2-3.3L16 7z" />
+                        </svg>
+                        <span className="ch-quote-text">{q}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
                 {imgs.length > 0 && (
                   <div className="ch-bubble-imgs">
                     {imgs.map((a) => (

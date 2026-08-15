@@ -395,6 +395,7 @@ export default function Chat() {
         content: text,
         ...(opts?.attachments?.length ? { attachments: opts.attachments } : {}),
         ...(opts?.refs?.length ? { refs: opts.refs } : {}),
+        ...(opts?.quotes?.length ? { quotes: opts.quotes } : {}),
       };
       const base = [...convo.messages, userMsg];
       convo.setMessages(() => base);
