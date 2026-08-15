@@ -25,6 +25,8 @@ import SharedPanel from "./SharedPanel";
 import SelectionReply from "./SelectionReply";
 import PostApprove, { type Step } from "./postapprove/PostApprove";
 import StatusDot, { type DotStatus } from "./postapprove/StatusDot";
+import { api } from "@/convex/_generated/api";
+import { convexClient, isConvexConfigured } from "@/lib/convex-browser";
 
 // etapas del flujo /comenzar (para el stepper del header)
 const STAGES = [
@@ -99,11 +101,20 @@ export default function Chat() {
   const [approved, setApproved] = useState(false);
   const [atBottom, setAtBottom] = useState(true);
   const [loginHint, setLoginHint] = useState(false);
-  const [publishHint, setPublishHint] = useState(false);
-  // estado de publicación (burbuja del botón): idle=gris (sin publicar),
-  // busy=amarillo (en curso), ready=verde (publicado). El backend de pago/publish
-  // todavía es un stub, así que arranca en "idle".
-  const [publishStatus] = useState<DotStatus>("idle");
+  // Estado de publicación del sitio (lo trae `siteByDraft` del draft actual).
+  // Convex acá es imperativo (sin provider reactivo), así que refrescamos a mano
+  // tras cada acción. La burbuja del botón: idle=gris (sin publicar / pausado),
+  // busy=amarillo (en curso), ready=verde (live).
+  const [siteStatus, setSiteStatus] = useState<"none" | "live" | "paused">("none");
+  const [siteSub, setSiteSub] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState(false);
+  const [publishNotice, setPublishNotice] = useState<string | null>(null);
+  const [publishErr, setPublishErr] = useState<string | null>(null);
+  const publishStatus: DotStatus = publishing
+    ? "busy"
+    : siteStatus === "live"
+      ? "ready"
+      : "idle";
   const [paStep, setPaStep] = useState<Step | null>(null);
   const [refining, setRefining] = useState(false);
   const [refLabels, setRefLabels] = useState<Record<string, string>>({});
@@ -186,6 +197,66 @@ export default function Chat() {
     },
     [convo]
   );
+
+  // ── publicar / pausar el sitio ──────────────────────────────────────────────
+  // El sitio vive en Convex (`sites`), no en el draft. Lo traemos con siteByDraft
+  // y lo refrescamos tras cada acción (Convex acá es imperativo, sin provider).
+  const refreshSite = useCallback(async () => {
+    if (!convo.token || !isConvexConfigured()) return;
+    try {
+      const s = await convexClient().query(api.generate.siteByDraft, {
+        draftToken: convo.token,
+      });
+      if (s && (s.status === "live" || s.status === "paused")) {
+        setSiteStatus(s.status);
+        setSiteSub(s.subdomain);
+      } else {
+        setSiteStatus("none");
+        setSiteSub(s?.subdomain ?? null);
+      }
+    } catch {
+      /* sin backend / error → dejamos el estado como está */
+    }
+  }, [convo.token]);
+
+  // publish = crear / actualizar / reactivar (todo el mismo POST); pause = pausar.
+  const runPublish = useCallback(
+    async (action: "publish" | "pause") => {
+      if (!convo.token || publishing) return;
+      setPublishing(true);
+      setPublishErr(null);
+      try {
+        const res = await fetch("/api/publish", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ draftToken: convo.token, action }),
+        });
+        if (!res.ok) {
+          const { error } = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(error ?? "No se pudo publicar");
+        }
+        const data = (await res.json()) as {
+          status: "live" | "paused";
+          subdomain: string;
+        };
+        setSiteStatus(data.status);
+        setSiteSub(data.subdomain);
+        setPublishNotice(
+          action === "pause" ? "Tu sitio quedó pausado." : "¡Tu sitio está publicado!"
+        );
+      } catch (e) {
+        setPublishErr(e instanceof Error ? e.message : "Algo salió mal");
+      } finally {
+        setPublishing(false);
+      }
+    },
+    [convo.token, publishing]
+  );
+
+  // Al entrar al editor (aprobado) traemos el estado del sitio (si ya existe).
+  useEffect(() => {
+    if (approved) void refreshSite();
+  }, [approved, refreshSite]);
 
   const scrollToBottom = useCallback((smooth = true) => {
     const el = mainRef.current;
@@ -539,23 +610,58 @@ export default function Chat() {
           </ol>
         )}
         {approved ? (
-          <button
-            type="button"
-            className="ch-save-btn pa-publish-btn"
-            onClick={() => {
-              setPublishHint(true);
-            }}
-            title={
-              publishStatus === "ready"
-                ? "Tu sitio está publicado"
-                : publishStatus === "busy"
+          <div className="pa-publish-group" style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            {siteSub && siteStatus !== "none" && (
+              <a
+                className="ch-save-btn"
+                href={`/s/${siteSub}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={
+                  siteStatus === "paused"
+                    ? "Tu sitio está pausado (fuera de línea)"
+                    : "Abrir tu sitio publicado"
+                }
+              >
+                {siteStatus === "paused" ? "Pausado" : "Ver sitio"}
+              </a>
+            )}
+            {siteStatus === "live" && (
+              <button
+                type="button"
+                className="ch-save-btn"
+                onClick={() => runPublish("pause")}
+                disabled={publishing}
+                title="Pausar el sitio (queda fuera de línea)"
+              >
+                Pausar
+              </button>
+            )}
+            <button
+              type="button"
+              className="ch-save-btn pa-publish-btn"
+              onClick={() => runPublish("publish")}
+              disabled={publishing}
+              title={
+                publishing
                   ? "Publicando…"
-                  : "Todavía sin publicar"
-            }
-          >
-            <StatusDot status={publishStatus} />
-            Publicar
-          </button>
+                  : siteStatus === "live"
+                    ? "Actualizar el sitio con tus últimos cambios"
+                    : siteStatus === "paused"
+                      ? "Reactivar el sitio"
+                      : "Publicar tu sitio"
+              }
+            >
+              <StatusDot status={publishStatus} />
+              {publishing
+                ? "Publicando…"
+                : siteStatus === "live"
+                  ? "Actualizar"
+                  : siteStatus === "paused"
+                    ? "Reactivar"
+                    : "Publicar"}
+            </button>
+          </div>
         ) : (
           // "Guardar" sólo tiene sentido sin sesión (pide login). Con sesión ya
           // iniciada desaparece.
@@ -710,9 +816,15 @@ export default function Chat() {
         </div>
       )}
 
-      {publishHint && (
-        <div className="ch-toast" role="status" onAnimationEnd={() => setPublishHint(false)}>
-          El pago y la publicación llegan muy pronto.
+      {publishNotice && (
+        <div className="ch-toast" role="status" onAnimationEnd={() => setPublishNotice(null)}>
+          {publishNotice}
+        </div>
+      )}
+
+      {publishErr && (
+        <div className="ch-toast" role="status" onAnimationEnd={() => setPublishErr(null)}>
+          {publishErr}
         </div>
       )}
 

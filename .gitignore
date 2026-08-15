@@ -30,3 +30,6 @@ tools/curation/
 # env: ignore all env files (secrets) but keep the committed template
 .env*
 !.env.example
+
+# clerk configuration (can include secrets)
+/.clerk/

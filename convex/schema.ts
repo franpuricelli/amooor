@@ -11,11 +11,13 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
-/** Estados del ciclo de vida de un sitio: draft → paid → live. */
+/** Estados del ciclo de vida de un sitio: draft → paid → live ⇄ paused.
+ *  `paused` = publicado pero fuera de línea (el host cae a la landing). */
 export const siteStatus = v.union(
   v.literal("draft"),
   v.literal("paid"),
-  v.literal("live")
+  v.literal("live"),
+  v.literal("paused")
 );
 
 /** Planes de compra (pago único). El "pro" incluye edición con IA. Ver lib/pricing.ts. */
