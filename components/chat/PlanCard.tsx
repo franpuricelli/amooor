@@ -15,6 +15,7 @@ import { useEffect, useRef, useState } from "react";
 import { SECTION_KIND_LABELS, type Plan } from "@/lib/plan";
 import type { Swatch } from "@/lib/palette-gen";
 import PalettePicker from "./PalettePicker";
+import TemplateChooser from "./TemplateChooser";
 
 // Opciones de tono como KEYWORDS (no frases), se eligen como la paleta.
 const TONE_PRESETS = [
@@ -318,6 +319,8 @@ function ToneEditor({ onRefine }: { onRefine: (instruction: string) => void }) {
 
 export default function PlanCard({
   plan,
+  template,
+  onTemplate,
   palette,
   customPalettes,
   onPalette,
@@ -329,6 +332,9 @@ export default function PlanCard({
   collapsed = false,
 }: {
   plan: Plan;
+  /** plantilla elegida (task 2-A) — el chooser vive arriba del plan */
+  template: string;
+  onTemplate: (id: string) => void;
   palette: string;
   customPalettes: Swatch[];
   onPalette: (id: string, sw?: Swatch) => void;
@@ -417,8 +423,8 @@ export default function PlanCard({
       <h2 className="ch-plan-title">{plan.title}</h2>
       <p className="ch-plan-angle">{plan.angle}</p>
 
-      {/* tono como keywords editables (quitar / editar / agregar) */}
-      <ToneEditor onRefine={onRefine} />
+      {/* estilo: plantilla (previews reales) + paleta, arriba del plan */}
+      <TemplateChooser template={template} onTemplate={onTemplate} />
 
       <PalettePicker
         value={palette}
@@ -426,6 +432,9 @@ export default function PlanCard({
         onSelect={onPalette}
         onCreate={onCreatePalette}
       />
+
+      {/* tono como keywords editables (quitar / editar / agregar) */}
+      <ToneEditor onRefine={onRefine} />
 
       <ul className="ch-plan-sections">
         {plan.sections.map((s, i) => {

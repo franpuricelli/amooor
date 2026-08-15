@@ -471,33 +471,7 @@
   box-shadow: 0 30px 70px -40px rgba(42, 10, 24, 0.35);
 }
 
-/* ── chooser (task 2-A): plantilla + paleta, ANTES del plan ─────────────────── */
-.ch-prechoice {
-  margin-top: 1.4rem;
-  background: var(--mk-card);
-  border: 1px solid var(--mk-line);
-  border-radius: var(--mk-r-xl);
-  padding: clamp(1.1rem, 4vw, 1.6rem);
-  box-shadow: 0 30px 70px -40px rgba(42, 10, 24, 0.35);
-}
-.ch-prechoice-head {
-  margin-bottom: 1.2rem;
-}
-.ch-prechoice-title {
-  font-family: var(--mk-serif);
-  font-style: italic;
-  font-weight: 500;
-  font-size: clamp(1.4rem, 4vw, 1.85rem);
-  line-height: 1.1;
-  color: var(--mk-ink);
-  margin: 0 0 0.35rem;
-}
-.ch-prechoice-sub {
-  color: var(--mk-ink-2);
-  line-height: 1.5;
-  margin: 0;
-  font-size: 0.94rem;
-}
+/* ── chooser de estilo (task 2-A): plantilla, arriba del plan (dentro del PlanCard) ── */
 .ch-choice-block {
   margin-top: 1.3rem;
 }
@@ -565,6 +539,19 @@
   background: var(--mk-card);
   border: 1px solid var(--mk-line-soft);
 }
+/* preview REAL: el export standalone escalado como miniatura no interactiva
+   (el click lo captura el .ch-tpl-card; el iframe queda inerte). */
+.ch-tpl-shot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 333.33%;
+  height: 333.33%;
+  border: 0;
+  transform: scale(0.3);
+  transform-origin: top left;
+  pointer-events: none;
+}
 .ch-tpl-view {
   position: absolute;
   right: 0.4rem;
@@ -603,78 +590,11 @@
   color: var(--mk-ink-3);
 }
 
-/* mini-mock del sitio (solo estético) */
-.ch-tpl-mock {
-  position: absolute;
-  inset: 0;
+/* "ver todos" DEBAJO de la grilla de plantillas */
+.ch-tpl-all-row {
   display: flex;
-  flex-direction: column;
-  gap: 5px;
-  padding: 9px;
-}
-.ch-tpl-mock-hero {
-  height: 42%;
-  border-radius: 5px;
-  background: linear-gradient(135deg, var(--mk-rose) 0%, var(--mk-rose-soft) 100%);
-}
-.ch-tpl-mock-line {
-  height: 5px;
-  width: 70%;
-  border-radius: 3px;
-  background: var(--mk-line);
-}
-.ch-tpl-mock-line.lg {
-  height: 8px;
-  width: 52%;
-  background: var(--mk-ink-3);
-}
-.ch-tpl-mock-grid {
-  margin-top: auto;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
-}
-.ch-tpl-mock-grid span {
-  aspect-ratio: 1;
-  border-radius: 3px;
-  background: var(--mk-bg-alt);
-}
-/* variantes de vibe: cambian densidad/forma para que se vean distintas */
-.ch-tpl-mock.vibe-editorial {
-  padding: 12px;
-  gap: 8px;
-}
-.ch-tpl-mock.vibe-editorial .ch-tpl-mock-hero {
-  height: 30%;
-  background: var(--mk-bg-alt);
-}
-.ch-tpl-mock.vibe-editorial .ch-tpl-mock-line.lg {
-  height: 11px;
-  width: 78%;
-}
-.ch-tpl-mock.vibe-brutalist {
-  gap: 4px;
-}
-.ch-tpl-mock.vibe-brutalist .ch-tpl-mock-hero {
-  height: 46%;
-  border-radius: 0;
-  background: var(--mk-ink);
-}
-.ch-tpl-mock.vibe-brutalist .ch-tpl-mock-line,
-.ch-tpl-mock.vibe-brutalist .ch-tpl-mock-grid span {
-  border-radius: 0;
-}
-.ch-tpl-mock.vibe-brutalist .ch-tpl-mock-line.lg {
-  background: var(--mk-ink);
-}
-
-.ch-prechoice .ch-palette {
-  margin: 0;
-}
-.ch-prechoice-cta {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 1.4rem;
+  justify-content: center;
+  margin-top: 0.7rem;
 }
 
 @media (max-width: 560px) {

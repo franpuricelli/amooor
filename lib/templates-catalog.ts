@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
-//  templates-catalog.ts — el catálogo de PLANTILLAS que el usuario elige antes
-//  del plan (chooser: components/chat/PreChoice.tsx).
+//  templates-catalog.ts — el catálogo de PLANTILLAS que el usuario elige en el
+//  chooser que vive arriba del plan (components/chat/TemplateChooser.tsx).
 //
 //  ⚠️ SCAFFOLD (task 2-A): hoy elegir una plantilla SOLO guarda la preferencia;
 //  el sitio del tenant se sigue renderizando siempre con PreviewSite +
