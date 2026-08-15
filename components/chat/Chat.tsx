@@ -110,6 +110,11 @@ export default function Chat() {
   const insertRef = useRef<((t: string) => void) | null>(null);
   const quoteRef = useRef<((t: string) => void) | null>(null);
   const openProfileRef = useRef<(() => void) | null>(null);
+  // PostApprove registra acá cómo saltar a un paso (para volver a "Fotos")
+  const paGotoRef = useRef<((s: Step) => void) | null>(null);
+  const registerPaGoto = useCallback((fn: (s: Step) => void) => {
+    paGotoRef.current = fn;
+  }, []);
   // correcciones de supuestos pendientes de avisarle al agente en el próximo refine
   const correctionsRef = useRef<string[]>([]);
 
@@ -474,6 +479,21 @@ export default function Chat() {
       ? 3
       : 2;
 
+  // Navegación por el stepper: solo se puede VOLVER a una etapa ya completada.
+  //  Historia/Plan → salir del post-approve (el plan vuelve a la vista; la media
+  //  queda guardada en el draft y se recarga al re-aprobar). Fotos → volver a la
+  //  subida desde el editor (rebind, sin regenerar). No permitimos saltar adelante.
+  const goToStage = (i: number) => {
+    if (i >= stageIndex) return;
+    if (approved) {
+      if (i <= 1) setApproved(false); // → Plan / Historia
+      else if (i === 2) paGotoRef.current?.("upload"); // Tu sitio → Fotos
+    } else if (i === 0) {
+      // ya estamos en el plan: llevamos la charla (arriba) a la vista
+      mainRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   return (
     <div className={`ch-root mk-root ${approved ? "ch-editing" : ""}`}>
       <header className="ch-top">
@@ -485,11 +505,27 @@ export default function Chat() {
             {STAGES.map((st, i) => {
               const done = i < stageIndex;
               const on = i === stageIndex;
+              // una etapa completada es clickeable para volver a ella
+              const nav = done;
               return (
                 <li
                   key={st.key}
-                  className={`ch-step ${done ? "done" : ""} ${on ? "on" : ""}`}
+                  className={`ch-step ${done ? "done" : ""} ${on ? "on" : ""} ${nav ? "nav" : ""}`}
                   aria-current={on ? "step" : undefined}
+                  {...(nav
+                    ? {
+                        role: "button",
+                        tabIndex: 0,
+                        title: `Volver a ${st.label}`,
+                        onClick: () => goToStage(i),
+                        onKeyDown: (e: React.KeyboardEvent) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            goToStage(i);
+                          }
+                        },
+                      }
+                    : {})}
                 >
                   <span
                     className={`ch-step-dot ${on && (sending || thinking) ? "busy" : ""}`}
@@ -539,7 +575,7 @@ export default function Chat() {
       </header>
 
       {approved ? (
-        <PostApprove convo={convo} onStep={setPaStep} />
+        <PostApprove convo={convo} onStep={setPaStep} registerGoto={registerPaGoto} />
       ) : (
       <>
       <div className="ch-main" ref={mainRef} onScroll={onScroll}>

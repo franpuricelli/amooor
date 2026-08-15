@@ -71,6 +71,18 @@
   font-weight: 600;
   white-space: nowrap;
 }
+/* etapa ya completada = clickeable (volver atrás) */
+.ch-step.nav {
+  cursor: pointer;
+}
+.ch-step.nav:hover .ch-step-label {
+  color: var(--mk-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.ch-step.nav:hover .ch-step-dot {
+  border-color: var(--mk-rose-btn);
+}
 /* conector entre etapas (hairline) */
 .ch-step + .ch-step::before {
   content: "";
@@ -2442,6 +2454,7 @@
   flex: 0 0 240px;
   overflow-y: auto;
   padding: clamp(1rem, 3vw, 1.6rem) 0.8rem;
+  border-right: 1px solid var(--mk-line-soft);
 }
 .pa-rail-title {
   font-size: 0.74rem;
@@ -2516,7 +2529,6 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--mk-line-soft);
 }
 .pa-panel-scroll {
   flex: 1;
@@ -2879,7 +2891,6 @@
   flex: 0 0 40%;
   max-width: 480px;
   min-width: 0;
-  border-right: 1px solid var(--mk-line-soft);
   display: flex;
   min-height: 0;
 }
