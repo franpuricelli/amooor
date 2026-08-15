@@ -2,12 +2,12 @@
 //  templates-catalog.ts — el catálogo de PLANTILLAS que el usuario elige en el
 //  chooser que vive arriba del plan (components/chat/TemplateChooser.tsx).
 //
-//  ⚠️ SCAFFOLD (task 2-A): hoy elegir una plantilla SOLO guarda la preferencia;
-//  el sitio del tenant se sigue renderizando siempre con PreviewSite +
-//  SECTION_REGISTRY + paleta. Cada `previewHref` apunta al export estático
-//  standalone en `/template/<id>` (app/template/<id>/page.tsx), que se abre en una
-//  pestaña nueva. Conectar la elección al render real (que la plantilla cambie el
-//  sitio generado) es task 2-B — ver `.context/task-2b-template-integration.md`.
+//  La elección SÍ cambia el render (task 2-B): `id` se guarda en
+//  `draft.theme.template` y se aplica como `[data-template="<id>"]` sobre el
+//  sitio (skin de tipografía/superficies en app/globals.css). Ver el flujo y el
+//  checklist para agregar plantillas en `docs/templates/README.md`; cada
+//  plantilla tiene su `docs/templates/<id>.md`. Cada `previewHref` apunta además
+//  al export estático standalone en `/template/<id>` (app/template/<id>/page.tsx).
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface TemplateOption {
@@ -17,7 +17,7 @@ export interface TemplateOption {
   blurb: string;
   /** preview standalone (export estático) — se abre en pestaña nueva */
   previewHref: string;
-  /** estilo del mini-mock del card (solo estético, no cambia el sitio) */
+  /** estilo del mini-mock del card + id del skin `[data-template]` que aplica */
   vibe: "romantic" | "editorial" | "brutalist";
 }
 

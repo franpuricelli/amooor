@@ -16,6 +16,7 @@ import { parsePlan, type Plan } from "@/lib/plan";
 import type { Activity, Attachment } from "@/lib/chat-format";
 import type { Swatch } from "@/lib/palette-gen";
 import type { Palette } from "@/lib/theme";
+import { DEFAULT_TEMPLATE_ID, TEMPLATE_STORAGE_KEY } from "@/lib/templates-catalog";
 
 const TOKEN_KEY = "amooor_draft_token";
 const CUSTOM_PAL_KEY = "amooor_custom_palettes";
@@ -79,12 +80,15 @@ export interface UseConversation {
   messages: Message[];
   plan: Plan | null;
   palette: string;
+  /** plantilla/skin elegida (task 2-B) — se persiste dentro de `theme.template`. */
+  template: string;
   customPalettes: Swatch[];
   setMessages: (updater: (m: Message[]) => Message[]) => void;
   setPlan: (plan: Plan | null) => void;
   /** overrides = paleta custom completa (13 tokens); sin ellos una custom no se
    *  tematiza. Para un built-in va sin overrides y se limpian los previos. */
   setPalette: (id: string, overrides?: Partial<Palette>) => void;
+  setTemplate: (id: string) => void;
   addCustomPalette: (sw: Swatch) => void;
   saving: boolean;
 }
@@ -95,6 +99,7 @@ export function useConversation(): UseConversation {
   const [messages, setMessagesRaw] = useState<Message[]>([]);
   const [plan, setPlanRaw] = useState<Plan | null>(null);
   const [palette, setPaletteRaw] = useState<string>("rosa");
+  const [template, setTemplateRaw] = useState<string>(DEFAULT_TEMPLATE_ID);
   const [customPalettes, setCustomPalettes] = useState<Swatch[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -105,6 +110,7 @@ export function useConversation(): UseConversation {
   const planRef = useRef<Plan | null>(null);
   const paletteRef = useRef<string>("rosa");
   const paletteOverridesRef = useRef<Partial<Palette> | undefined>(undefined);
+  const templateRef = useRef<string>(DEFAULT_TEMPLATE_ID);
   const tokenRef = useRef("");
   const linkedRef = useRef(false);
 
@@ -164,6 +170,14 @@ export function useConversation(): UseConversation {
     setToken(t);
     tokenRef.current = t;
     setCustomPalettes(loadCustomPalettes());
+    // plantilla elegida (persistida en localStorage) — sirve también sin Convex.
+    try {
+      const tpl = window.localStorage.getItem(TEMPLATE_STORAGE_KEY);
+      if (tpl) {
+        templateRef.current = tpl;
+        setTemplateRaw(tpl);
+      }
+    } catch {}
     // Sin backend Convex configurado: el chat funciona igual (token en
     // localStorage), sólo no persiste. No tiramos error ni ensuciamos la consola.
     if (!isConvexConfigured()) {
@@ -230,6 +244,7 @@ export function useConversation(): UseConversation {
         intakePlan: planRef.current ?? undefined,
         theme: {
           palette: paletteRef.current,
+          template: templateRef.current,
           ...(paletteOverridesRef.current
             ? { overrides: paletteOverridesRef.current as Record<string, string> }
             : {}),
@@ -280,6 +295,18 @@ export function useConversation(): UseConversation {
     [schedule]
   );
 
+  const setTemplate = useCallback(
+    (id: string) => {
+      templateRef.current = id;
+      setTemplateRaw(id);
+      try {
+        window.localStorage.setItem(TEMPLATE_STORAGE_KEY, id);
+      } catch {}
+      schedule();
+    },
+    [schedule]
+  );
+
   const addCustomPalette = useCallback((sw: Swatch) => {
     setCustomPalettes((prev) => {
       const next = [...prev.filter((p) => p.id !== sw.id), sw];
@@ -296,10 +323,12 @@ export function useConversation(): UseConversation {
     messages,
     plan,
     palette,
+    template,
     customPalettes,
     setMessages,
     setPlan,
     setPalette,
+    setTemplate,
     addCustomPalette,
     saving,
   };

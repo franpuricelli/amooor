@@ -17,7 +17,6 @@ import { parsePlan } from "@/lib/plan";
 import { PURIVI_PLAN, SKIP_WIZARD_TRIGGER } from "@/lib/demo-plan";
 import { parseDeepen, deriveShared } from "@/lib/chat-format";
 import type { Swatch } from "@/lib/palette-gen";
-import { DEFAULT_TEMPLATE_ID, TEMPLATE_STORAGE_KEY } from "@/lib/templates-catalog";
 import ChatMessages from "./ChatMessages";
 import ChatComposer, { type SendOpts } from "./ChatComposer";
 import PlanCard from "./PlanCard";
@@ -108,8 +107,6 @@ export default function Chat() {
   const [paStep, setPaStep] = useState<Step | null>(null);
   const [refining, setRefining] = useState(false);
   const [refLabels, setRefLabels] = useState<Record<string, string>>({});
-  // task 2-A: elección de plantilla (el chooser vive arriba del plan mismo).
-  const [template, setTemplate] = useState<string>(DEFAULT_TEMPLATE_ID);
   const mainRef = useRef<HTMLDivElement | null>(null);
   const atBottomRef = useRef(true);
   const insertRef = useRef<((t: string) => void) | null>(null);
@@ -125,20 +122,8 @@ export default function Chat() {
 
   const hasPlan = !!convo.plan && !approved;
 
-  // restaurar la plantilla elegida (persistida en localStorage)
-  useEffect(() => {
-    try {
-      const tpl = window.localStorage.getItem(TEMPLATE_STORAGE_KEY);
-      if (tpl) setTemplate(tpl);
-    } catch {}
-  }, []);
-
-  const selectTemplate = useCallback((id: string) => {
-    setTemplate(id);
-    try {
-      window.localStorage.setItem(TEMPLATE_STORAGE_KEY, id);
-    } catch {}
-  }, []);
+  // task 2-A/2-B: la plantilla elegida vive en el draft (convo.template) — se
+  // persiste dentro de `theme.template` y fluye al render (ver PreviewSite).
 
   // nombres editables de las referencias (persisten en localStorage)
   useEffect(() => {
@@ -633,8 +618,8 @@ export default function Chat() {
                   />
                   <PlanCard
                     plan={convo.plan}
-                    template={template}
-                    onTemplate={selectTemplate}
+                    template={convo.template}
+                    onTemplate={convo.setTemplate}
                     palette={convo.palette}
                     customPalettes={convo.customPalettes}
                     onPalette={applyPalette}
@@ -663,8 +648,8 @@ export default function Chat() {
                   {hasPlan && convo.plan && (
                     <PlanCard
                       plan={convo.plan}
-                      template={template}
-                      onTemplate={selectTemplate}
+                      template={convo.template}
+                      onTemplate={convo.setTemplate}
                       palette={convo.palette}
                       customPalettes={convo.customPalettes}
                       onPalette={applyPalette}

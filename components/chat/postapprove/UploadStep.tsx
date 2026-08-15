@@ -159,8 +159,12 @@ export default function UploadStep({
     const overrides = convo.palette.startsWith("custom-")
       ? convo.customPalettes.find((s) => s.id === convo.palette)?.palette
       : undefined;
-    return { palette: convo.palette as PaletteId, overrides };
-  }, [convo.palette, convo.customPalettes]);
+    return {
+      palette: convo.palette as PaletteId,
+      template: convo.template,
+      overrides,
+    };
+  }, [convo.palette, convo.customPalettes, convo.template]);
   const subdomain = slugifyCouple(
     (convo.plan?.names ?? []).filter(Boolean).join(" & ") || "tu-sitio"
   );

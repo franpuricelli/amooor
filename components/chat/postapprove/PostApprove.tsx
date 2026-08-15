@@ -38,7 +38,10 @@ export default function PostApprove({
 }) {
   const [step, setStep] = useState<Step | null>(null); // null = hidratando
   const [content, setContent] = useState<Content | null>(null);
-  const [theme, setTheme] = useState<Theme>({ palette: convo.palette as PaletteId });
+  const [theme, setTheme] = useState<Theme>({
+    palette: convo.palette as PaletteId,
+    template: convo.template,
+  });
 
   useEffect(() => {
     onStep?.(step);
@@ -65,7 +68,12 @@ export default function PostApprove({
         if (!alive) return;
         if (draft?.content) {
           setContent(draft.content as Content);
-          setTheme((draft.theme as Theme) ?? { palette: convo.palette as PaletteId });
+          setTheme(
+            (draft.theme as Theme) ?? {
+              palette: convo.palette as PaletteId,
+              template: convo.template,
+            }
+          );
           setStep("edit");
         } else {
           setStep("upload");

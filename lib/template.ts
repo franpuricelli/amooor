@@ -197,12 +197,21 @@ export const contentSchema = z.object({
     .optional(),
 });
 
-/** El `theme` de un tenant: una paleta base + overrides opcionales. */
+/** El `theme` de un tenant: una paleta base + overrides opcionales + la
+ *  PLANTILLA elegida (task 2-B). `template` es un skin de tipografía/layout que
+ *  se aplica como `[data-template="<id>"]` sobre el render (PreviewSite / tenant);
+ *  su CSS vive en app/globals.css y cada plantilla se documenta en
+ *  docs/templates/<id>.md. Es opcional: sin él, se usa la base "romantic". */
 export const themeSchema = z.object({
   palette: z.enum(["rosa", "durazno", "lavanda", "menta", "cielo"]),
+  template: z.string().optional(),
   overrides: z.record(z.string()).optional(),
 });
-export type Theme = { palette: PaletteId; overrides?: Partial<Palette> };
+export type Theme = {
+  palette: PaletteId;
+  template?: string;
+  overrides?: Partial<Palette>;
+};
 
 // ── TemplateManifest ─────────────────────────────────────────────────────────
 export interface TemplateManifest {
