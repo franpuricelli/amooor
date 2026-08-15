@@ -24,6 +24,9 @@ Not obvious from `package.json`; the full env list is in `.env.example`.
 - Persistence: **Convex** (`convex/`) — drafts, photos, videos, sites, orders.
 - Photos: **Cloudflare Images**; assets/videos: **R2** — `lib/storage.ts`.
 - Assistant LLM: **Kimi (Moonshot)** — `lib/llm.ts` (server-only).
+- Closing "drawing" stylization: **FAL** (gpt-image-2 edit, image-to-image) —
+  `lib/fal.ts` (server-only); wired in `app/api/generate/route.ts` (closing photo
+  → `content.drawing.src`). Falls back to the raw photo without `FAL_KEY`.
 - Voice dictation: **Deepgram** — `app/api/deepgram/token/route.ts`.
 - Payments **Rebill**, domains **Vercel/Namecheap**, email **Resend**.
 
