@@ -3529,6 +3529,59 @@
   gap: 8px;
   align-items: center;
 }
+/* pill "Publicado" (abre la card) + ícono de pausa translúcido a la derecha */
+.pa-pub-trigger {
+  display: inline-flex;
+  align-items: center;
+  background: var(--mk-ink);
+  color: var(--mk-card);
+  border-radius: 999px;
+  transition: background 0.15s;
+}
+.pa-pub-trigger:hover {
+  background: #000;
+}
+.pa-pub-trigger-main,
+.pa-pub-trigger-pause {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+.pa-pub-trigger-main {
+  gap: 0.45rem;
+  padding: 0.4rem 0.5rem 0.4rem 0.9rem;
+}
+.pa-pub-trigger-pause {
+  padding: 0.4rem 0.72rem 0.4rem 0.5rem;
+  opacity: 0.45; /* translúcido; se resalta al hover (con tooltip vía title) */
+  transition: opacity 0.15s;
+}
+.pa-pub-trigger-pause:hover {
+  opacity: 1;
+}
+.pa-pub-trigger-pause:disabled {
+  cursor: default;
+  opacity: 0.3;
+}
+/* la burbuja de estado vive sobre el pill oscuro: gris "idle" claro, verde ready */
+.pa-pub-trigger .pa-dot {
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+.pa-pub-trigger .pa-dot.busy {
+  background: #f2b529;
+  box-shadow: none;
+}
+.pa-pub-trigger .pa-dot.ready {
+  background: #2ec27e;
+  box-shadow: none;
+}
 .pa-pub-card {
   position: absolute;
   top: calc(100% + 8px);
@@ -3558,12 +3611,14 @@
 .pa-pub-thumb iframe {
   position: absolute;
   top: 0;
-  left: 0;
-  width: 1280px;
-  height: 800px;
+  left: 50%;
+  /* 1184 * .25 = 296px = ancho interno de la card (320 − 24 de padding): así el
+     thumbnail llena el ancho exacto y queda centrado (sin recorte a la derecha). */
+  width: 1184px;
+  height: 760px;
   border: 0;
-  transform: scale(0.25);
-  transform-origin: top left;
+  transform: translateX(-50%) scale(0.25);
+  transform-origin: top center;
   pointer-events: none;
 }
 .pa-pub-actions {

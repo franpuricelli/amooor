@@ -89,6 +89,15 @@ function ArrowDown() {
   );
 }
 
+function PauseIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <rect x="6" y="5" width="4" height="14" rx="1" />
+      <rect x="14" y="5" width="4" height="14" rx="1" />
+    </svg>
+  );
+}
+
 export default function Chat() {
   const convo = useConversation();
   // Soft gate: el hero carga para todos, pero el primer envío al bot abre el
@@ -657,16 +666,30 @@ export default function Chat() {
                 {publishing ? "Publicando…" : "Publicar"}
               </button>
             ) : (
-              // ya publicado → abre la card con el thumbnail + acciones
-              <button
-                type="button"
-                className="ch-save-btn pa-publish-btn"
-                onClick={() => setPubCardOpen((o) => !o)}
-                title="Tu sitio publicado"
-              >
-                <StatusDot status={publishStatus} />
-                Publicado
-              </button>
+              // ya publicado → pill que abre la card, con ícono de pausa (live)
+              <div className="pa-pub-trigger">
+                <button
+                  type="button"
+                  className="pa-pub-trigger-main"
+                  onClick={() => setPubCardOpen((o) => !o)}
+                  title="Tu sitio publicado"
+                >
+                  <StatusDot status={publishStatus} />
+                  {siteStatus === "paused" ? "Pausado" : "Publicado"}
+                </button>
+                {siteStatus === "live" && (
+                  <button
+                    type="button"
+                    className="pa-pub-trigger-pause"
+                    onClick={() => void runPublish("pause")}
+                    disabled={publishing}
+                    title="Pausar el sitio — queda fuera de línea hasta que lo actualices"
+                    aria-label="Pausar el sitio"
+                  >
+                    <PauseIcon />
+                  </button>
+                )}
+              </div>
             )}
 
             {pubCardOpen && siteSub && siteStatus !== "none" && (
@@ -693,7 +716,7 @@ export default function Chat() {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    Ver sitio ↗
+                    Ver sitio
                   </a>
                   <button
                     type="button"
@@ -702,7 +725,7 @@ export default function Chat() {
                     disabled={publishing}
                     title="Actualizar y abrir tu sitio"
                   >
-                    {publishing ? "Publicando…" : "Publicar"}
+                    {publishing ? "Publicando…" : "Actualizar"}
                   </button>
                 </div>
               </div>
