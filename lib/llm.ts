@@ -501,11 +501,15 @@ export async function synthesizePlan(
  * que la ruta mergea (deep-merge) y valida con `contentSchema`. Devuelve null si el
  * modelo no produjo un JSON. Ver skills/edit/SKILL.md (objetivo: el sitio) para el contrato.
  */
+export type SiteEditResult =
+  | { kind: "patch"; patch: Record<string, unknown> }
+  | { kind: "ask"; question: string };
+
 export async function editSiteContent(
   messages: ChatMessage[],
   currentContent: unknown,
   signal?: AbortSignal
-): Promise<Record<string, unknown> | null> {
+): Promise<SiteEditResult | null> {
   const p = provider();
   if (!p) throw new Error("KIMI_API_KEY no configurado");
 
@@ -515,12 +519,15 @@ export async function editSiteContent(
       currentContent
     )}`
   );
+  // deep/thinking: que RAZONE sobre la instrucción y el content antes de tocar nada
+  // (entiende mejor y puede decidir repreguntar). El reasoning cuenta contra
+  // max_tokens: le damos aire para pensar + el JSON del patch.
   const body = buildBody(
     p,
     [{ role: "system", content: system }, ...messages],
-    "instant",
+    "deep",
     false,
-    3500
+    8000
   );
 
   const res = await kimiFetch(p, body, signal);
@@ -530,6 +537,12 @@ export async function editSiteContent(
   const data = await res.json();
   const text = data?.choices?.[0]?.message?.content;
   if (typeof text !== "string") return null;
-  const patch = extractJSON(text);
-  return patch && typeof patch === "object" ? (patch as Record<string, unknown>) : null;
+  const obj = extractJSON(text);
+  if (!obj || typeof obj !== "object") return null;
+  // El modelo puede repreguntar en vez de editar: { "__ask": "pregunta?" }.
+  const ask = (obj as Record<string, unknown>).__ask;
+  if (typeof ask === "string" && ask.trim()) {
+    return { kind: "ask", question: ask.trim() };
+  }
+  return { kind: "patch", patch: obj as Record<string, unknown> };
 }
