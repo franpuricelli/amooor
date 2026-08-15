@@ -16,14 +16,16 @@ import "server-only";
 // ─────────────────────────────────────────────────────────────────────────────
 
 import {
-  INTAKE_SYSTEM,
   CHECKLIST_SYSTEM,
-  PLAN_SYSTEM,
   PLAN_FORCED_HINT,
   HIDDEN_CHECKLIST,
 } from "./intake-prompt";
-import { SITE_AGENT_SYSTEM } from "./site-agent-prompt";
+import { composeSystem } from "./skills";
 import { parsePlan, type Plan } from "./plan";
+
+/** Checklist mental (oculto) que el orchestrator cubre conversando, nunca como form. */
+const CHECKLIST_BLOCK = `Checklist mental (cubrilo conversando, nunca como formulario):
+${HIDDEN_CHECKLIST.map((c) => `- ${c}`).join("\n")}`;
 import type { Activity } from "./chat-format";
 
 export interface ChatMessage {
@@ -117,62 +119,61 @@ function extractJSON(text: string): any | null {
   }
 }
 
-// ── conversación: stream de tokens (instant mode) ────────────────────────────
-/**
- * Streamea la respuesta del agente token a token (instant mode). AsyncGenerator
- * de strings incrementales. Lanza si no hay provider o si el upstream falla.
- */
-export async function* streamChat(
-  messages: ChatMessage[],
-  signal?: AbortSignal
-): AsyncGenerator<string> {
-  const p = provider();
-  if (!p) throw new Error("KIMI_API_KEY no configurado");
-
-  const body = buildBody(
-    p,
-    [{ role: "system", content: INTAKE_SYSTEM }, ...messages],
-    "instant",
-    true
-  );
-
-  const res = await fetch(p.url, {
-    method: "POST",
-    headers: p.headers,
-    body: JSON.stringify(body),
-    signal,
-  });
-  if (!res.ok || !res.body) {
-    throw new Error(`Kimi ${res.status}: ${await res.text().catch(() => "")}`);
-  }
-
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let buf = "";
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buf += decoder.decode(value, { stream: true });
-    // SSE: eventos separados por \n; líneas "data: {json}" o "data: [DONE]".
-    let idx: number;
-    while ((idx = buf.indexOf("\n")) !== -1) {
-      const line = buf.slice(0, idx).trim();
-      buf = buf.slice(idx + 1);
-      if (!line.startsWith("data:")) continue;
-      const payload = line.slice(5).trim();
-      if (payload === "[DONE]") return;
-      const json = extractJSON(payload) ?? safeParse(payload);
-      const delta = json?.choices?.[0]?.delta?.content;
-      if (typeof delta === "string" && delta.length) yield delta;
-    }
-  }
-}
-
 function safeParse(s: string): any | null {
   try {
     return JSON.parse(s);
   } catch {
     return null;
+  }
+}
+
+/** Espera `ms`, cancelable por el signal (rechaza si se aborta). */
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) return reject(new DOMException("Aborted", "AbortError"));
+    const t = setTimeout(resolve, ms);
+    signal?.addEventListener(
+      "abort",
+      () => {
+        clearTimeout(t);
+        reject(new DOMException("Aborted", "AbortError"));
+      },
+      { once: true }
+    );
+  });
+}
+
+/** ms a esperar tras un 429: usa Retry-After si viene, si no backoff (1s, 2s, 4s…). */
+function retryAfterMs(res: Response, attempt: number): number {
+  const secs = Number.parseInt(res.headers.get("retry-after") ?? "", 10);
+  if (Number.isFinite(secs) && secs > 0) return secs * 1000;
+  return Math.min(1000 * 2 ** attempt, 8000);
+}
+
+/**
+ * POST a Moonshot con reintentos ante 429 (el org tiene un tope de RPM muy bajo, y un
+ * turno dispara varias llamadas). Espera lo que sugiere Retry-After (o un backoff
+ * exponencial) y reintenta con el mismo body; el resto de los status se devuelven tal
+ * cual para que cada caller los maneje.
+ */
+async function kimiFetch(
+  p: KimiProvider,
+  body: unknown,
+  signal?: AbortSignal,
+  retries = 3
+): Promise<Response> {
+  const init: RequestInit = {
+    method: "POST",
+    headers: p.headers,
+    body: JSON.stringify(body),
+    signal,
+  };
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(p.url, init);
+    if (res.status !== 429 || attempt >= retries) return res;
+    // 429 = tope de RPM de la org: soltamos el body y reintentamos tras esperar.
+    await res.body?.cancel().catch(() => {});
+    await sleep(retryAfterMs(res, attempt), signal);
   }
 }
 
@@ -212,7 +213,10 @@ export async function* runAgentTurn(
   const p = provider();
   if (!p) throw new Error("KIMI_API_KEY no configurado");
 
-  const convo: any[] = [{ role: "system", content: INTAKE_SYSTEM }, ...messages];
+  const convo: any[] = [
+    { role: "system", content: composeSystem("orchestrator", CHECKLIST_BLOCK) },
+    ...messages,
+  ];
   const tools = webSearchEnabled()
     ? [{ type: "builtin_function", function: { name: "$web_search" } }]
     : undefined;
@@ -238,12 +242,7 @@ export async function* runAgentTurn(
     if (!useThinking) body.top_p = 0.95;
     if (tools) body.tools = tools;
 
-    const res = await fetch(p.url, {
-      method: "POST",
-      headers: p.headers,
-      body: JSON.stringify(body),
-      signal,
-    });
+    const res = await kimiFetch(p, body, signal);
     if (!res.ok || !res.body) {
       throw new Error(`Kimi ${res.status}: ${await res.text().catch(() => "")}`);
     }
@@ -408,12 +407,7 @@ async function assessChecklist(
       false,
       250
     );
-    const res = await fetch(p.url, {
-      method: "POST",
-      headers: p.headers,
-      body: JSON.stringify(body),
-      signal,
-    });
+    const res = await kimiFetch(p, body, signal);
     if (!res.ok) return { satisfied: false, missing: [] };
     const data = await res.json();
     const text = data?.choices?.[0]?.message?.content;
@@ -469,17 +463,19 @@ export async function synthesizePlan(
   const p = provider();
   if (!p) throw new Error("KIMI_API_KEY no configurado");
 
-  const system = [
-    PLAN_SYSTEM,
-    opts.forced ? PLAN_FORCED_HINT : "",
-    opts.previousPlan
-      ? `El usuario ya vio este plan y pidió refinarlo. Plan anterior:\n${JSON.stringify(
+  // Refinar un plan existente = skill `edit` (objetivo: el plan). Sintetizar de cero
+  // = `prepare-plan` (voz/ángulo) + `adapt` (adaptar el template al material).
+  const system = opts.previousPlan
+    ? composeSystem(
+        "edit",
+        `Estás editando: EL PLAN.\nEl usuario ya vio este plan y pidió refinarlo. Plan anterior (JSON):\n${JSON.stringify(
           opts.previousPlan
-        )}\nAplicá SÓLO lo que pidió en los últimos mensajes y devolvé el plan revisado completo. Mantené el resto igual. Si el usuario confirmó/corrigió un dato, tratalo como HECHO y NO lo vuelvas a listar como supuesto.`
-      : "",
-  ]
-    .filter(Boolean)
-    .join("\n\n");
+        )}`
+      )
+    : composeSystem(
+        ["prepare-plan", "adapt"],
+        opts.forced ? PLAN_FORCED_HINT : undefined
+      );
 
   // Refinar un plan existente NO necesita razonamiento profundo: usamos modo
   // instant (sin thinking) → respuesta mucho más rápida para cambios chicos. La
@@ -488,12 +484,7 @@ export async function synthesizePlan(
     ? buildBody(p, [{ role: "system", content: system }, ...messages], "instant", false, 3500)
     : buildBody(p, [{ role: "system", content: system }, ...messages], "deep", false);
 
-  const res = await fetch(p.url, {
-    method: "POST",
-    headers: p.headers,
-    body: JSON.stringify(body),
-    signal,
-  });
+  const res = await kimiFetch(p, body, signal);
   if (!res.ok) {
     throw new Error(`Kimi plan ${res.status}: ${await res.text().catch(() => "")}`);
   }
@@ -508,39 +499,50 @@ export async function synthesizePlan(
  * Corre el agente de EDICIÓN del sitio (instant mode): recibe el `Content` actual
  * + la instrucción del usuario y devuelve un PATCH PARCIAL de Content (objeto JSON)
  * que la ruta mergea (deep-merge) y valida con `contentSchema`. Devuelve null si el
- * modelo no produjo un JSON. Ver lib/site-agent-prompt.ts para el contrato.
+ * modelo no produjo un JSON. Ver skills/edit/SKILL.md (objetivo: el sitio) para el contrato.
  */
+export type SiteEditResult =
+  | { kind: "patch"; patch: Record<string, unknown> }
+  | { kind: "ask"; question: string };
+
 export async function editSiteContent(
   messages: ChatMessage[],
   currentContent: unknown,
   signal?: AbortSignal
-): Promise<Record<string, unknown> | null> {
+): Promise<SiteEditResult | null> {
   const p = provider();
   if (!p) throw new Error("KIMI_API_KEY no configurado");
 
-  const system = `${SITE_AGENT_SYSTEM}\n\nCONTENT ACTUAL del sitio (JSON):\n${JSON.stringify(
-    currentContent
-  )}`;
+  const system = composeSystem(
+    "edit",
+    `Estás editando: EL SITIO.\nCONTENT ACTUAL del sitio (JSON):\n${JSON.stringify(
+      currentContent
+    )}`
+  );
+  // deep/thinking: que RAZONE sobre la instrucción y el content antes de tocar nada
+  // (entiende mejor y puede decidir repreguntar). El reasoning cuenta contra
+  // max_tokens: le damos aire para pensar + el JSON del patch.
   const body = buildBody(
     p,
     [{ role: "system", content: system }, ...messages],
-    "instant",
+    "deep",
     false,
-    3500
+    8000
   );
 
-  const res = await fetch(p.url, {
-    method: "POST",
-    headers: p.headers,
-    body: JSON.stringify(body),
-    signal,
-  });
+  const res = await kimiFetch(p, body, signal);
   if (!res.ok) {
     throw new Error(`Kimi site ${res.status}: ${await res.text().catch(() => "")}`);
   }
   const data = await res.json();
   const text = data?.choices?.[0]?.message?.content;
   if (typeof text !== "string") return null;
-  const patch = extractJSON(text);
-  return patch && typeof patch === "object" ? (patch as Record<string, unknown>) : null;
+  const obj = extractJSON(text);
+  if (!obj || typeof obj !== "object") return null;
+  // El modelo puede repreguntar en vez de editar: { "__ask": "pregunta?" }.
+  const ask = (obj as Record<string, unknown>).__ask;
+  if (typeof ask === "string" && ask.trim()) {
+    return { kind: "ask", question: ask.trim() };
+  }
+  return { kind: "patch", patch: obj as Record<string, unknown> };
 }

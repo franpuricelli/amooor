@@ -13,6 +13,7 @@ import "server-only";
 
 import type { Content } from "./content";
 import type { WizardState } from "./draft";
+import { composeSystem } from "./skills";
 
 interface Provider {
   kind: "anthropic" | "openai";
@@ -113,10 +114,7 @@ export async function enhanceNarrative(
     title: s.beats[0]?.title ?? id,
   }));
 
-  const system =
-    "Sos un escritor romántico pero natural (español rioplatense). Escribís copy " +
-    "cálido, breve y honesto para el sitio de aniversario de una pareja. Devolvés " +
-    "SOLO un objeto JSON válido, sin markdown.";
+  const system = composeSystem("website");
 
   const user = JSON.stringify({
     instruccion:

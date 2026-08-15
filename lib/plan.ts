@@ -53,20 +53,44 @@ export const zPlanSection = z.object({
 export type PlanSection = z.infer<typeof zPlanSection>;
 
 /** El plan estructurado que el agente propone tras entender la historia. */
-export const zPlan = z.object({
-  /** nombres de las dos personas (para personalizar el título del plan) */
-  names: z.array(z.string()).default([]),
-  /** título/ángulo editorial del sitio (voz de la pareja) */
-  title: z.string().min(1),
-  /** el ángulo narrativo en 1–2 frases: de qué va este sitio */
-  angle: z.string().min(1),
-  /** el tono emocional / vibe (p.ej. "cálido y divertido, sin cursilería") */
-  tone: z.string().min(1),
-  /** lista ordenada de secciones con su intención */
-  sections: z.array(zPlanSection).min(1),
-  /** supuestos que asumió el agente (se muestran para que el usuario los corrija) */
-  assumptions: z.array(z.string()).default([]),
-});
+export const zPlan = z
+  .object({
+    /** nombres de las dos personas (para personalizar el título del plan) */
+    names: z.array(z.string()).default([]),
+    /** título/ángulo editorial del sitio (voz de la pareja) */
+    title: z.string().min(1),
+    /** el ángulo narrativo en 1–2 frases: de qué va este sitio */
+    angle: z.string().min(1),
+    /** el tono emocional / vibe (p.ej. "cálido y divertido, sin cursilería") */
+    tone: z.string().min(1),
+    /** lista ordenada de secciones con su intención */
+    sections: z.array(zPlanSection).min(1),
+    /** supuestos que asumió el agente (se muestran para que el usuario los corrija) */
+    assumptions: z.array(z.string()).default([]),
+  })
+  // Invariantes de estructura del template (el skill `adapt` los exige en prosa; acá
+  // los garantizamos): el sitio SIEMPRE abre con un único `hero` y cierra con un único
+  // `closing`. Si el modelo dropea algo mal formado, `parsePlan` devuelve null y la
+  // ruta sigue la charla en vez de construir un sitio roto.
+  .superRefine((plan, ctx) => {
+    const kinds = plan.sections.map((s) => s.kind);
+    const heroes = kinds.filter((k) => k === "hero").length;
+    const closings = kinds.filter((k) => k === "closing").length;
+    if (heroes !== 1 || kinds[0] !== "hero") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "El plan debe empezar con exactamente un 'hero'.",
+        path: ["sections"],
+      });
+    }
+    if (closings !== 1 || kinds[kinds.length - 1] !== "closing") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "El plan debe terminar con exactamente un 'closing'.",
+        path: ["sections"],
+      });
+    }
+  });
 export type Plan = z.infer<typeof zPlan>;
 
 /** Valida/normaliza un plan (venga del LLM o rehidratado del draft). null si no es válido. */
