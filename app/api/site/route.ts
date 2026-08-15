@@ -107,8 +107,17 @@ export async function POST(req: NextRequest) {
         }
 
         activity("running");
-        const patch = await editSiteContent(messages, body.content, req.signal);
-        if (!patch || Object.keys(patch).length === 0) {
+        const result = await editSiteContent(messages, body.content, req.signal);
+
+        // El agente puede repreguntar en vez de editar (instrucción ambigua).
+        if (result?.kind === "ask") {
+          activity("done");
+          send({ type: "message", message: result.question });
+          send({ type: "done" });
+          return close();
+        }
+
+        if (!result || Object.keys(result.patch).length === 0) {
           activity("done");
           send({
             type: "error",
@@ -119,7 +128,7 @@ export async function POST(req: NextRequest) {
           return close();
         }
 
-        const merged = deepMerge(body.content, patch);
+        const merged = deepMerge(body.content, result.patch);
         try {
           const content = parseContent(merged);
           activity("done");

@@ -338,6 +338,10 @@ function ChatFlow({
         } else if (evt.type === "content" && evt.content) {
           onContent(evt.content);
           updateLast((m) => ({ ...m, content: m.content.trim() ? m.content : "Listo, apliqué el cambio." }));
+        } else if (evt.type === "message" && evt.message) {
+          // el agente repregunta en vez de editar (instrucción ambigua)
+          setThinking(false);
+          updateLast((m) => ({ ...m, content: (m.content ? m.content + "\n\n" : "") + evt.message }));
         } else if (evt.type === "error") {
           setThinking(false);
           updateLast((m) => ({ ...m, content: (m.content ? m.content + "\n\n" : "") + (evt.message ?? "Algo salió mal.") }));
