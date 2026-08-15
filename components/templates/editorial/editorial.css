@@ -13,6 +13,18 @@
    are already loaded on <html> by app/layout.tsx.
    ─────────────────────────────────────────────────────────────────────────── */
 
+/* Overscroll: this template runs inside the app shell whose <body> carries the
+   tenant palette (pink). Without this, rubber-band scrolling reveals that pink
+   band above/below the page. Kill the bounce and match the document background
+   to the template so an over-scroll shows nothing out of place. */
+html:has(.ed) {
+  overscroll-behavior: none;
+  background: #f4efe8;
+}
+html:has(.ed--romantic) {
+  background: #fdf1f5;
+}
+
 .ed {
   /* Palette — warm cream + olive, echoing the reference */
   --ed-cream: #f4efe8;

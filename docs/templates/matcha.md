@@ -10,9 +10,12 @@ live counter → wall-of-love → flip-card dedication.
 - **Component:** `components/templates/editorial/EditorialTemplate.tsx` (default
   "editorial" variant — warm cream + matcha-green accent). Self-contained styles
   under `.ed` in `editorial.css`; it does NOT use a `[data-template]` block.
-- **Standalone preview:** `/template/matcha` (React route via the registry +
-  `app/template/[slug]/page.tsx`), shows the Puri & Ivi example. Empty skeleton at
-  `/template/plain`.
+- **The template (empty):** `/template/matcha` — the reusable skeleton (structure
+  + design, placeholder copy, neutral photo blocks). React route via the registry
+  + `app/template/[slug]/page.tsx`.
+- **Real examples (filled):** live under `/examples/<slug>` —
+  `/examples/purivi-matcha` (Puri & Ivi in Matcha) and `/examples/purivi` (the
+  original Puri & Ivi site). The gallery card previews the filled example.
 
 ## How the live render works (full integration)
 

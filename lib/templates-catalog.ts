@@ -51,7 +51,9 @@ export const TEMPLATE_OPTIONS: TemplateOption[] = [
     id: "matcha",
     label: "Matcha",
     blurb: "Su historia completa: línea de tiempo, viajes y mural.",
-    previewHref: "/template/matcha",
+    // Preview the real filled example (like the other cards show a sample couple);
+    // the empty template itself lives at /template/matcha.
+    previewHref: "/examples/purivi-matcha",
     vibe: "matcha",
     previewIsRoute: true,
   },

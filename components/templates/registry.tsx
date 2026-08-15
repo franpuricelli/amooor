@@ -16,8 +16,6 @@
 
 import type { ReactElement } from "react";
 import EditorialTemplate from "./editorial/EditorialTemplate";
-import editorialEs from "./editorial/content";
-import editorialEn from "./editorial/content.en";
 import editorialPlain from "./editorial/content.plain";
 
 export type Locale = "es" | "en";
@@ -30,23 +28,21 @@ export interface TemplatePreview {
 }
 
 export const TEMPLATE_PREVIEWS: Record<string, TemplatePreview> = {
-  // "Matcha" — the story-structure template (its own option in the gallery,
-  // distinct from the love-story skins romantic/editorial/brutalist). The
-  // standalone preview shows the Puri & Ivi example (cream + matcha-green).
+  // "Matcha" — the reusable TEMPLATE itself (empty skeleton: structure + design
+  // with placeholder copy and neutral photo blocks). Real, filled couples live
+  // under /examples/<slug> (e.g. /examples/purivi-matcha), not here.
   matcha: {
     slug: "matcha",
     name: "Matcha",
     description:
-      "Su historia completa: línea de tiempo, viajes, mural de fotos y dedicatoria. Neutros cálidos y acento verde matcha.",
-    render: (locale) => (
-      <EditorialTemplate content={locale === "en" ? editorialEn : editorialEs} />
-    ),
+      "El template Matcha: línea de tiempo, viajes, mural de fotos y dedicatoria. Estructura y diseño con contenido de ejemplo (vacío).",
+    render: () => <EditorialTemplate content={editorialPlain} />,
   },
+  // back-compat alias for the skeleton.
   plain: {
     slug: "plain",
     name: "Matcha (plantilla vacía)",
-    description:
-      "El esqueleto del template: misma estructura y diseño, con copy placeholder y sin fotos (bloques neutros). Para ver el diseño sin el contenido de una pareja.",
+    description: "Alias del esqueleto del template Matcha.",
     render: () => <EditorialTemplate content={editorialPlain} />,
   },
 };
