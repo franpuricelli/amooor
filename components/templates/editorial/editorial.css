@@ -50,6 +50,10 @@ html:has(.ed--romantic) {
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
   overflow-x: clip;
+  /* positioning context so the nav can be contained inside the in-tree editor
+     preview (see `.pa-frame-body .ed-nav`); harmless on the real full-page site
+     where the nav stays viewport-fixed. */
+  position: relative;
 }
 
 .ed *,
@@ -88,6 +92,13 @@ html:has(.ed--romantic) {
   z-index: 50;
   display: flex;
   justify-content: center;
+}
+/* In the editor's in-tree desktop preview (`.pa-frame-body`), a viewport-fixed
+   nav escapes the browser-chrome frame and floats over the editor UI. Contain it
+   to the `.ed` root there. The real published site (and the mobile <iframe>
+   preview, which has its own viewport) keep the sticky viewport-fixed nav. */
+.pa-frame-body .ed-nav {
+  position: absolute;
 }
 .ed-navpill {
   display: inline-flex;
