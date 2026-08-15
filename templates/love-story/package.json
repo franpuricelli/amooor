@@ -1,0 +1,27 @@
+{
+  "name": "love-story-template",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@gsap/react": "^2.1.2",
+    "gsap": "^3.13.0",
+    "lenis": "^1.1.20",
+    "next": "^15.5.22",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "puppeteer-core": "^25.3.0",
+    "sharp": "^0.33.5",
+    "typescript": "^5"
+  }
+}
