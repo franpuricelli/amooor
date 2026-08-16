@@ -14,9 +14,14 @@ import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import { useContent } from "@/lib/tenant";
 import { SECTION_REGISTRY } from "@/components/sections/registry";
+import MatchaSite from "@/components/templates/MatchaSite";
 
-export default function SiteApp() {
+export default function SiteApp({ template }: { template?: string }) {
   const content = useContent();
+
+  // The "Matcha" template is a different STRUCTURE (not a [data-template] skin):
+  // it renders the whole page from the same tenant content via the adapter.
+  if (template === "matcha") return <MatchaSite />;
 
   return (
     <SmoothScroll>

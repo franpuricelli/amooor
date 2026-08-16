@@ -13,6 +13,18 @@
    are already loaded on <html> by app/layout.tsx.
    ─────────────────────────────────────────────────────────────────────────── */
 
+/* Overscroll: this template runs inside the app shell whose <body> carries the
+   tenant palette (pink). Without this, rubber-band scrolling reveals that pink
+   band above/below the page. Kill the bounce and match the document background
+   to the template so an over-scroll shows nothing out of place. */
+html:has(.ed) {
+  overscroll-behavior: none;
+  background: #f4efe8;
+}
+html:has(.ed--romantic) {
+  background: #fdf1f5;
+}
+
 .ed {
   /* Palette — warm cream + olive, echoing the reference */
   --ed-cream: #f4efe8;
@@ -38,7 +50,16 @@
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
   overflow-x: clip;
+  /* contexto de posicionamiento para los adornos absolutos del template */
+  position: relative;
 }
+
+/* Matcha CONSERVA su paleta propia (el cream+olivo curado de arriba) en todos lados:
+   preview standalone, preview del editor y sitio publicado. A diferencia de los
+   otros skins —que recolorean desde la paleta elegida por la pareja—, el color ES
+   parte de la identidad de esta plantilla: es lo que se ve en el card del chooser,
+   así que lo que elegís es lo que se rinde. Por eso acá NO hay puente desde
+   --accent/--pink/--ink hacia los tokens --ed-*. */
 
 .ed *,
 .ed *::before,
@@ -77,6 +98,9 @@
   display: flex;
   justify-content: center;
 }
+/* (El preview del editor va dentro de un <iframe> con su propio viewport — ver
+   PreviewViewport en SitePreviewFrame.tsx —, así que el nav fixed se contiene solo
+   y ya no hace falta volverlo absolute acá.) */
 .ed-navpill {
   display: inline-flex;
   align-items: center;

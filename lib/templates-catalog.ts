@@ -15,10 +15,14 @@ export interface TemplateOption {
   label: string;
   /** una línea de "de qué va" el estilo */
   blurb: string;
-  /** preview standalone (export estático) — se abre en pestaña nueva */
+  /** preview standalone — se abre en pestaña nueva */
   previewHref: string;
   /** estilo del mini-mock del card + id del skin `[data-template]` que aplica */
-  vibe: "romantic" | "editorial" | "brutalist";
+  vibe: "romantic" | "editorial" | "brutalist" | "matcha";
+  /** true = `previewHref` es una ruta React (se embebe/abre directo), no un
+   *  export estático servido en `<previewHref>/index.html`. Lo usa "matcha", que
+   *  es una plantilla de OTRA estructura (no un skin), no un export estático. */
+  previewIsRoute?: boolean;
 }
 
 export const TEMPLATE_OPTIONS: TemplateOption[] = [
@@ -42,6 +46,16 @@ export const TEMPLATE_OPTIONS: TemplateOption[] = [
     blurb: "Contraste fuerte, bloques y borde.",
     previewHref: "/template/brutalist",
     vibe: "brutalist",
+  },
+  {
+    id: "matcha",
+    label: "Matcha",
+    blurb: "Su historia completa: línea de tiempo, viajes y mural.",
+    // The chooser/gallery preview the TEMPLATE itself (empty skeleton), not a
+    // specific couple. Filled examples live at /examples/<slug>.
+    previewHref: "/template/matcha",
+    vibe: "matcha",
+    previewIsRoute: true,
   },
 ];
 

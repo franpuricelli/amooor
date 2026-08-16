@@ -11,43 +11,114 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import PreviewSite from "@/components/wizard/PreviewSite";
+import { fontVariables } from "@/app/fonts";
 import type { Content } from "@/lib/content";
 import type { Theme } from "@/lib/template";
 import type { EditAPI } from "@/lib/edit-context";
 
 type Device = "desktop" | "mobile";
 
-// Vista celular REAL: un <iframe> le da al sitio un viewport angosto de verdad, así
-// se disparan sus propias media queries (≤700/860/900px) — angostar el ancho a mano
-// no alcanza (el hero usa vw y queda gigante). Portaleamos el MISMO árbol de React
-// adentro y clonamos las hojas de estilo del documento padre para que herede el CSS.
-function MobileFrame({ children }: { children: ReactNode }) {
+/** Ancho de viewport "escritorio" con el que se diseñó el sitio. El preview lo
+ *  rinde a ESTE ancho y después lo escala para entrar en el panel: así el sitio ve
+ *  un viewport de escritorio real y sale idéntico a la plantilla standalone. */
+const DESIGN_WIDTH = 1280;
+
+// Viewport REAL para el preview: un <iframe> es la única forma de darle al sitio un
+// viewport propio. Sin él, `vw` y las media queries miden la VENTANA (p.ej. 1440px)
+// y no el panel (~690px), así que el hero se calcula gigante y se desborda: el
+// preview no se parece a la plantilla. Portaleamos el MISMO árbol de React adentro
+// (así la edición inline y los contextos siguen funcionando) y clonamos las hojas de
+// estilo del documento padre para que herede el CSS.
+//
+//  - `fit` (escritorio): el iframe mide DESIGN_WIDTH y se escala a `ancho/DESIGN_WIDTH`.
+//  - sin `fit` (celular): el iframe mide su ancho natural (marco de teléfono).
+function PreviewViewport({
+  width,
+  fit = false,
+  title,
+  className,
+  onDoc,
+  children,
+}: {
+  width: number;
+  fit?: boolean;
+  title: string;
+  className?: string;
+  /** el documento del iframe: es el que scrollea (scroll-spy / scrollTo) */
+  onDoc?: (doc: Document | null) => void;
+  children: ReactNode;
+}) {
+  const wrapRef = useRef<HTMLDivElement | null>(null);
   const [body, setBody] = useState<HTMLElement | null>(null);
+  const [box, setBox] = useState({ w: 0, h: 0 });
+
   const setRef = useCallback((node: HTMLIFrameElement | null) => {
     const doc = node?.contentDocument;
     if (doc?.body) {
       doc.body.style.margin = "0";
-      doc.documentElement.style.height = "100%";
+      // Las CSS vars de fuente tienen que vivir en el ROOT del iframe: la base
+      // (romantic) toma su tipografía de `body { font-family: var(--font-inter) }`,
+      // y si la var sólo está en el div interno esa regla es inválida entera y el
+      // sitio cae a Times. Con esto el skin base rinde su tipografía real.
+      doc.documentElement.className = fontVariables;
       setBody(doc.body);
     }
   }, []);
+
+  // clonamos el CSS del padre adentro del iframe (incluye @font-face de next/font)
   useEffect(() => {
     if (!body) return;
     const head = body.ownerDocument.head;
     const copied: Element[] = [];
-    document
-      .querySelectorAll('style, link[rel="stylesheet"]')
-      .forEach((node) => {
-        const clone = node.cloneNode(true) as Element;
-        head.appendChild(clone);
-        copied.push(clone);
-      });
+    document.querySelectorAll('style, link[rel="stylesheet"]').forEach((node) => {
+      const clone = node.cloneNode(true) as Element;
+      head.appendChild(clone);
+      copied.push(clone);
+    });
     return () => copied.forEach((c) => c.remove());
   }, [body]);
-  return (
-    <iframe title="Vista celular" className="pa-mobile-iframe" ref={setRef}>
+
+  useEffect(() => {
+    onDoc?.(body?.ownerDocument ?? null);
+  }, [body, onDoc]);
+
+  // medimos el panel para calcular la escala (y rehacerlo si cambia de tamaño)
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el || !fit) return;
+    const ro = new ResizeObserver(([e]) =>
+      setBox({ w: e.contentRect.width, h: e.contentRect.height })
+    );
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [fit]);
+
+  // escala + alto compensado: tras el scale el iframe cubre exactamente el panel,
+  // y el scroll queda adentro del iframe (su documento es el scroller).
+  const k = fit && box.w ? box.w / width : 1;
+  const style: React.CSSProperties = fit
+    ? {
+        width,
+        height: box.h ? box.h / k : "100%",
+        transform: `scale(${k})`,
+        transformOrigin: "top left",
+        border: 0,
+        display: "block",
+      }
+    : {};
+
+  const frame = (
+    <iframe title={title} className={className} ref={setRef} style={style}>
       {body ? createPortal(children, body) : null}
     </iframe>
+  );
+
+  return fit ? (
+    <div className="pa-fit" ref={wrapRef}>
+      {frame}
+    </div>
+  ) : (
+    frame
   );
 }
 
@@ -89,21 +160,24 @@ export default function SitePreviewFrame({
    *  fuerza re-scroll aunque se elija la misma sección dos veces. */
   scrollTo?: { cat: string; nonce: number } | null;
 }) {
-  const bodyRef = useRef<HTMLDivElement | null>(null);
+  // el documento del <iframe> del preview: es el que scrollea, así que scroll-spy y
+  // scrollTo trabajan sobre él (antes era el div in-tree `.pa-frame-body`).
+  const [doc, setDoc] = useState<Document | null>(null);
   // vista escritorio ↔ celular (el toggle de la barra del navegador del preview)
   const [device, setDevice] = useState<Device>("desktop");
 
   // ── scroll-spy: la sección cuyo tope ya pasó la línea de referencia (30% del
   //    alto visible) es la "activa". rAF para no disparar en cada píxel. ─────────
   useEffect(() => {
-    const body = bodyRef.current;
-    if (!body || !onVisibleSection) return;
+    if (!doc || !onVisibleSection) return;
+    const win = doc.defaultView;
+    if (!win) return;
     let raf = 0;
     const compute = () => {
       raf = 0;
-      const line = body.getBoundingClientRect().top + body.clientHeight * 0.3;
+      const line = win.innerHeight * 0.3;
       // incluye el cierre (footer#closing), que no es un <section> del layout.
-      const secs = body.querySelectorAll<HTMLElement>("main section[id], footer[id]");
+      const secs = doc.querySelectorAll<HTMLElement>("main section[id], footer[id]");
       let current: string | null = null;
       for (const el of secs) {
         if (el.getBoundingClientRect().top <= line) current = el.id;
@@ -112,26 +186,28 @@ export default function SitePreviewFrame({
       if (current) onVisibleSection(current);
     };
     const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(compute);
+      if (!raf) raf = win.requestAnimationFrame(compute);
     };
-    body.addEventListener("scroll", onScroll, { passive: true });
+    win.addEventListener("scroll", onScroll, { passive: true });
     return () => {
-      body.removeEventListener("scroll", onScroll);
-      if (raf) cancelAnimationFrame(raf);
+      win.removeEventListener("scroll", onScroll);
+      if (raf) win.cancelAnimationFrame(raf);
     };
-  }, [onVisibleSection]);
+  }, [doc, onVisibleSection]);
 
   // Multimedia → preview: al elegir una sección en el panel, scrolleá el preview
   // hasta ella. Depende del nonce para reaccionar aunque sea la misma sección.
   useEffect(() => {
-    const body = bodyRef.current;
-    if (!body || !scrollTo) return;
+    if (!doc || !scrollTo) return;
+    const win = doc.defaultView;
+    const scroller = doc.scrollingElement;
+    if (!win || !scroller) return;
     // el cierre vive en footer#closing (fuera de <main>): matcheamos por id suelto.
-    const el = body.querySelector<HTMLElement>(`[id="${CSS.escape(scrollTo.cat)}"]`);
+    const el = doc.querySelector<HTMLElement>(`[id="${CSS.escape(scrollTo.cat)}"]`);
     if (!el) return;
-    const top = el.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop;
-    body.scrollTo({ top, behavior: "smooth" });
-  }, [scrollTo]);
+    const top = el.getBoundingClientRect().top + scroller.scrollTop;
+    win.scrollTo({ top, behavior: "smooth" });
+  }, [doc, scrollTo]);
 
   return (
     <div className="pa-frame">
@@ -166,14 +242,28 @@ export default function SitePreviewFrame({
         </div>
         {toolbar && <div className="pa-frame-tools">{toolbar}</div>}
       </div>
-      <div className={`pa-frame-body ${device === "mobile" ? "is-mobile" : ""}`} ref={bodyRef}>
+      <div className={`pa-frame-body ${device === "mobile" ? "is-mobile" : ""}`}>
         {device === "mobile" ? (
           // en mobile el preview es view-only (se edita en escritorio)
-          <MobileFrame>
+          <PreviewViewport
+            width={390}
+            title="Vista celular"
+            className="pa-mobile-iframe"
+            onDoc={setDoc}
+          >
             <PreviewSite content={content} theme={theme} framed />
-          </MobileFrame>
+          </PreviewViewport>
         ) : (
-          <PreviewSite content={content} theme={theme} edit={edit} framed />
+          // escritorio: se rinde a DESIGN_WIDTH y se escala al panel, así el sitio ve
+          // un viewport de escritorio real y sale igual que la plantilla standalone.
+          <PreviewViewport
+            width={DESIGN_WIDTH}
+            fit
+            title="Vista escritorio"
+            onDoc={setDoc}
+          >
+            <PreviewSite content={content} theme={theme} edit={edit} framed />
+          </PreviewViewport>
         )}
       </div>
     </div>

@@ -513,6 +513,10 @@ section {
   justify-content: center;
   padding: 0 1rem;
 }
+/* (El preview del editor ya no se rinde in-tree: va dentro de un <iframe> con su
+   propio viewport — ver PreviewViewport en SitePreviewFrame.tsx —, así que el nav
+   `position: fixed` se contiene solo y no hace falta el workaround que lo volvía
+   absolute acá.) */
 .nav-inner {
   display: flex;
   align-items: center;

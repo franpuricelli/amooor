@@ -28,25 +28,21 @@ export interface TemplatePreview {
 }
 
 export const TEMPLATE_PREVIEWS: Record<string, TemplatePreview> = {
-  editorial: {
-    slug: "editorial",
-    name: "Historia",
+  // "Matcha" — the reusable TEMPLATE itself (empty skeleton: structure + design
+  // with placeholder copy and neutral photo blocks). Real, filled couples live
+  // under /examples/<slug> (e.g. /examples/purivi-matcha), not here.
+  matcha: {
+    slug: "matcha",
+    name: "Matcha",
     description:
-      "Plantilla editorial narrativa para contar la historia de una pareja. Serif elegante, neutros cálidos y acento oliva.",
+      "El template Matcha: línea de tiempo, viajes, mural de fotos y dedicatoria. Estructura y diseño con contenido de ejemplo (vacío).",
     render: () => <EditorialTemplate content={editorialPlain} />,
   },
-  romantic: {
-    slug: "romantic",
-    name: "Romántica",
-    description:
-      "Misma estructura narrativa que Historia, con una piel romántica: fondos blush, acento rosa/vino y detalles en itálica.",
-    render: () => <EditorialTemplate content={editorialPlain} variant="romantic" />,
-  },
+  // back-compat alias for the skeleton.
   plain: {
     slug: "plain",
-    name: "Historia (plantilla vacía)",
-    description:
-      "El esqueleto del template: misma estructura y diseño, con copy placeholder y sin fotos (bloques neutros). Para ver el diseño sin el contenido de una pareja.",
+    name: "Matcha (plantilla vacía)",
+    description: "Alias del esqueleto del template Matcha.",
     render: () => <EditorialTemplate content={editorialPlain} />,
   },
 };
