@@ -50,32 +50,16 @@ html:has(.ed--romantic) {
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
   overflow-x: clip;
-  /* positioning context so the nav can be contained inside the in-tree editor
-     preview (see `.pa-frame-body .ed-nav`); harmless on the real full-page site
-     where the nav stays viewport-fixed. */
+  /* contexto de posicionamiento para los adornos absolutos del template */
   position: relative;
 }
 
-/* ── Palette bridge: adopt the couple's chosen palette ─────────────────────────
-   The standalone previews (/template/matcha, /examples/*) render the template
-   with its curated cream+olive (or blush) skin above. But inside a REAL tenant
-   and the editor preview the render root carries `data-template="matcha"` plus
-   the selected palette's CSS vars (--accent / --pink / --ink…, set by
-   app/layout.tsx and PreviewSite). There we derive Matcha's own --ed-* tokens
-   from that palette so the site shows the couple's colors — not the fixed
-   "example" olive — matching how every other template recolors. */
-[data-template="matcha"] .ed {
-  --ed-cream: color-mix(in srgb, var(--accent) 12%, #fff);
-  --ed-cream-soft: color-mix(in srgb, var(--accent) 5%, #fff);
-  --ed-sand: color-mix(in srgb, var(--accent) 24%, #fff);
-  --ed-sand-deep: color-mix(in srgb, var(--accent) 40%, #fff);
-  --ed-olive: var(--pink);
-  --ed-olive-soft: color-mix(in srgb, var(--pink) 78%, #fff);
-  --ed-ink: var(--ink);
-  --ed-muted: color-mix(in srgb, var(--ink) 52%, #fff);
-  --ed-line: color-mix(in srgb, var(--ink) 12%, transparent);
-  --ed-badge: var(--pink);
-}
+/* Matcha CONSERVA su paleta propia (el cream+olivo curado de arriba) en todos lados:
+   preview standalone, preview del editor y sitio publicado. A diferencia de los
+   otros skins —que recolorean desde la paleta elegida por la pareja—, el color ES
+   parte de la identidad de esta plantilla: es lo que se ve en el card del chooser,
+   así que lo que elegís es lo que se rinde. Por eso acá NO hay puente desde
+   --accent/--pink/--ink hacia los tokens --ed-*. */
 
 .ed *,
 .ed *::before,

@@ -37,6 +37,13 @@ the adapter.
 
 - **Canvas:** warm cream `#f4efe8` / sand bands; one deep **matcha-green** accent
   (`--ed-olive`) for eyebrows, the accent bento card, chips and the flip-card back.
+- **Keeps its OWN palette.** Unlike the skins (`romantic` / `editorial` /
+  `brutalist`), which recolor from the couple's chosen palette, Matcha's color IS
+  part of its identity: it renders its curated cream+olive everywhere — chooser
+  card, editor preview and published site — so what you pick is what you get.
+  Concretely, `editorial.css` bridges NOTHING from `--accent` / `--pink` / `--ink`
+  into the `--ed-*` tokens; the palette vars are present on the render root but
+  inert here. (The palette picker therefore has no visible effect on Matcha.)
 - **Typography:** Fraunces (display serif + italic), Inter (body), Caveat (the
   handwritten dedication) — already loaded in `app/fonts.ts`.
 - **Music:** the nav pill toggles the couple's song (`adapt` wires
