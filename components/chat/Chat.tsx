@@ -674,7 +674,7 @@ export default function Chat() {
                     className="pa-pub-pause"
                     onClick={() => void runPublish("pause")}
                     disabled={publishing}
-                    title="Pausar el sitio — queda fuera de línea hasta que lo publiques de nuevo"
+                    data-tip="Pausar tu sitio — queda fuera de línea hasta que lo publiques de nuevo"
                     aria-label="Pausar el sitio"
                   >
                     <PauseIcon />
@@ -702,7 +702,9 @@ export default function Chat() {
                   title="Abrir tu sitio"
                 >
                   <iframe
-                    src={`/s/${siteSub}`}
+                    // ?preview=<token> → muestra TU sitio aunque esté pausado
+                    // (resolveSite lo resuelve por draftToken, no la landing).
+                    src={`/s/${siteSub}?preview=${encodeURIComponent(convo.token)}`}
                     title="Vista previa del sitio"
                     tabIndex={-1}
                     scrolling="no"

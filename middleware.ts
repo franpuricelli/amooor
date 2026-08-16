@@ -13,6 +13,12 @@ import { NextResponse } from "next/server";
 export default clerkMiddleware((_auth, req) => {
   const headers = new Headers(req.headers);
   headers.set("x-amooor-path", req.nextUrl.pathname);
+  // Preview del dueño: /s/<slug>?preview=<draftToken> resuelve el sitio aunque
+  // esté pausado (para el thumbnail del editor). Sólo el dueño tiene ese token.
+  const preview = req.nextUrl.searchParams.get("preview");
+  if (preview && req.nextUrl.pathname.startsWith("/s/")) {
+    headers.set("x-amooor-preview", preview);
+  }
   return NextResponse.next({ request: { headers } });
 });
 
