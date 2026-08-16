@@ -3272,8 +3272,19 @@
 .pa-frame-body {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  /* el scroll vive DENTRO del <iframe> del preview (su documento es el scroller):
+     acá sólo recortamos. Ver PreviewViewport en SitePreviewFrame.tsx. */
+  overflow: hidden;
   background: var(--mk-bg);
+}
+
+/* escritorio: el iframe se rinde a 1280px y se escala para entrar en el panel, así
+   el sitio ve un viewport de escritorio real (vw y media queries correctas) y el
+   preview se ve idéntico a la plantilla standalone. */
+.pa-fit {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
 /* editor de textos (panel "Textos") */

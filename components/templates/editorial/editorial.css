@@ -114,13 +114,9 @@ html:has(.ed--romantic) {
   display: flex;
   justify-content: center;
 }
-/* In the editor's in-tree desktop preview (`.pa-frame-body`), a viewport-fixed
-   nav escapes the browser-chrome frame and floats over the editor UI. Contain it
-   to the `.ed` root there. The real published site (and the mobile <iframe>
-   preview, which has its own viewport) keep the sticky viewport-fixed nav. */
-.pa-frame-body .ed-nav {
-  position: absolute;
-}
+/* (El preview del editor va dentro de un <iframe> con su propio viewport — ver
+   PreviewViewport en SitePreviewFrame.tsx —, así que el nav fixed se contiene solo
+   y ya no hace falta volverlo absolute acá.) */
 .ed-navpill {
   display: inline-flex;
   align-items: center;
