@@ -121,7 +121,7 @@ export function useConversation(): UseConversation {
     const d = draft as {
       conversation?: unknown;
       intakePlan?: unknown;
-      theme?: { palette?: unknown; overrides?: unknown };
+      theme?: { palette?: unknown; template?: unknown; overrides?: unknown };
     } | null;
     if (d?.conversation) {
       const msgs = parseMessages(d.conversation);
@@ -152,6 +152,17 @@ export function useConversation(): UseConversation {
       paletteOverridesRef.current = ov as Partial<Palette>;
     } else if (replace) {
       paletteOverridesRef.current = undefined;
+    }
+    // La plantilla (task 2-B) vive en el draft igual que la paleta: sin hidratarla
+    // acá, `template` sólo salía de localStorage y se perdía al adoptar el draft de
+    // otra cuenta (login) o en otro browser → el preview caía a "romantic".
+    const tpl = d?.theme?.template;
+    if (typeof tpl === "string" && tpl) {
+      templateRef.current = tpl;
+      setTemplateRaw(tpl);
+    } else if (replace) {
+      templateRef.current = DEFAULT_TEMPLATE_ID;
+      setTemplateRaw(DEFAULT_TEMPLATE_ID);
     }
   }, []);
 
