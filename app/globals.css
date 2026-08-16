@@ -513,6 +513,18 @@ section {
   justify-content: center;
   padding: 0 1rem;
 }
+/* In the editor's in-tree desktop preview (`.pa-frame-body`), a viewport-fixed
+   nav escapes the browser-chrome frame and floats over the editor UI (same bug
+   fixed for Matcha's `.ed-nav`). Contain it to the preview's render root there;
+   the real published site and the mobile <iframe> preview (own viewport) keep the
+   viewport-fixed pill. `[data-template]` is the render root PreviewSite puts the
+   whole site under, so it's the positioning context the absolute nav resolves to. */
+.pa-frame-body [data-template] {
+  position: relative;
+}
+.pa-frame-body .nav {
+  position: absolute;
+}
 .nav-inner {
   display: flex;
   align-items: center;

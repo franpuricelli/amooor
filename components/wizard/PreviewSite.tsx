@@ -9,6 +9,7 @@
 import SmoothScroll from "@/components/SmoothScroll";
 import RevealInit from "@/components/RevealInit";
 import LightboxProvider from "@/components/Lightbox";
+import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import { TenantProvider } from "@/lib/tenant";
 import { EditProvider, type EditAPI } from "@/lib/edit-context";
@@ -51,6 +52,7 @@ export default function PreviewSite({
         <SmoothScroll enabled={!edit && !framed}>
           <LightboxProvider>
             <RevealInit />
+            <Nav />
             <main>
               {content.layout
                 .filter((s) => s.enabled)
