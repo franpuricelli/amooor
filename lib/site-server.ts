@@ -8,7 +8,7 @@ import "server-only";
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { cache } from "react";
-import { headers, cookies } from "next/headers";
+import { headers } from "next/headers";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 import { content as defaultContent, type Content } from "@/lib/content";
@@ -26,12 +26,17 @@ const DEFAULT_SITE: ResolvedSite = {
   found: false,
 };
 
-/** El host del request. En preview (sin dominio propio) la cookie `amooor_tenant`
- *  fuerza un subdominio — la setea `/api/preview?tenant=<sub>`. */
+/** El "host" con el que resolvemos el tenant. En un dominio real cada sitio vive
+ *  en su subdominio (`<slug>.amooor.com`) y alcanza con el header Host. En el host
+ *  único del deploy (sin wildcard, p.ej. `*.vercel.app`) servimos el tenant por
+ *  PATH: `/s/<slug>` → devolvemos `<slug>`. El pathname llega como `x-amooor-path`
+ *  (lo inyecta middleware.ts). Evitamos una cookie global: secuestraría toda la
+ *  app (landing/comenzar) hasta que expire. Ver app/s/[slug]/page.tsx. */
 export async function currentHost(): Promise<string | null> {
-  const preview = (await cookies()).get("amooor_tenant")?.value;
-  if (preview) return preview;
   const h = await headers();
+  const path = h.get("x-amooor-path") ?? "";
+  const m = path.match(/^\/s\/([^/?#]+)/);
+  if (m) return decodeURIComponent(m[1]).trim().toLowerCase();
   return h.get("host");
 }
 
@@ -39,11 +44,31 @@ export async function currentHost(): Promise<string | null> {
  *  layout + generateMetadata + generateViewport comparten una sola query. */
 export const resolveSite = cache(async (): Promise<ResolvedSite> => {
   const url = process.env.NEXT_PUBLIC_CONVEX_URL;
-  const host = await currentHost();
-  if (!host || !url) return DEFAULT_SITE;
+  if (!url) return DEFAULT_SITE;
 
   try {
     const client = new ConvexHttpClient(url);
+
+    // Preview del dueño (thumbnail del editor): /s/<slug>?preview=<draftToken>.
+    // `siteByDraft` trae el sitio SIN importar su estado (live/paused) y sólo el
+    // dueño tiene el token, así el thumbnail siempre muestra SU sitio — no la
+    // landing — aunque esté pausado. Ver middleware.ts (x-amooor-preview).
+    const previewToken = (await headers()).get("x-amooor-preview");
+    if (previewToken) {
+      const owned = await client.query(api.generate.siteByDraft, {
+        draftToken: previewToken,
+      });
+      if (owned) {
+        return {
+          content: owned.content as Content,
+          theme: owned.theme as Theme,
+          found: true,
+        };
+      }
+    }
+
+    const host = await currentHost();
+    if (!host) return DEFAULT_SITE;
     const site = await client.query(api.sites.getByHost, { host });
     if (!site) return DEFAULT_SITE;
     return {
