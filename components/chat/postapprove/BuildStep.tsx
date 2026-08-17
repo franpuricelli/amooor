@@ -11,6 +11,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Content } from "@/lib/content";
 import type { Theme } from "@/lib/template";
+import { track } from "@/lib/analytics";
 
 // ── etapas (ícono propio + label) ──────────────────────────────────────────────
 const STAGES: { label: string; icon: React.ReactNode }[] = [
@@ -124,6 +125,10 @@ export default function BuildStep({
       1400
     );
     const quoteTimer = setInterval(() => setQi((x) => (x + 1) % QUOTES.length), 4200);
+    // El build es el paso más lento y el que más abandona: medimos duración y
+    // motivo de la falla (este bloque corre una sola vez por draft).
+    const t0 = Date.now();
+    track("site_build_started", {});
     (async () => {
       try {
         const res = await fetch("/api/generate", {
@@ -131,10 +136,19 @@ export default function BuildStep({
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ draftToken: token, mode: "preview" }),
         });
-        if (!res.ok) throw new Error("build failed");
+        if (!res.ok) throw new Error(`http ${res.status}`);
         const json = await res.json();
-        onBuilt(json.content as Content, json.theme as Theme);
-      } catch {
+        const content = json.content as Content;
+        track("site_build_succeeded", {
+          ms: Date.now() - t0,
+          sections: content?.layout?.length ?? 0,
+        });
+        onBuilt(content, json.theme as Theme);
+      } catch (e) {
+        track("site_build_failed", {
+          ms: Date.now() - t0,
+          reason: e instanceof Error ? e.message : "unknown",
+        });
         setError("No pudimos armar tu sitio. Probá de nuevo.");
       } finally {
         clearInterval(stepTimer);

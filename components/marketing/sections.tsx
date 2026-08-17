@@ -13,6 +13,7 @@ import Script from "next/script";
 import { PLANS, PLAN_ORDER } from "@/lib/pricing";
 import type { PlanId } from "@/lib/pricing";
 import { useMarketing } from "@/lib/marketing-context";
+import { track } from "@/lib/analytics";
 
 // Parte un título "línea 1\nlínea 2" en {lead, em} para el patrón serif itálico.
 function splitTitle(title: string): { lead: string; em: string } {
@@ -79,7 +80,11 @@ export function MkNav() {
             <UserButton />
           </Show>
 
-          <a href="/comenzar" className="mk-nav-cta">
+          <a
+            href="/comenzar"
+            className="mk-nav-cta"
+            onClick={() => track("landing_cta_clicked", { location: "nav" })}
+          >
             {m.hero.ctaLabel}
           </a>
 
@@ -141,7 +146,11 @@ export function MkHero() {
       <p className="mk-hero-sub mk-animate-in">{subtitle}</p>
 
       <div className="mk-hero-actions mk-animate-in">
-        <a href="/comenzar" className="mk-btn-primary">
+        <a
+          href="/comenzar"
+          className="mk-btn-primary"
+          onClick={() => track("landing_cta_clicked", { location: "hero" })}
+        >
           {ctaLabel}
         </a>
         <a href="#ejemplos" className="mk-btn-text">
@@ -501,6 +510,7 @@ export function MkPricing() {
                   href={`/comenzar?plan=${id}`}
                   className="mk-plan-cta"
                   aria-label={`${m.ui.startWith} ${disp.name}`}
+                  onClick={() => track("landing_cta_clicked", { location: "pricing", plan: id })}
                 >
                   {m.hero.ctaLabel}
                 </a>
@@ -585,7 +595,11 @@ export function MkFooter() {
             </>
           )}
         </h2>
-        <a href="/comenzar" className="mk-btn-primary">
+        <a
+          href="/comenzar"
+          className="mk-btn-primary"
+          onClick={() => track("landing_cta_clicked", { location: "closing" })}
+        >
           {m.hero.ctaLabel}
         </a>
       </div>

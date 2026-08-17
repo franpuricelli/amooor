@@ -27,6 +27,7 @@ import PostApprove, { type Step } from "./postapprove/PostApprove";
 import StatusDot, { type DotStatus } from "./postapprove/StatusDot";
 import { api } from "@/convex/_generated/api";
 import { convexClient, isConvexConfigured } from "@/lib/convex-browser";
+import { registerContext, track } from "@/lib/analytics";
 
 // etapas del flujo /comenzar (para el stepper del header)
 const STAGES = [
@@ -148,6 +149,26 @@ export default function Chat() {
   // task 2-A/2-B: la plantilla elegida vive en el draft (convo.template) — se
   // persiste dentro de `theme.template` y fluye al render (ver PreviewSite).
 
+  // ── analytics ───────────────────────────────────────────────────────────────
+  // El `draft_token` es la clave que une el embudo entero (anónimo → logueado →
+  // publicado), así que va como super-propiedad antes de cualquier evento.
+  useEffect(() => {
+    if (convo.token) registerContext({ draft_token: convo.token });
+  }, [convo.token]);
+
+  // `builder_opened` una sola vez, cuando el draft ya se hidrató (si no, todas
+  // las visitas parecerían nuevas mientras carga).
+  const openedRef = useRef(false);
+  useEffect(() => {
+    if (!convo.ready || openedRef.current) return;
+    openedRef.current = true;
+    const plan = new URLSearchParams(window.location.search).get("plan");
+    track("builder_opened", {
+      returning: convo.messages.length > 0 || !!convo.plan,
+      ...(plan ? { plan } : {}),
+    });
+  }, [convo.ready, convo.messages.length, convo.plan]);
+
   // nombres editables de las referencias (persisten en localStorage)
   useEffect(() => {
     try {
@@ -178,6 +199,9 @@ export default function Chat() {
       correctionsRef.current.push(
         `En vez de "${oldText}" → ${newText}. Es un hecho confirmado, no lo listes como supuesto.`
       );
+      track("plan_assumption_corrected", {
+        remaining: convo.plan.assumptions.length - 1,
+      });
     },
     [convo]
   );
@@ -196,6 +220,10 @@ export default function Chat() {
       correctionsRef.current.push(
         `El usuario eliminó la sección "${gone.title}" (${gone.kind}): no la incluyas en el plan.`
       );
+      track("plan_section_removed", {
+        kind: gone.kind,
+        remaining: convo.plan.sections.length - 1,
+      });
     },
     [convo]
   );
@@ -206,6 +234,18 @@ export default function Chat() {
     (id: string, sw?: Swatch) => {
       const overrides = sw && id.startsWith("custom-") ? sw.palette : undefined;
       convo.setPalette(id, overrides);
+      track("palette_changed", { palette: id, custom: !!overrides, surface: "plan" });
+      registerContext({ palette: id });
+    },
+    [convo]
+  );
+
+  // La plantilla se elige desde la PlanCard (mismo setter que el draft).
+  const applyTemplate = useCallback(
+    (id: string) => {
+      convo.setTemplate(id);
+      track("template_changed", { template: id, surface: "plan" });
+      registerContext({ template: id });
     },
     [convo]
   );
@@ -237,6 +277,10 @@ export default function Chat() {
       if (!convo.token || publishing) return;
       setPublishing(true);
       setPublishErr(null);
+      // "republish" = ya existía un sitio (actualizar o reactivar), no el alta.
+      const republish = siteStatus !== "none";
+      const t0 = Date.now();
+      track("site_publish_started", { action, republish });
       try {
         const res = await fetch("/api/publish", {
           method: "POST",
@@ -257,16 +301,25 @@ export default function Chat() {
         setPublishNotice(
           action === "pause" ? "Tu sitio quedó pausado." : "¡Tu sitio está publicado!"
         );
+        if (action === "pause") track("site_paused", { subdomain: data.subdomain });
+        else
+          track("site_published", {
+            subdomain: data.subdomain,
+            republish,
+            ms: Date.now() - t0,
+          });
         if (action === "publish") setPubCardOpen(true);
         return data;
       } catch (e) {
-        setPublishErr(e instanceof Error ? e.message : "Algo salió mal");
+        const reason = e instanceof Error ? e.message : "Algo salió mal";
+        setPublishErr(reason);
+        track("site_publish_failed", { action, reason });
         return null;
       } finally {
         setPublishing(false);
       }
     },
-    [convo.token, publishing]
+    [convo.token, publishing, siteStatus]
   );
 
   // Publicar y abrir el sitio en una pestaña nueva. Abrimos la pestaña en blanco
@@ -390,7 +443,16 @@ export default function Chat() {
         } else if (evt.type === "plan") {
           setThinking(false);
           const p = parsePlan(evt.plan);
-          if (p) convo.setPlan(p);
+          if (p) {
+            convo.setPlan(p);
+            // `refined` distingue el primer plan (fin de la entrevista) de cada
+            // iteración posterior — son dos pasos distintos del embudo.
+            track("plan_generated", {
+              sections: p.sections.length,
+              kinds: p.sections.map((s) => s.kind),
+              refined: hasPlan,
+            });
+          }
           setRefining(false); // llegó el plan nuevo → expandimos de nuevo
         } else if (evt.type === "error") {
           setThinking(false);
@@ -430,7 +492,7 @@ export default function Chat() {
         );
       }
     },
-    [convo]
+    [convo, hasPlan]
   );
 
   const send = useCallback(
@@ -452,6 +514,8 @@ export default function Chat() {
         ]);
         convo.setPalette("rosa");
         convo.setPlan(PURIVI_PLAN);
+        // Marcamos la sesión como demo: sirve para excluirla de los embudos.
+        track("demo_plan_loaded", {});
         atBottomRef.current = true;
         setAtBottom(true);
         requestAnimationFrame(() => scrollToBottom(true));
@@ -463,6 +527,7 @@ export default function Chat() {
       // los mensajes. Cubre chips de arranque, composer, deepen y refine porque
       // todos pasan por acá.
       if (!isSignedIn) {
+        track("signup_gate_shown", { at: "chat_send" });
         openSignIn();
         return;
       }
@@ -488,6 +553,16 @@ export default function Chat() {
       convo.setMessages(() => base);
       setSending(true);
       setThinking(true);
+      // Nunca mandamos el texto: sólo su largo y qué adjuntó (sin PII).
+      const mode = converse ? "converse" : refine ? "refine" : "chat";
+      const t0 = Date.now();
+      track("chat_message_sent", {
+        mode,
+        length: text.trim().length,
+        has_attachments: !!opts?.attachments?.length,
+        has_refs: !!opts?.refs?.length,
+        has_quotes: !!opts?.quotes?.length,
+      });
       // el propio usuario mandó algo → lo llevamos abajo
       atBottomRef.current = true;
       setAtBottom(true);
@@ -528,8 +603,14 @@ export default function Chat() {
           );
         }
         await consumeSSE(res.body);
+        track("chat_reply_received", { mode, ms: Date.now() - t0 });
       } catch (e) {
         setError((e as Error).message);
+        track("chat_reply_failed", {
+          mode,
+          ms: Date.now() - t0,
+          reason: (e as Error).message,
+        });
       } finally {
         setSending(false);
         setThinking(false);
@@ -566,7 +647,14 @@ export default function Chat() {
       mode={hasPlan ? "plan" : "chat"}
       busy={sending}
       planBusy={sending}
-      onApprove={() => setApproved(true)}
+      onApprove={() => {
+        track("plan_approved", {
+          sections: convo.plan?.sections.length ?? 0,
+          palette: convo.palette,
+          template: convo.template,
+        });
+        setApproved(true);
+      }}
       onRefineEmpty={() =>
         send(
           "Quiero refinar el plan pero no sé bien por dónde. Preguntame qué puedo ajustar: secciones, tono, orden o qué falta.",
@@ -599,7 +687,10 @@ export default function Chat() {
     if (i >= stageIndex) return;
     if (approved) {
       if (i <= 1) setApproved(false); // → Plan / Historia
-      else if (i === 2) paGotoRef.current?.("upload"); // Tu sitio → Fotos
+      else if (i === 2) {
+        track("photos_step_reopened", {});
+        paGotoRef.current?.("upload"); // Tu sitio → Fotos
+      }
     } else if (i === 0) {
       // ya estamos en el plan: llevamos la charla (arriba) a la vista
       mainRef.current?.scrollTo({ top: 0, behavior: "smooth" });
@@ -717,6 +808,7 @@ export default function Chat() {
                     href={`/s/${siteSub}`}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => track("published_site_opened", { subdomain: siteSub })}
                   >
                     Ver sitio
                   </a>
@@ -804,7 +896,7 @@ export default function Chat() {
                   <PlanCard
                     plan={convo.plan}
                     template={convo.template}
-                    onTemplate={convo.setTemplate}
+                    onTemplate={applyTemplate}
                     palette={convo.palette}
                     customPalettes={convo.customPalettes}
                     onPalette={applyPalette}
@@ -834,7 +926,7 @@ export default function Chat() {
                     <PlanCard
                       plan={convo.plan}
                       template={convo.template}
-                      onTemplate={convo.setTemplate}
+                      onTemplate={applyTemplate}
                       palette={convo.palette}
                       customPalettes={convo.customPalettes}
                       onPalette={applyPalette}
