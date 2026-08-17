@@ -770,9 +770,13 @@ section {
   gap: 0.9rem;
   z-index: 5;
   opacity: 0;
+  /* `visibility` (not aria-hidden) is what keeps the closed card out of the
+     a11y tree and the tab order. It steps to `hidden` only at the END of the
+     fade-out, so the transition still reads as a fade. */
+  visibility: hidden;
   pointer-events: none;
   transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.45s;
 }
 /* the cards float over the full-screen art */
 .person-card.left {
@@ -785,6 +789,7 @@ section {
 }
 .person-card.on {
   opacity: 1;
+  visibility: visible;
   transform: translateY(-50%);
 }
 .person-head {
@@ -801,6 +806,10 @@ section {
   font-size: 0.85rem;
   color: var(--white-45);
   font-weight: 550;
+}
+/* chevron that hints the name is tappable — mobile only (shown below) */
+.person-toggle {
+  display: none;
 }
 .person-traits {
   display: flex;
@@ -857,9 +866,36 @@ section {
   .person-card.right {
     position: static;
     opacity: 1;
+    /* always shown here: there are no hover zones to reveal it */
+    visibility: visible;
     transform: none;
     pointer-events: auto;
     width: min(360px, 100%);
+  }
+  /* the name row becomes the tap target that opens the details */
+  .person-head {
+    cursor: pointer;
+  }
+  .person-toggle {
+    display: inline-block;
+    margin-left: auto;
+    align-self: center;
+    font-size: 1rem;
+    line-height: 1;
+    color: var(--white-45);
+    transition: transform 0.25s ease;
+  }
+  /* traits + favorite artists stay hidden until the visitor taps the name */
+  .person-traits,
+  .person-artists {
+    display: none;
+  }
+  .person-card.open .person-traits,
+  .person-card.open .person-artists {
+    display: flex;
+  }
+  .person-card.open .person-toggle {
+    transform: rotate(180deg);
   }
 }
 

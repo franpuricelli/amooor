@@ -45,14 +45,35 @@ function PersonCard({
   active: boolean;
 }) {
   const { t, tr } = useI18n();
+  // Mobile-only: traits/artists stay collapsed until the visitor taps the name
+  // (on desktop the whole card reveals on hover and this state is unused).
+  const [open, setOpen] = useState(false);
   return (
     <aside
-      className={`person-card glass-card ${side} ${active ? "on" : ""}`}
-      aria-hidden={!active}
+      className={`person-card glass-card ${side} ${active ? "on" : ""} ${open ? "open" : ""}`}
+      /* No `aria-hidden`: on mobile the card is always visible (there are no
+         hover zones), so it would wrongly hide the card and the focusable
+         toggle inside it. The closed desktop card leaves the a11y tree and the
+         tab order via `visibility: hidden` in CSS, which is per-viewport. */
     >
-      <div className="person-head">
+      <div
+        className="person-head"
+        role="button"
+        tabIndex={0}
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setOpen((v) => !v);
+          }
+        }}
+      >
         <span className="person-name">{person.name}</span>
         <span className="person-tag">{tr(person.tagline)}</span>
+        <span className="person-toggle" aria-hidden>
+          ▾
+        </span>
       </div>
       <div className="person-traits">
         {person.traits.map((trait) => (

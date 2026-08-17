@@ -40,14 +40,38 @@ function PersonCard({
   onHide: () => void;
 }) {
   const content = useContent();
+  const edit = useEdit();
+  // Mobile-only: the traits/artists stay hidden until the visitor taps the
+  // person's name. On desktop the whole card reveals on hover (this state is
+  // ignored by the CSS above the mobile breakpoint). While editing we keep
+  // everything open so every field is reachable in the preview.
+  const [open, setOpen] = useState(false);
+  const expanded = open || !!edit?.editing;
   return (
     <aside
-      className={`person-card glass-card ${side} ${active ? "on" : ""}`}
-      aria-hidden={!active}
+      className={`person-card glass-card ${side} ${active ? "on" : ""} ${expanded ? "open" : ""}`}
+      /* No `aria-hidden` here: on mobile the card is always visible (the hover
+         zones don't exist), so a JS-driven flag would wrongly hide it — and
+         hide the focusable toggle inside it. The closed desktop card is taken
+         out of the a11y tree AND the tab order by `visibility: hidden` in CSS,
+         which is evaluated per-viewport (and correctly inside the preview
+         iframe, where `window.matchMedia` would measure the parent instead). */
       onMouseEnter={onReveal}
       onMouseLeave={onHide}
     >
-      <div className="person-head">
+      <div
+        className="person-head"
+        role="button"
+        tabIndex={0}
+        aria-expanded={expanded}
+        onClick={() => setOpen((v) => !v)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setOpen((v) => !v);
+          }
+        }}
+      >
         <EditableText
           as="span"
           className="person-name"
@@ -60,6 +84,9 @@ function PersonCard({
           path={`people.${side}.tagline`}
           value={person.tagline}
         />
+        <span className="person-toggle" aria-hidden>
+          ▾
+        </span>
       </div>
       <div className="person-traits">
         {person.traits.map((t, i) => (
