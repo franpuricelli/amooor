@@ -28,6 +28,9 @@ Not obvious from `package.json`; the full env list is in `.env.example`.
   `lib/fal.ts` (server-only); wired in `app/api/generate/route.ts` (closing photo
   → `content.drawing.src`). Falls back to the raw photo without `FAL_KEY`.
 - Voice dictation: **Deepgram** — `app/api/deepgram/token/route.ts`.
+- Product analytics: **PostHog** — catálogo tipado de eventos en `lib/analytics.ts`,
+  init/identidad en `components/analytics/PostHogProvider.tsx`. No-op sin
+  `NEXT_PUBLIC_POSTHOG_KEY`. Ver `docs/analytics.md`.
 - Payments **Rebill**, domains **Vercel/Namecheap**, email **Resend**.
 
 ## `/comenzar` flow
@@ -117,6 +120,7 @@ dev `hallowed-kookabura-859` · prod `canny-pheasant-391` (project `amoor`).
 
 ## References (docs/)
 
+- `analytics.md` — the PostHog event catalog + the main funnel.
 - `design-system-landing.md` — the landing's visual system (`.mk-`).
 - `templates/README.md` — the template-skin system + how to add one; a
   `templates/<id>.md` per template.

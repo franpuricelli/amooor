@@ -7,6 +7,7 @@ import { fontVariables } from "./fonts";
 import { resolvePalette, paletteVars } from "@/lib/theme";
 import { TenantProvider } from "@/lib/tenant";
 import { resolveSite } from "@/lib/site-server";
+import PostHogProvider from "@/components/analytics/PostHogProvider";
 
 // Metadata + viewport are per-tenant: they read the same (request-cached) site
 // as the layout, so each host gets its own title/OG/theme-color.
@@ -55,7 +56,10 @@ export default async function RootLayout({
             <html> keeps its per-tenant palette style + font classes. Spanish
             localization matches the app voice. */}
         <ClerkProvider localization={esES}>
-          <TenantProvider content={content}>{children}</TenantProvider>
+          {/* PostHog va DENTRO de Clerk: identifica al usuario con useUser(). */}
+          <PostHogProvider>
+            <TenantProvider content={content}>{children}</TenantProvider>
+          </PostHogProvider>
         </ClerkProvider>
       </body>
     </html>

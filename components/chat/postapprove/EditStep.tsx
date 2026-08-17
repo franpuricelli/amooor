@@ -24,6 +24,7 @@ import { mediaFromPhotos, rebindMedia } from "@/lib/generate";
 import { uploadImage, uploadVideo } from "@/lib/media-client";
 import type { Swatch } from "@/lib/palette-gen";
 import type { EditAPI } from "@/lib/edit-context";
+import { registerContext, track } from "@/lib/analytics";
 import ChatMessages from "../ChatMessages";
 import ChatComposer from "../ChatComposer";
 import PalettePicker from "../PalettePicker";
@@ -131,6 +132,14 @@ export default function EditStep({
 
   const subdomain = slugifyCouple(content.couple || "tu-sitio");
 
+  // El editor es el "home" post-build: lo marcamos una sola vez por montaje.
+  const openedRef = useRef(false);
+  useEffect(() => {
+    if (openedRef.current) return;
+    openedRef.current = true;
+    track("editor_opened", { sections: content.layout?.length ?? 0 });
+  }, [content.layout?.length]);
+
   // ── persistencia (validada) ─────────────────────────────────────────────────
   const saveContent = useCallback(
     async (c: Content) => {
@@ -144,10 +153,15 @@ export default function EditStep({
     },
     [token]
   );
+  // El guardado va debounceado; el evento de analytics viaja con él para no
+  // mandar uno por tecla (sólo el path editado, nunca el texto).
   const scheduleSave = useCallback(
-    (c: Content) => {
+    (c: Content, path?: string) => {
       if (saveTimer.current) clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(() => void saveContent(c), 700);
+      saveTimer.current = setTimeout(() => {
+        if (path) track("editor_text_edited", { path });
+        void saveContent(c);
+      }, 700);
     },
     [saveContent]
   );
@@ -158,7 +172,7 @@ export default function EditStep({
     onEditText: (path, value) => {
       const next = setByPath(content, path, value);
       onContent(next);
-      scheduleSave(next);
+      scheduleSave(next, path);
     },
     onPickImage: (cat, slug) => {
       setTool("media");
@@ -193,6 +207,8 @@ export default function EditStep({
       // preservá la plantilla elegida (task 2-B): el theme guardado la lleva.
       onTheme({ palette: id as PaletteId, template: theme.template, overrides });
       convo.setPalette(id, overrides);
+      track("palette_changed", { palette: id, custom: !!overrides, surface: "editor" });
+      registerContext({ palette: id });
       if (token && isConvexConfigured()) {
         void convexClient().mutation(api.drafts.save, {
           token,
@@ -392,6 +408,8 @@ function ChatFlow({
       setMessages(base);
       setSending(true);
       setThinking(true);
+      const t0 = Date.now();
+      track("editor_message_sent", { length: text.trim().length });
       try {
         const res = await fetch("/api/site", {
           method: "POST",
@@ -404,7 +422,9 @@ function ChatFlow({
         });
         if (!res.ok || !res.body) throw new Error("No pude conectar con el editor.");
         await consumeSSE(res.body);
+        track("editor_reply_received", { ms: Date.now() - t0 });
       } catch (e) {
+        track("editor_reply_failed", { ms: Date.now() - t0, reason: (e as Error).message });
         setMessages((prev) => {
           const next = prev.slice();
           for (let i = next.length - 1; i >= 0; i--) {

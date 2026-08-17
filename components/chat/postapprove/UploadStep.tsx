@@ -25,6 +25,7 @@ import { slugifyCouple } from "@/lib/subdomain";
 import type { SectionKind } from "@/lib/plan";
 import type { Theme } from "@/lib/template";
 import type { PaletteId } from "@/lib/theme";
+import { track } from "@/lib/analytics";
 import SitePreviewFrame from "./SitePreviewFrame";
 
 type Mode = "single" | "multi";
@@ -132,6 +133,18 @@ export default function UploadStep({
     [photosOf, videoOf]
   );
 
+  // Cierre del paso de fotos: con cuánta media sale el usuario (el primer cierre
+  // dispara el build; los siguientes sólo re-atan la media).
+  const finish = useCallback(() => {
+    track("photos_step_completed", {
+      photos: rows.length,
+      videos: videos.length,
+      has_music: !!audio,
+      first_build: !hasBuild,
+    });
+    onCreate();
+  }, [rows.length, videos.length, audio, hasBuild, onCreate]);
+
   // ── preview vivo (derecha) ──────────────────────────────────────────────────
   //  Content determinista desde el plan + las fotos ya subidas + la paleta. Sin
   //  fotos, cae al template de muestra; a medida que subís, tus fotos lo llenan.
@@ -201,12 +214,24 @@ export default function UploadStep({
     (files: FileList | File[], category: string, single: boolean) => {
       setErr(null);
       const list = Array.from(files);
+      // La subida es de 3 hops (lib/media-client.ts): medimos cada archivo por
+      // separado para poder ver dónde y con qué frecuencia falla.
+      const kindOf = (f: File): "image" | "video" =>
+        f.type.startsWith("video/") ? "video" : "image";
+      if (list.length) {
+        track("media_upload_started", {
+          category,
+          kind: kindOf(list[0]),
+          count: single ? 1 : list.length,
+        });
+      }
       (async () => {
         // slot único: reemplazar (borrar lo previo) antes de subir el nuevo
         if (single) {
           const f = list[0];
           if (!f) return;
           bump(category, 1);
+          const t0 = Date.now();
           try {
             for (const p of photosOf(category))
               await convexClient().mutation(api.photos.deleteDraftPhoto, { id: p._id });
@@ -214,8 +239,14 @@ export default function UploadStep({
             if (v) await convexClient().mutation(api.videos.deleteDraftVideo, { id: v._id });
             if (f.type.startsWith("video/")) await uploadVideo(f, token, category);
             else await uploadImage(f, token, category);
+            track("media_uploaded", { category, kind: kindOf(f), ms: Date.now() - t0 });
           } catch (e) {
             setErr((e as Error).message);
+            track("media_upload_failed", {
+              category,
+              kind: kindOf(f),
+              reason: (e as Error).message,
+            });
           } finally {
             bump(category, -1);
             await refresh();
@@ -225,11 +256,22 @@ export default function UploadStep({
         // multi: cada archivo en paralelo, sin bloquear la UI
         for (const f of list) {
           bump(category, 1);
+          const t0 = Date.now();
           const job = f.type.startsWith("video/")
             ? uploadVideo(f, token, category)
             : uploadImage(f, token, category);
           job
-            .catch((e) => setErr((e as Error).message))
+            .then(() =>
+              track("media_uploaded", { category, kind: kindOf(f), ms: Date.now() - t0 })
+            )
+            .catch((e) => {
+              setErr((e as Error).message);
+              track("media_upload_failed", {
+                category,
+                kind: kindOf(f),
+                reason: (e as Error).message,
+              });
+            })
             .finally(async () => {
               bump(category, -1);
               await refresh();
@@ -242,10 +284,12 @@ export default function UploadStep({
 
   const del = async (id: Id<"draftPhotos">) => {
     await convexClient().mutation(api.photos.deleteDraftPhoto, { id });
+    track("media_deleted", { kind: "image" });
     await refresh();
   };
   const delVideo = async (id: Id<"draftVideos">) => {
     await convexClient().mutation(api.videos.deleteDraftVideo, { id });
+    track("media_deleted", { kind: "video" });
     await refresh();
   };
 
@@ -255,9 +299,11 @@ export default function UploadStep({
     (file: File) => {
       setErr(null);
       setAudioBusy(true);
+      const t0 = Date.now();
       (async () => {
         try {
           await uploadAudio(file, token);
+          track("music_uploaded", { ms: Date.now() - t0 });
         } catch (e) {
           setErr((e as Error).message);
         } finally {
@@ -273,6 +319,7 @@ export default function UploadStep({
     setAudioBusy(true);
     try {
       await convexClient().mutation(api.audio.deleteDraftAudio, { draftToken: token });
+      track("music_removed", {});
     } catch (e) {
       console.error("[upload] quitar música falló:", e);
     } finally {
@@ -427,7 +474,7 @@ export default function UploadStep({
               {withMedia} de {sections.length} secciones con media
             </span>
             {isLast ? (
-              <button type="button" className="ch-btn primary" onClick={onCreate}>
+              <button type="button" className="ch-btn primary" onClick={finish}>
                 {hasBuild ? "Volver al editor" : "Crear mi sitio"}
               </button>
             ) : (
