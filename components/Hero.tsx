@@ -30,6 +30,7 @@ function PersonCard({
   active,
   onReveal,
   onHide,
+  onClose,
 }: {
   person: Person;
   side: Side;
@@ -38,15 +39,25 @@ function PersonCard({
   onReveal: () => void;
   /** ocultar al sacar el mouse de la tarjeta (si no estás editando adentro) */
   onHide: () => void;
+  /** cerrarla desde la ✕ (sólo en mobile, donde la tarjeta es un overlay) */
+  onClose: () => void;
 }) {
   const content = useContent();
   return (
     <aside
+      id={`person-card-${side}`}
       className={`person-card glass-card ${side} ${active ? "on" : ""}`}
-      aria-hidden={!active}
+      /* No `aria-hidden` here: the closed card is taken out of the a11y tree
+         AND the tab order by `visibility: hidden` in CSS, which is evaluated
+         per-viewport — correctly so inside the editor's preview iframe, where
+         a JS `window.matchMedia` would measure the parent window instead. */
       onMouseEnter={onReveal}
       onMouseLeave={onHide}
     >
+      {/* sólo visible en mobile: ahí la tarjeta es un overlay sobre el hero */}
+      <button className="person-close" aria-label={content.ui.close} onClick={onClose}>
+        <span aria-hidden>✕</span>
+      </button>
       <div className="person-head">
         <EditableText
           as="span"
@@ -111,6 +122,40 @@ export default function Hero({ id }: { id: string }) {
     setActive(null);
   };
 
+  const toggleCard = (side: Side) => setActive((cur) => (cur === side ? null : side));
+  const onNameKey = (e: React.KeyboardEvent, side: Side) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      toggleCard(side);
+    }
+  };
+  // Qué tarjeta abre cada nombre del título. `hero.nameStart/nameEnd` y
+  // `people.left/right` los genera el LLM por separado, así que pueden venir en
+  // otro orden (o con otro nombre: el título dice "Puri" y la persona se llama
+  // "Fran, aka Puri"). Los resolvemos DE A PAR: el que matchea manda, y el otro
+  // se queda con la persona que sobra; si no matchea ninguno, orden posicional.
+  const norm = (s: string) => s.trim().toLowerCase();
+  const matchSide = (titleName: string): Side | null => {
+    if (norm(titleName) === norm(left.name)) return "left";
+    if (norm(titleName) === norm(right.name)) return "right";
+    return null;
+  };
+  const other = (s: Side): Side => (s === "left" ? "right" : "left");
+  const startMatch = matchSide(hero.nameStart);
+  const endMatch = matchSide(hero.nameEnd);
+  let startSide: Side = "left";
+  let endSide: Side = "right";
+  if (startMatch && endMatch && startMatch !== endMatch) {
+    startSide = startMatch;
+    endSide = endMatch;
+  } else if (startMatch && !endMatch) {
+    startSide = startMatch;
+    endSide = other(startMatch);
+  } else if (!startMatch && endMatch) {
+    endSide = endMatch;
+    startSide = other(endMatch);
+  }
+
   return (
     <section
       id={id}
@@ -161,10 +206,33 @@ export default function Hero({ id }: { id: string }) {
           path="hero.eyebrow"
           value={hero.eyebrow}
         />
+        {/* Los nombres del título SON el disparador de cada tarjeta: en mobile
+            no hay hover ni nada más sobre el hero, así que tocar un nombre abre
+            la tarjeta de ESA persona (ver el emparejamiento arriba). */}
         <h1 className="display hero-in" style={{ animationDelay: "0.15s" }}>
-          <EditableText as="span" path="hero.nameStart" value={hero.nameStart} />{" "}
+          <span
+            className="hero-name"
+            role="button"
+            tabIndex={0}
+            aria-expanded={active === startSide}
+            aria-controls={`person-card-${startSide}`}
+            onClick={() => toggleCard(startSide)}
+            onKeyDown={(e) => onNameKey(e, startSide)}
+          >
+            <EditableText as="span" path="hero.nameStart" value={hero.nameStart} />
+          </span>{" "}
           <span className="hero-amp">&</span>{" "}
-          <EditableText as="span" path="hero.nameEnd" value={hero.nameEnd} />
+          <span
+            className="hero-name"
+            role="button"
+            tabIndex={0}
+            aria-expanded={active === endSide}
+            aria-controls={`person-card-${endSide}`}
+            onClick={() => toggleCard(endSide)}
+            onKeyDown={(e) => onNameKey(e, endSide)}
+          >
+            <EditableText as="span" path="hero.nameEnd" value={hero.nameEnd} />
+          </span>
         </h1>
         <EditableText
           as="p"
@@ -201,12 +269,23 @@ export default function Hero({ id }: { id: string }) {
         {right.name}
       </span>
 
+      {/* fondo que cierra la tarjeta al tocar afuera. Sólo existe en mobile
+          (en escritorio es display:none, así que no se come ningún hover). */}
+      {active ? (
+        <button
+          className="person-scrim"
+          aria-label={content.ui.close}
+          onClick={() => setActive(null)}
+        />
+      ) : null}
+
       <PersonCard
         person={left}
         side="left"
         active={active === "left"}
         onReveal={() => setActive("left")}
         onHide={closeCard}
+        onClose={() => setActive(null)}
       />
       <PersonCard
         person={right}
@@ -214,6 +293,7 @@ export default function Hero({ id }: { id: string }) {
         active={active === "right"}
         onReveal={() => setActive("right")}
         onHide={closeCard}
+        onClose={() => setActive(null)}
       />
     </section>
   );
