@@ -39,41 +39,29 @@ function PersonCard({
   person,
   side,
   active,
+  onClose,
 }: {
   person: Person;
   side: Side;
   active: boolean;
+  /** close from the ✕ (mobile only, where the card is an overlay) */
+  onClose: () => void;
 }) {
   const { t, tr } = useI18n();
-  // Mobile-only: traits/artists stay collapsed until the visitor taps the name
-  // (on desktop the whole card reveals on hover and this state is unused).
-  const [open, setOpen] = useState(false);
   return (
     <aside
-      className={`person-card glass-card ${side} ${active ? "on" : ""} ${open ? "open" : ""}`}
-      /* No `aria-hidden`: on mobile the card is always visible (there are no
-         hover zones), so it would wrongly hide the card and the focusable
-         toggle inside it. The closed desktop card leaves the a11y tree and the
-         tab order via `visibility: hidden` in CSS, which is per-viewport. */
+      id={`person-card-${side}`}
+      className={`person-card glass-card ${side} ${active ? "on" : ""}`}
+      /* No `aria-hidden`: the closed card leaves the a11y tree AND the tab
+         order via `visibility: hidden` in CSS, which is per-viewport. */
     >
-      <div
-        className="person-head"
-        role="button"
-        tabIndex={0}
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            setOpen((v) => !v);
-          }
-        }}
-      >
+      {/* mobile only: there the card is an overlay sitting over the hero */}
+      <button className="person-close" aria-label={t.lightbox.close} onClick={onClose}>
+        <span aria-hidden>✕</span>
+      </button>
+      <div className="person-head">
         <span className="person-name">{person.name}</span>
         <span className="person-tag">{tr(person.tagline)}</span>
-        <span className="person-toggle" aria-hidden>
-          ▾
-        </span>
       </div>
       <div className="person-traits">
         {person.traits.map((trait) => (
@@ -107,6 +95,41 @@ export default function Hero() {
 
   // Split "Orion & Sera" so the "&" can be styled; still works without one.
   const ampParts = config.names.couple.split(/\s*&\s*/);
+
+  // Which card each title name opens. The couple string and the people list are
+  // configured separately, so they can be in a different order (or use another
+  // name: the title says "Puri" while the person is "Fran, aka Puri"). Resolve
+  // them AS A PAIR: whichever matches wins, the other takes the person left
+  // over; if neither matches, fall back to position.
+  const norm = (v: string) => v.trim().toLowerCase();
+  const matchSide = (titleName: string): Side | null => {
+    if (norm(titleName) === norm(left.name)) return "left";
+    if (norm(titleName) === norm(right.name)) return "right";
+    return null;
+  };
+  const other = (s: Side): Side => (s === "left" ? "right" : "left");
+  const startMatch = ampParts.length === 2 ? matchSide(ampParts[0]) : null;
+  const endMatch = ampParts.length === 2 ? matchSide(ampParts[1]) : null;
+  let startSide: Side = "left";
+  let endSide: Side = "right";
+  if (startMatch && endMatch && startMatch !== endMatch) {
+    startSide = startMatch;
+    endSide = endMatch;
+  } else if (startMatch && !endMatch) {
+    startSide = startMatch;
+    endSide = other(startMatch);
+  } else if (!startMatch && endMatch) {
+    endSide = endMatch;
+    startSide = other(endMatch);
+  }
+
+  const toggleCard = (side: Side) => setActive((cur) => (cur === side ? null : side));
+  const onNameKey = (e: React.KeyboardEvent, side: Side) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      toggleCard(side);
+    }
+  };
 
   return (
     <section id="inicio" className="hero" onMouseLeave={() => setActive(null)}>
@@ -149,10 +172,35 @@ export default function Hero() {
         <span className="eyebrow hero-in" style={{ animationDelay: "0.05s" }}>
           {prettyDate(config.dates.together)} → ∞
         </span>
+        {/* The names in the title ARE what opens each card: on mobile there is
+            no hover and nothing else sits on the hero, so tapping the first
+            name opens THAT person's card (see the pairing above). */}
         <h1 className="display hero-in" style={{ animationDelay: "0.15s" }}>
           {ampParts.length === 2 ? (
             <>
-              {ampParts[0]} <span className="hero-amp">&</span> {ampParts[1]}
+              <span
+                className="hero-name"
+                role="button"
+                tabIndex={0}
+                aria-expanded={active === startSide}
+                aria-controls={`person-card-${startSide}`}
+                onClick={() => toggleCard(startSide)}
+                onKeyDown={(e) => onNameKey(e, startSide)}
+              >
+                {ampParts[0]}
+              </span>{" "}
+              <span className="hero-amp">&</span>{" "}
+              <span
+                className="hero-name"
+                role="button"
+                tabIndex={0}
+                aria-expanded={active === endSide}
+                aria-controls={`person-card-${endSide}`}
+                onClick={() => toggleCard(endSide)}
+                onKeyDown={(e) => onNameKey(e, endSide)}
+              >
+                {ampParts[1]}
+              </span>
             </>
           ) : (
             config.names.couple
@@ -187,8 +235,28 @@ export default function Hero() {
         {right.name}
       </span>
 
-      <PersonCard person={left} side="left" active={active === "left"} />
-      <PersonCard person={right} side="right" active={active === "right"} />
+      {/* backdrop that closes the card when you tap outside it. Mobile only —
+          on desktop it is display:none, so it never eats a hover. */}
+      {active ? (
+        <button
+          className="person-scrim"
+          aria-label={t.lightbox.close}
+          onClick={() => setActive(null)}
+        />
+      ) : null}
+
+      <PersonCard
+        person={left}
+        side="left"
+        active={active === "left"}
+        onClose={() => setActive(null)}
+      />
+      <PersonCard
+        person={right}
+        side="right"
+        active={active === "right"}
+        onClose={() => setActive(null)}
+      />
     </section>
   );
 }

@@ -833,9 +833,46 @@ section {
   color: var(--white-45);
   font-weight: 550;
 }
-/* chevron that hints the name is tappable — mobile only (shown below) */
-.person-toggle {
+/* Los nombres del <h1> son el disparador de cada tarjeta (el único, en mobile). */
+.hero-name {
+  /* `.hero-content` es pointer-events:none para no comerle el hover a las
+     zonas laterales; el nombre tiene que volver a habilitarlo para recibir el tap. */
+  pointer-events: auto;
+  cursor: pointer;
+}
+.hero-name:focus-visible {
+  outline: 3px solid var(--white);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+/* Chrome del overlay de mobile: en escritorio la tarjeta flota al costado y
+   no lleva ni fondo ni ✕, así que las dos piezas arrancan ocultas. */
+.person-scrim {
   display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  border: 0;
+  padding: 0;
+  background: rgba(14, 3, 9, 0.55);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+.person-close {
+  display: none;
+  position: absolute;
+  top: 0.55rem;
+  right: 0.6rem;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-strong);
+  color: var(--white);
+  font-size: 0.8rem;
+  line-height: 1;
 }
 .person-traits {
   display: flex;
@@ -899,41 +936,38 @@ section {
   .hero-hint {
     display: none;
   }
+  /* Nada de tarjetas apoyadas sobre el hero: la tarjeta pasa a ser un overlay
+     centrado que sólo aparece cuando tocás ese nombre en el título. Hereda
+     `visibility: hidden` + `opacity: 0` de la regla base, así que mientras esté
+     cerrada no ocupa lugar ni la ve un lector de pantalla. */
   .person-card,
   .person-card.left,
   .person-card.right {
-    position: static;
-    opacity: 1;
-    /* always shown here: there are no hover zones to reveal it */
-    visibility: visible;
-    transform: none;
+    top: 50%;
+    left: 50%;
+    right: auto;
+    width: min(360px, calc(100% - 2.5rem));
+    max-height: min(78svh, 620px);
+    overflow-y: auto;
+    transform: translate(-50%, -50%) scale(0.96);
+    z-index: 5;
+  }
+  .person-card.on,
+  .person-card.left.on,
+  .person-card.right.on {
+    transform: translate(-50%, -50%);
+    /* abierta SÍ se toca: hay que poder scrollearla y cerrarla */
     pointer-events: auto;
-    width: min(360px, 100%);
   }
-  /* the name row becomes the tap target that opens the details */
-  .person-head {
-    cursor: pointer;
+  /* dejarle aire a la ✕ para que no pise el tagline */
+  .person-card .person-head {
+    padding-right: 2rem;
   }
-  .person-toggle {
-    display: inline-block;
-    margin-left: auto;
-    align-self: center;
-    font-size: 1rem;
-    line-height: 1;
-    color: var(--white-45);
-    transition: transform 0.25s ease;
+  .person-scrim {
+    display: block;
   }
-  /* traits + favorite artists stay hidden until the visitor taps the name */
-  .person-traits,
-  .person-artists {
-    display: none;
-  }
-  .person-card.open .person-traits,
-  .person-card.open .person-artists {
-    display: flex;
-  }
-  .person-card.open .person-toggle {
-    transform: rotate(180deg);
+  .person-close {
+    display: grid;
   }
 }
 
