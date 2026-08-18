@@ -16,6 +16,8 @@ import { planToWizardState, planSectionSlugs } from "./plan-to-state";
 
 const basePlan: Plan = {
   names: ["Martín", "Ivi"],
+  you: "Ivi",
+  dates: { together: "2021-03-08", met: "2020-11-02" },
   title: "De la facu al living",
   angle: "Cómo dos desconocidos en un pasillo terminaron compartiendo las llaves.",
   tone: "cálido y divertido, sin cursilería",
@@ -83,4 +85,17 @@ test("nombres faltantes no rompen (couple vacío, names parciales)", () => {
   assert.equal(s.couple, "");
   assert.equal(s.people.left.name, "");
   assert.equal(s.people.right.name, "");
+});
+
+test("las fechas del plan viajan al WizardState (contador + portada)", () => {
+  const s = planToWizardState(basePlan);
+  assert.equal(s.dates.together, "2021-03-08");
+  assert.equal(s.dates.met, "2020-11-02");
+});
+
+test("narrator = quién arma el sitio (plan.you), con fallback al primero", () => {
+  assert.equal(planToWizardState(basePlan).narrator, "Ivi");
+  assert.equal(planToWizardState({ ...basePlan, you: "" }).narrator, "Martín");
+  // un `you` que no matchea ningún nombre no puede ensuciar la firma
+  assert.equal(planToWizardState({ ...basePlan, you: "Otro" }).narrator, "Martín");
 });

@@ -18,6 +18,13 @@ voz de esa pareja y que refleje la personalidad de cada uno. Definí:
 
 - names: array con los nombres de las dos personas si los conocés (["Martín","Ivi"]).
   Si no sabés alguno, dejá [] o solo el que sepas. No inventes nombres.
+- you: el nombre (tal cual aparece en names) de la persona que está armando el sitio,
+  o "" si no quedó claro. El sitio firma con él el cierre y el crédito del footer.
+- dates: { "together": "yyyy-mm-dd", "met": "yyyy-mm-dd" }. `together` es el
+  ANIVERSARIO (desde cuándo están juntos): es el ancla del contador de tiempo, de la
+  portada y del cierre. Si solo sabés mes y año, poné el día 01; si no lo sabés,
+  dejá "" y anotalo en assumptions. `met` (cuándo se conocieron) es opcional.
+  No inventes fechas: una fecha inventada rompe el contador del sitio.
 - title: un título o ángulo editorial corto y con alma para el sitio.
 - angle: 1 a 2 frases sobre de qué va este sitio (el hilo narrativo).
 - tone: el tono o vibe emocional en una frase (p.ej. "cálido y divertido, sin cursilería").

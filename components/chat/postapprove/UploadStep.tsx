@@ -147,7 +147,8 @@ export default function UploadStep({
 
   // ── preview vivo (derecha) ──────────────────────────────────────────────────
   //  Content determinista desde el plan + las fotos ya subidas + la paleta. Sin
-  //  fotos, cae al template de muestra; a medida que subís, tus fotos lo llenan.
+  //  fotos NO cae a la demo: muestra la plantilla elegida con marcos vacíos, y a
+  //  medida que subís, tus fotos los reemplazan.
   //  Los ids de sección del layout generado = las categorías del rail → el scroll
   //  y el resaltado quedan sincronizados.
   const media = useMemo(
@@ -166,7 +167,14 @@ export default function UploadStep({
   );
   const previewContent = useMemo(() => {
     if (!convo.plan) return null;
-    return generateContent({ state: planToWizardState(convo.plan, convo.palette), media });
+    const closingCat = planSectionSlugs(convo.plan).find(
+      (s) => s.section.kind === "closing"
+    )?.category;
+    return generateContent({
+      state: planToWizardState(convo.plan, convo.palette),
+      media,
+      closingCat,
+    });
   }, [convo.plan, convo.palette, media]);
   const theme: Theme = useMemo(() => {
     const overrides = convo.palette.startsWith("custom-")

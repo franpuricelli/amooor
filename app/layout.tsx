@@ -4,7 +4,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { esES } from "@clerk/localizations";
 import "./globals.css";
 import { fontVariables } from "./fonts";
-import { resolvePalette, paletteVars } from "@/lib/theme";
+import { themeVars } from "@/lib/theme";
 import { TenantProvider } from "@/lib/tenant";
 import { resolveSite } from "@/lib/site-server";
 import PostHogProvider from "@/components/analytics/PostHogProvider";
@@ -39,8 +39,9 @@ export default async function RootLayout({
 }) {
   const { content, theme } = await resolveSite();
   // The tenant's palette becomes CSS variables on <html> — the whole site
-  // re-themes from data, per host.
-  const paletteStyle = paletteVars(resolvePalette(theme)) as React.CSSProperties;
+  // re-themes from data, per host. `themeVars` adds the chosen template's own
+  // surface tokens, derived from that same palette (lib/theme.ts).
+  const paletteStyle = themeVars(theme) as React.CSSProperties;
 
   return (
     <html

@@ -12,6 +12,8 @@
 /** Lo que el agente tiene que entender (a grandes rasgos) antes de dropear el plan. */
 export const HIDDEN_CHECKLIST = [
   "quiénes son los dos: nombres y la PERSONALIDAD de cada uno (qué los hace ser ellos)",
+  "CUÁL de los dos es la persona que está hablando (quién arma el sitio)",
+  "la FECHA de aniversario (desde cuándo están juntos): al menos mes y año",
   "el arco general de la relación: cómo se conocieron (a grandes rasgos) y dónde están hoy",
   "si la persona ya tiene una idea de la estructura/secciones que quiere, o prefiere que se la propongamos",
   "material para cada sección que aplique del template: historia (cómo se conocieron), viajes si los hay, momentos/rituales del día a día, pelis o series que los definen, y el mensaje final del cierre",
@@ -28,6 +30,9 @@ YA hay suficiente material GENERAL para proponer un plan de sitio.
 
 Hay suficiente cuando se entiende, a grandes rasgos:
 ${HIDDEN_CHECKLIST.map((c) => `- ${c}`).join("\n")}
+
+Dos ítems son BLOQUEANTES aunque todo lo demás esté: la fecha de aniversario y cuál de
+los dos es la persona que habla. Si falta alguno, "satisfied" es false y va en "missing".
 
 Escalá la exigencia según cuánto hace que están juntos:
 - relación corta o nueva (hasta ~1 año): no exijas detalle fino. Alcanza con el hilo

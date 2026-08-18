@@ -15,16 +15,21 @@ const ContentContext = createContext<Content>(defaultContent);
 
 export function TenantProvider({
   content,
+  placeholders = false,
   children,
 }: {
   content: Content;
+  /** preview del builder: las secciones sin fotos muestran marcos vacíos */
+  placeholders?: boolean;
   children: ReactNode;
 }) {
   // El content y las fotos del tenant viajan juntos: los componentes leen el copy
   // con useContent() y las fotos con usePhotos() (ambos por request/host).
   return (
     <ContentContext.Provider value={content}>
-      <PhotoProvider media={content.media}>{children}</PhotoProvider>
+      <PhotoProvider media={content.media} placeholders={placeholders}>
+        {children}
+      </PhotoProvider>
     </ContentContext.Provider>
   );
 }

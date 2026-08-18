@@ -228,6 +228,36 @@ export default function Chat() {
     [convo]
   );
 
+  // Corregir los datos duros del plan (aniversario / quién de los dos arma el
+  // sitio) = edición LOCAL: el sitio los necesita sí o sí y no vale la pena una
+  // re-síntesis. La nota queda para que el agente no los vuelva a suponer.
+  const correctFacts = useCallback(
+    (facts: { you?: string; together?: string }) => {
+      if (!convo.plan) return;
+      const next = {
+        ...convo.plan,
+        ...(facts.you !== undefined ? { you: facts.you } : {}),
+        ...(facts.together !== undefined
+          ? { dates: { ...convo.plan.dates, together: facts.together } }
+          : {}),
+      };
+      convo.setPlan(next);
+      if (facts.you !== undefined) {
+        correctionsRef.current.push(
+          `De la pareja, quien arma el sitio es ${facts.you}. Es un hecho confirmado.`
+        );
+        track("plan_narrator_set", {});
+      }
+      if (facts.together !== undefined) {
+        correctionsRef.current.push(
+          `El aniversario (desde cuándo están juntos) es ${facts.together}. Es un hecho confirmado.`
+        );
+        track("plan_anniversary_set", { had_date: !!convo.plan.dates.together });
+      }
+    },
+    [convo]
+  );
+
   // Aplicar paleta: una custom viaja con su paleta completa (overrides) para que
   // el sitio la tematice; una built-in va sin overrides (los limpia).
   const applyPalette = useCallback(
@@ -905,6 +935,7 @@ export default function Chat() {
                     onAskMore={() => {}}
                     onCorrectAssumption={correctAssumption}
                     onRemoveSection={removeSection}
+                    onFacts={correctFacts}
                     collapsed
                   />
                   <ChatMessages
@@ -940,6 +971,7 @@ export default function Chat() {
                       }
                       onCorrectAssumption={correctAssumption}
                       onRemoveSection={removeSection}
+                      onFacts={correctFacts}
                     />
                   )}
                 </>

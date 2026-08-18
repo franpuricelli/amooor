@@ -5,6 +5,7 @@ import { fill } from "@/lib/content";
 import { useContent } from "@/lib/tenant";
 import { usePhotos } from "@/lib/photos-context";
 import { useLightbox } from "@/components/Lightbox";
+import { useEditableImgClass, usePhotoAction } from "@/lib/edit-context";
 
 export interface StoryPhoto {
   cat: string;
@@ -35,6 +36,9 @@ export default function StoryRow({
   const { open } = useLightbox();
   const content = useContent();
   const { full, photos, thumb } = usePhotos();
+  // en el editor, tocar una foto del collage abre Multimedia en esa foto
+  const photoClick = usePhotoAction();
+  const editableImg = useEditableImgClass();
   const catsKey = cats.join(",");
   const album = useMemo(
     () => cats.flatMap((c) => photos(c).map((slug) => ({ cat: c, slug }))),
@@ -90,8 +94,8 @@ export default function StoryRow({
         {collage.map((p, i) => (
           <button
             key={`${p.cat}/${p.slug}`}
-            className={`collage-tile ct-${i + 1}`}
-            onClick={() => open(items, indexOf(p))}
+            className={`collage-tile ct-${i + 1} ${editableImg}`}
+            onClick={photoClick(p.cat, p.slug, () => open(items, indexOf(p)))}
             aria-label={content.ui.photoView}
           >
             <img src={thumb(p.cat, p.slug)} alt="" loading="lazy" decoding="async" />

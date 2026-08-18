@@ -26,10 +26,16 @@ type Theme = { palette: PaletteId; template?: string; overrides?: Partial<Palett
   `<html>` for the real tenant (`app/layout.tsx`) and the root `<div>` of the
   preview (`components/wizard/PreviewSite.tsx`). No template → base `romantic`.
 - The **CSS** for each skin lives in `app/globals.css`, under
-  `[data-template="<id>"]`. `romantic` is the base (`:root`, no block). The 6
-  palette tokens the render injects inline on the same element (`--canvas`,
-  `--canvas-soft`, `--canvas-deep`, `--pink`, `--ink`, `--dark`) carry
-  `!important` in the skin block so they win over the inline `style`.
+  `[data-template="<id>"]`. `romantic` is the base (`:root`, no block). That block
+  holds the *treatment* (typography, borders, radii, shadows, photo filters) plus
+  **fallback** colors.
+- The skin's **colors follow the chosen palette**: `templateVars()` (`lib/theme.ts`)
+  derives each skin's surface tokens (canvas, ink, glass, `--pop`, panel tints…)
+  from the palette's accent and ships them as inline vars on the render root, next
+  to `paletteVars()` — both come from `themeVars(theme)`. So the template decides
+  *how* the site feels and the palette decides *what color* it is. Never re-add
+  `!important` color declarations to a skin block: that's exactly what made a
+  chosen palette do nothing on editorial/brutalist (QA, ago-2026).
 - **Fonts** load in `app/fonts.ts` (a shared module) and their `.variable`
   rides in the render root's className (`fontVariables`), so the skin renders the
   same on desktop (in-tree) and inside the mobile `<iframe>` (portal) of
@@ -51,7 +57,10 @@ implementing the `TemplateManifest` contract in `lib/template.ts`) — keep the
 2. **Fonts:** if it brings new families, load them in `app/fonts.ts` and add
    them to `fontVariables`.
 3. **CSS:** add the `[data-template="<id>"] { … }` block in `app/globals.css`
-   (next to the other skins). `!important` on the 6 inline palette tokens.
+   (next to the other skins) with the treatment + fallback colors — **no
+   `!important` on color tokens**. If the skin needs its own color identity,
+   derive it from the palette in `templateVars()` (`lib/theme.ts`) so it follows
+   whatever palette the couple picked.
 4. **Standalone preview (optional):** if you want the card's "view", export the
    static build to `public/template/<id>/` (see `app/template/<id>/page.tsx`).
 5. **Doc:** create `docs/templates/<id>.md` (copy the shape used here).
@@ -64,8 +73,8 @@ Nothing else touches the pipeline: `data-template` flows on its own from
 ## Templates
 
 - [romantic](./romantic.md) — the warm base (Puri & Ivi).
-- [editorial](./editorial.md) — light fine-art, monochrome.
-- [brutalist](./brutalist.md) — neo-brutalist, blocks and contrast.
+- [editorial](./editorial.md) — light fine-art, low chroma (tinted by the palette).
+- [brutalist](./brutalist.md) — neo-brutalist, blocks and contrast (accent = palette).
 - [matcha](./matcha.md) — a **different structure** (story timeline / travel /
   wall of love), not a skin; renders via `MatchaSite` + the content adapter. See
   also `components/templates/editorial.md`.

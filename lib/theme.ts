@@ -8,6 +8,8 @@
 //  default es la paleta original de Puri & Ivi ("rosa").
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { hexToHsl, hslToHex } from "./palette-gen";
+
 /** Los ~13 tokens de color que definen una paleta. */
 export interface Palette {
   canvas: string; // fondo principal
@@ -117,6 +119,15 @@ export const paletteLabels: Record<PaletteId, string> = {
   cielo: "Cielo",
 };
 
+/** rgba() de un hex (#rrggbb) con alfa — para los tokens derivados de la paleta. */
+function rgba(hex: string, alpha: number): string {
+  const h = hex.replace("#", "").trim();
+  const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  const n = parseInt(full.slice(0, 6), 16);
+  if (Number.isNaN(n)) return `rgba(0, 0, 0, ${alpha})`;
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+}
+
 /** token camelCase → nombre de CSS variable. */
 const CSS_VAR: Record<keyof Palette, string> = {
   canvas: "--canvas",
@@ -140,6 +151,10 @@ export function paletteVars(p: Palette): Record<string, string> {
   (Object.keys(CSS_VAR) as (keyof Palette)[]).forEach((k) => {
     out[CSS_VAR[k]] = p[k];
   });
+  // Derivados de `ink` (los defaults de :root son los de la paleta rosa: sin
+  // esto, el texto secundario seguía tirando a rosa en cualquier otra paleta).
+  out["--ink-70"] = rgba(p.ink, 0.7);
+  out["--ink-50"] = rgba(p.ink, 0.5);
   return out;
 }
 
@@ -151,4 +166,109 @@ export function resolvePalette(theme: {
 }): Palette {
   const base = palettes[theme.palette as PaletteId] ?? palettes[defaultPaletteId];
   return { ...base, ...(theme.overrides ?? {}) };
+}
+
+// ── Tokens de los SKINS (plantillas) ─────────────────────────────────────────
+//  Cada plantilla (`[data-template]`) tiene su tratamiento de superficies: crema
+//  plano y filetes en "editorial", papel + bloques duros en "brutalist". Antes esos
+//  colores estaban HARDCODEADOS en app/globals.css con `!important` (para ganarle a
+//  las vars inline de la paleta), así que elegir una paleta no cambiaba nada en esas
+//  plantillas. Ahora se DERIVAN de la paleta elegida: la plantilla aporta el
+//  tratamiento (claro/plano, papel/duro) y la paleta aporta el color.
+const clampN = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
+
+/**
+ * Los tokens de color que necesita el skin `template`, derivados de `p`.
+ * Devuelve {} para la base ("romantic") y para plantillas sin skin de color.
+ */
+export function templateVars(p: Palette, template?: string): Record<string, string> {
+  if (template !== "editorial" && template !== "brutalist") return {};
+  const [h, s] = hexToHsl(p.accentStrong);
+  // un acento ilegible (dato viejo de un tenant) no puede romper el sitio: sin
+  // tono usable dejamos que el skin use sus colores de fallback (globals.css).
+  if (!Number.isFinite(h) || !Number.isFinite(s)) return {};
+  const sat = clampN(s, 8, 95);
+  /** mismo tono que la paleta, con la saturación bajada al `k` del original. */
+  const tone = (l: number, k: number) => hslToHex(h, clampN(sat * k, 3, 60), l);
+
+  if (template === "editorial") {
+    // fine-art claro: lienzo crema tintado por la paleta, tinta casi negra del
+    // mismo tono, y el acento del usuario intacto (es "su" color en el sitio).
+    const canvas = tone(95, 0.3);
+    const ink = tone(12, 0.3);
+    const dark = tone(89, 0.34);
+    return {
+      "--canvas": canvas,
+      "--canvas-soft": tone(92, 0.32),
+      "--canvas-deep": tone(89, 0.34),
+      "--pink": p.accentStrong,
+      "--ink": ink,
+      "--ink-70": rgba(ink, 0.66),
+      "--ink-50": rgba(ink, 0.46),
+      // en esta plantilla no hay bloques oscuros: "blanco sobre oscuro" pasa a
+      // ser "tinta sobre claro" (la base usa --white para el texto ahí).
+      "--white": ink,
+      "--white-70": rgba(ink, 0.66),
+      "--white-45": rgba(ink, 0.46),
+      "--dark": dark,
+      "--glass": tone(97, 0.22),
+      "--glass-strong": tone(94, 0.26),
+      "--glass-border": rgba(ink, 0.16),
+      "--glass-border-soft": rgba(ink, 0.1),
+      // gradiente del lienzo + escalones del deck de países
+      "--skin-wash-a": tone(98, 0.18),
+      "--skin-wash-b": tone(91, 0.36),
+      // los stops decorativos de la base también tienen que ser del skin (si no,
+      // el sitio publicado pinta el wash rosado de la paleta sobre el crema).
+      "--grad-a": tone(97, 0.22),
+      "--grad-b": tone(93, 0.28),
+      "--skin-panel-a": tone(91, 0.32),
+      "--skin-panel-b": tone(88, 0.36),
+      "--skin-panel-c": tone(94, 0.26),
+      "--skin-tint-1": rgba(ink, 0.04),
+      "--skin-tint-2": rgba(ink, 0.07),
+    };
+  }
+
+  // brutalist — papel cálido, tinta casi negra, el acento de la paleta como
+  // "pop" (antes azul eléctrico fijo) y un realce claro del mismo tono (antes
+  // amarillo fijo). Los bordes/sombras duros los sigue poniendo el CSS.
+  const ink = tone(8, 0.25);
+  const [, , accentL] = hexToHsl(p.accentStrong);
+  return {
+    "--canvas": tone(93, 0.3),
+    "--canvas-soft": tone(90, 0.32),
+    "--canvas-deep": tone(87, 0.34),
+    "--pink": p.accentStrong,
+    "--ink": ink,
+    "--ink-70": rgba(ink, 0.72),
+    "--ink-50": rgba(ink, 0.5),
+    "--white": "#ffffff",
+    "--white-70": "rgba(255, 255, 255, 0.74)",
+    "--white-45": "rgba(255, 255, 255, 0.5)",
+    "--dark": ink,
+    "--glass": tone(99, 0.08),
+    "--glass-strong": tone(99, 0.08),
+    "--glass-border": ink,
+    "--glass-border-soft": ink,
+    "--grad-a": tone(95, 0.28),
+    "--grad-b": tone(91, 0.3),
+    "--pop": p.accentStrong,
+    // texto sobre el bloque de acento: blanco si el acento es oscuro, tinta si no.
+    "--on-pop": accentL > 68 ? ink : "#ffffff",
+    "--pop-soft": hslToHex(h, clampN(sat, 55, 95), 78),
+    "--skin-panel-a": hslToHex(h, clampN(sat * 0.7, 20, 90), 85),
+    "--skin-panel-b": hslToHex(h, clampN(sat, 45, 95), 80),
+    "--skin-grid": rgba(ink, 0.05),
+  };
+}
+
+/** Todas las CSS vars de un theme: paleta + tokens del skin elegido. */
+export function themeVars(theme: {
+  palette: PaletteId | string;
+  template?: string;
+  overrides?: Partial<Palette>;
+}): Record<string, string> {
+  const p = resolvePalette(theme);
+  return { ...paletteVars(p), ...templateVars(p, theme.template) };
 }

@@ -6,8 +6,13 @@
 //  (las 468 fotos de Puri & Ivi). En multi-tenant cada sitio tiene SUS fotos, así
 //  que ahora llaman `usePhotos()`:
 //    · si el tenant trae `content.media` (fotos subidas → Cloudflare Images),
-//      la fuente resuelve las URLs de ahí.
-//    · si no (el default Puri & Ivi), cae al manifiesto estático `lib/photos.ts`.
+//      la fuente resuelve las URLs de ahí — AUNQUE ESTÉ VACÍO. Un sitio sin fotos
+//      propias muestra cero fotos, nunca las de Puri & Ivi.
+//    · sólo sin `media` (el default Puri & Ivi, la landing, /template/*) cae al
+//      manifiesto estático `lib/photos.ts`.
+//
+//  `placeholders` (preview del builder): con la media vacía devuelve marcos vacíos
+//  en lugar de nada, para que se vea DÓNDE van a entrar las fotos mientras las subís.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { createContext, useContext, useMemo, type ReactNode } from "react";
@@ -45,8 +50,21 @@ const staticSource: PhotoSource = {
   totalPhotos: staticTotal,
 };
 
+// ── marcos vacíos (sólo en el preview del builder) ───────────────────────────
+/** Un marco de "foto pendiente": SVG neutro que entra en cualquier paleta. */
+export const PLACEHOLDER_PHOTO =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="#e9e5e6"/><g fill="none" stroke="#bdb5b8" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"><rect x="139" y="104" width="122" height="92" rx="12"/><circle cx="171" cy="136" r="11"/><path d="M145 182l40-36 27 23 23-19 22 32"/></g></svg>`
+  );
+const PLACEHOLDER_SLUGS = ["ph-1", "ph-2", "ph-3"];
+const PLACEHOLDER_ALL: CatPhoto[] = Array.from({ length: 8 }, (_, i) => ({
+  cat: "__placeholder",
+  slug: `ph-${i + 1}`,
+}));
+
 /** Construye una fuente desde las fotos subidas del tenant (`content.media`). */
-function sourceFromMedia(media: MediaSet): PhotoSource {
+function sourceFromMedia(media: MediaSet, placeholders: boolean): PhotoSource {
   const byCat = media.photos ?? {};
   const url = new Map<string, { thumb: string; full: string }>();
   const all: CatPhoto[] = [];
@@ -59,13 +77,18 @@ function sourceFromMedia(media: MediaSet): PhotoSource {
   }
   const at = (cat: string, slug: string) => url.get(`${cat}/${slug}`);
   return {
-    photos: (cat) => (byCat[cat] ?? []).map((p) => p.slug),
-    thumb: (cat, slug) => at(cat, slug)?.thumb ?? "",
-    full: (cat, slug) => at(cat, slug)?.full ?? "",
+    photos: (cat) => {
+      const list = (byCat[cat] ?? []).map((p) => p.slug);
+      return list.length === 0 && placeholders ? PLACEHOLDER_SLUGS : list;
+    },
+    // una foto que no existe devuelve el marco vacío, nunca "" (un <img src="">
+    // se ve como imagen rota).
+    thumb: (cat, slug) => at(cat, slug)?.thumb ?? PLACEHOLDER_PHOTO,
+    full: (cat, slug) => at(cat, slug)?.full ?? PLACEHOLDER_PHOTO,
     // La música propia se sirve por `content.media.audioUrl` / `content.music.url`;
     // este helper sólo aplica al modo librería (assets estáticos).
     audio: staticAudio,
-    allPhotos: all,
+    allPhotos: all.length === 0 && placeholders ? PLACEHOLDER_ALL : all,
     totalPhotos: all.length,
   };
 }
@@ -74,17 +97,19 @@ const PhotoContext = createContext<PhotoSource>(staticSource);
 
 export function PhotoProvider({
   media,
+  placeholders = false,
   children,
 }: {
   media?: MediaSet;
+  /** preview del builder: sin fotos propias, mostrá marcos vacíos (no nada) */
+  placeholders?: boolean;
   children: ReactNode;
 }) {
+  // Con `media` (aunque venga vacío) la fuente es la del tenant: un sitio sin
+  // fotos muestra marcos vacíos, nunca el manifiesto de Puri & Ivi.
   const source = useMemo(
-    () =>
-      media && Object.keys(media.photos ?? {}).length > 0
-        ? sourceFromMedia(media)
-        : staticSource,
-    [media]
+    () => (media ? sourceFromMedia(media, placeholders) : staticSource),
+    [media, placeholders]
   );
   return <PhotoContext.Provider value={source}>{children}</PhotoContext.Provider>;
 }

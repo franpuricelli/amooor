@@ -19,7 +19,7 @@
 //  cliente de upload y el server usan exactamente la misma clave (`planSectionSlugs`).
 // ─────────────────────────────────────────────────────────────────────────────
 
-import type { Plan, PlanSection } from "./plan";
+import { planNarrator, type Plan, type PlanSection } from "./plan";
 import { zWizardState, type WizardState, type WizardSection } from "./draft";
 import { slugifyCouple } from "./subdomain";
 
@@ -96,6 +96,11 @@ export function planToWizardState(plan: Plan, palette?: string): WizardState {
       left: { name: leftName },
       right: { name: rightName },
     },
+    // El aniversario sale del intake (skills/orchestrator lo pregunta): alimenta
+    // el contador, el eyebrow del hero y la línea del cierre. Sin él, esos campos
+    // quedan vacíos — NUNCA con la fecha de la demo.
+    dates: { together: plan.dates.together, met: plan.dates.met },
+    narrator: planNarrator(plan).you,
     story,
     sections,
     categories,

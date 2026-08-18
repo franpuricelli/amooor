@@ -96,6 +96,9 @@ export const zWizardState = z.object({
       left: zPersonProfile.parse({ name: "" }),
       right: zPersonProfile.parse({ name: "" }),
     }),
+  /** quién de los dos está armando el sitio (nombre): firma el cierre y el
+   *  crédito del footer. Viene del intake (`plan.you`). */
+  narrator: z.string().default(""),
   /** descripción libre de la historia → insumo IA */
   story: z.string().default(""),
   /** secciones editables (agregar/quitar/renombrar/reordenar/editar por IA) */

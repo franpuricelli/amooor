@@ -7,7 +7,7 @@ import { useContent } from "@/lib/tenant";
 import { usePhotos } from "@/lib/photos-context";
 import { useLightbox } from "@/components/Lightbox";
 import { useLenis } from "lenis/react";
-import { EditableText } from "@/lib/edit-context";
+import { EditableText, useEditableImgClass, usePhotoAction } from "@/lib/edit-context";
 
 const COLS = 8;
 // Con pocas fotos, tantas columnas quedan cortas y el marquee se ve "colapsado"
@@ -27,6 +27,9 @@ export default function Galeria({ id }: { id: string }) {
   const [showAll, setShowAll] = useState(false);
   const { gallery, ui } = useContent();
   const { allPhotos, full, thumb, totalPhotos } = usePhotos();
+  // en el editor, tocar una foto del muro abre Multimedia en esa foto
+  const photoClick = usePhotoAction();
+  const editableImg = useEditableImgClass();
 
   const items = useMemo(
     () => allPhotos.map((p) => ({ src: full(p.cat, p.slug), thumb: thumb(p.cat, p.slug) })),
@@ -67,8 +70,8 @@ export default function Galeria({ id }: { id: string }) {
   ) => (
     <button
       key={key}
-      className="wol-tile"
-      onClick={() => open(items, p.i)}
+      className={`wol-tile ${editableImg}`}
+      onClick={photoClick(p.cat, p.slug, () => open(items, p.i))}
       tabIndex={interactive ? 0 : -1}
       aria-label={photoAria(p.i)}
     >

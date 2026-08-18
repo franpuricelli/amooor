@@ -8,7 +8,7 @@
 //  edición inline del copy y el click en imágenes.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import PreviewSite from "@/components/wizard/PreviewSite";
 import { fontVariables } from "@/app/fonts";
@@ -165,6 +165,25 @@ export default function SitePreviewFrame({
   const [doc, setDoc] = useState<Document | null>(null);
   // vista escritorio ↔ celular (el toggle de la barra del navegador del preview)
   const [device, setDevice] = useState<Device>("desktop");
+  // cartel de "esto se edita acá" — se va con la primera edición o con la ✕
+  const [hint, setHint] = useState(true);
+
+  // la primera edición real ya explicó el mecanismo: bajamos el cartel.
+  const editApi: EditAPI | undefined = useMemo(
+    () =>
+      edit && {
+        ...edit,
+        onEditText: (path, value) => {
+          setHint(false);
+          edit.onEditText(path, value);
+        },
+        onPickImage: (cat, slug) => {
+          setHint(false);
+          edit.onPickImage(cat, slug);
+        },
+      },
+    [edit]
+  );
 
   // ── scroll-spy: la sección cuyo tope ya pasó la línea de referencia (30% del
   //    alto visible) es la "activa". rAF para no disparar en cada píxel. ─────────
@@ -242,16 +261,30 @@ export default function SitePreviewFrame({
         </div>
         {toolbar && <div className="pa-frame-tools">{toolbar}</div>}
       </div>
+      {/* La superficie es EDITABLE y no se nota: lo decimos una vez, arriba del
+          sitio, hasta que la persona edite algo (o lo cierre). */}
+      {edit && hint && (
+        <div className="pa-edit-hint">
+          <span>
+            Tocá cualquier <b>texto</b> del sitio para editarlo, o una <b>foto</b> para
+            cambiarla.
+          </span>
+          <button type="button" aria-label="Entendido" onClick={() => setHint(false)}>
+            ✕
+          </button>
+        </div>
+      )}
       <div className={`pa-frame-body ${device === "mobile" ? "is-mobile" : ""}`}>
         {device === "mobile" ? (
-          // en mobile el preview es view-only (se edita en escritorio)
+          // la vista celular también edita: es el mismo árbol de React portaleado
+          // dentro del iframe, así que el copy y las fotos responden igual.
           <PreviewViewport
             width={390}
             title="Vista celular"
             className="pa-mobile-iframe"
             onDoc={setDoc}
           >
-            <PreviewSite content={content} theme={theme} framed />
+            <PreviewSite content={content} theme={theme} edit={editApi} framed />
           </PreviewViewport>
         ) : (
           // escritorio: se rinde a DESIGN_WIDTH y se escala al panel, así el sitio ve
@@ -262,7 +295,7 @@ export default function SitePreviewFrame({
             title="Vista escritorio"
             onDoc={setDoc}
           >
-            <PreviewSite content={content} theme={theme} edit={edit} framed />
+            <PreviewSite content={content} theme={theme} edit={editApi} framed />
           </PreviewViewport>
         )}
       </div>

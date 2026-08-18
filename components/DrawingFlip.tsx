@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useContent } from "@/lib/tenant";
+import { PLACEHOLDER_PHOTO } from "@/lib/photos-context";
 import { EditableText } from "@/lib/edit-context";
 
 /** Hand-drawn card in the footer: click to flip it over and reveal the message. */
@@ -20,7 +21,9 @@ export default function DrawingFlip() {
       >
         <span className={`drawing-flip-inner ${flipped ? "flipped" : ""}`}>
           <span className="drawing-card drawing-face drawing-front">
-            <img src={drawing.src} alt={drawing.alt} />
+            {/* sin foto de cierre todavía → marco vacío (el dibujo lo genera el
+                alta a partir de la foto que suba la pareja) */}
+            <img src={drawing.src || PLACEHOLDER_PHOTO} alt={drawing.alt} />
           </span>
           <span className="drawing-card drawing-face drawing-back" aria-hidden={!flipped}>
             <span className="drawing-back-msg">
