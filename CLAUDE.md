@@ -110,7 +110,11 @@ dev `hallowed-kookabura-859` · prod `canny-pheasant-391` (project `amoor`).
   (e.g. `filename`) means the deployment is behind the branch — push functions.
 - **Deepgram:** restricted keys can't mint ephemeral tokens (`/v1/auth/grant` →
   403). For local dev, `DEEPGRAM_ALLOW_RAW_KEY=1` serves the real key to the
-  browser; prod needs a key with `grant/keys:write`.
+  browser; prod needs a key with `grant/keys:write`. Ojo con el **subprotocolo**
+  del WS: la key real se manda como `["token", key]` y el token efímero (JWT)
+  como `["bearer", jwt]`. Mandar el JWT como `token` hace que Deepgram rechace el
+  handshake, así que el dictado anda en dev (key real) y falla siempre en prod.
+  El `/token` devuelve el `scheme` a usar.
 - **Editor screenshot:** `puppeteer-core` + Chrome
   (`/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`, `headless:
   "new"`), run the `.mjs` from repo root. Reach the editor via `/comenzar` →

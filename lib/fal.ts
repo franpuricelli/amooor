@@ -36,7 +36,12 @@ export async function stylizeClosingDrawing({
   styleUrl,
 }: StylizeArgs): Promise<string | null> {
   const key = process.env.FAL_KEY;
-  if (!key) return null;
+  if (!key) {
+    // Sin esto el cierre muestra la foto cruda y NO hay forma de distinguir
+    // "FAL falló" de "FAL no está configurado" mirando los logs del deploy.
+    console.warn("[fal] FAL_KEY ausente: el cierre queda con la foto real, sin dibujo.");
+    return null;
+  }
 
   try {
     const res = await fetch(`https://fal.run/${FAL_MODEL}`, {
