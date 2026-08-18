@@ -85,6 +85,23 @@ the only var Convex functions read is **`ASSET_SECRET`** (`grep process.env
 convex/`). `.env.example` is the versioned template; `.env*` is gitignored — keep
 secrets out of commits.
 
+**Where to find the local keys:** all of them live in **`.env.local` at the repo
+root** (gitignored, never committed). A fresh Conductor workspace often arrives
+*without* it — copy it from a sibling workspace
+(`/Users/<you>/conductor/workspaces/amooor/*/.env.local`) rather than
+reconstructing it. Read it with `grep`, and don't print secret values into the
+transcript. Notes:
+
+- Values containing `|` or `=` (e.g. `CONVEX_DEPLOY_KEY`) must be **quoted**, or
+  the Convex CLI refuses them.
+- `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` are stored there for
+  safekeeping but **the app never reads them** — they get pasted into Clerk
+  Dashboard → production instance → SSO Connections → Google → *Use custom
+  credentials* (prod Clerk rejects Clerk's shared Google credentials).
+- Vercel env is managed per-target (`development`/`preview`/`production`) via the
+  REST API with `VERCEL_TOKEN` + `VERCEL_PROJECT_ID` + `VERCEL_TEAM_ID`; changes
+  need a **redeploy** to take effect.
+
 ## Convex deployments
 
 dev `hallowed-kookabura-859` · prod `canny-pheasant-391` (project `amoor`).
