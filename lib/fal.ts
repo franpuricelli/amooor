@@ -35,11 +35,14 @@ export async function stylizeClosingDrawing({
   photoUrl,
   styleUrl,
 }: StylizeArgs): Promise<string | null> {
-  const key = process.env.FAL_KEY;
+  // `FAL_API` es el nombre con el que la key vive en TODOS los `.env.local` y en
+  // Vercel; este módulo leía sólo `FAL_KEY`, así que nunca se activaba y el cierre
+  // caía siempre a la foto cruda. Aceptamos los dos nombres.
+  const key = process.env.FAL_KEY || process.env.FAL_API;
   if (!key) {
     // Sin esto el cierre muestra la foto cruda y NO hay forma de distinguir
     // "FAL falló" de "FAL no está configurado" mirando los logs del deploy.
-    console.warn("[fal] FAL_KEY ausente: el cierre queda con la foto real, sin dibujo.");
+    console.warn("[fal] sin FAL_KEY/FAL_API: el cierre queda con la foto real, sin dibujo.");
     return null;
   }
 
