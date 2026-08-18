@@ -14,16 +14,22 @@ export default function MusicToggle({ label }: { label: string }) {
   const content = useContent();
   const { music, media } = content;
   const { audio: audioUrl } = usePhotos();
-  // Si el tenant subió su propia canción, la usamos; si no, el helper estático.
-  const src = media?.audioUrl && media.audioUrl.length > 0
-    ? media.audioUrl
-    : audioUrl(music.cat, music.slug);
+  // Si el tenant subió su propia canción, la usamos; si no, la de la librería que
+  // haya elegido. Sin ninguna de las dos NO hay música: el sitio no puede caer a
+  // la canción de la demo (el default de lib/content.ts).
+  const src =
+    media?.audioUrl && media.audioUrl.length > 0
+      ? media.audioUrl
+      : music.cat && music.slug
+        ? audioUrl(music.cat, music.slug)
+        : "";
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const heartRef = useRef<HTMLSpanElement>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const [playing, setPlaying] = useState(false);
 
   useEffect(() => {
+    if (!src) return; // sin canción: la pill queda como marca, sin audio
     const audio = new Audio(src);
     audio.loop = true;
     audio.volume = 0.55;

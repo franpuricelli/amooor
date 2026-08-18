@@ -45,6 +45,8 @@ Contrato de salida (el plan completo). Devolvé SOLO un objeto JSON válido, sin
 ni texto extra, con EXACTAMENTE estas claves:
 {
   "names": [...],
+  "you": "el nombre de quien arma el sitio (de names), o \"\"",
+  "dates": { "together": "yyyy-mm-dd", "met": "yyyy-mm-dd" },
   "title": "...",
   "angle": "...",
   "tone": "...",
@@ -52,4 +54,6 @@ ni texto extra, con EXACTAMENTE estas claves:
                 { "kind": "closing", "title": "...", "intent": "..." } ],
   "assumptions": [...]
 }
+`dates.together` es el aniversario (el ancla del contador): si no lo sabés, dejalo en
+"" y decilo en assumptions — nunca lo inventes. `dates.met` es opcional.
 El primer elemento de "sections" es siempre un "hero" y el último siempre un "closing".

@@ -13,6 +13,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { SECTION_KIND_LABELS, type Plan } from "@/lib/plan";
+import { fmtDate } from "@/lib/dates";
 import type { Swatch } from "@/lib/palette-gen";
 import PalettePicker from "./PalettePicker";
 import TemplateChooser from "./TemplateChooser";
@@ -192,6 +193,58 @@ function Assumption({
   );
 }
 
+/**
+ * Los dos datos DUROS del plan: el aniversario (ancla del contador, la portada y el
+ * cierre) y cuál de los dos es quien arma el sitio (firma el cierre y el crédito).
+ * Se editan acá mismo, sin re-sintetizar el plan: si el intake no los pescó, la
+ * pareja los completa en un toque.
+ */
+function PlanFacts({
+  plan,
+  onFacts,
+}: {
+  plan: Plan;
+  onFacts: (facts: { you?: string; together?: string }) => void;
+}) {
+  const names = (plan.names ?? []).map((n) => n.trim()).filter(Boolean);
+  const together = plan.dates?.together ?? "";
+  const pretty = fmtDate(together);
+  return (
+    <section className="ch-facts">
+      <div className="ch-fact">
+        <span className="ch-fact-label">Aniversario</span>
+        <label className={`ch-fact-date ${pretty ? "" : "missing"}`}>
+          <span>{pretty || "falta la fecha"}</span>
+          <input
+            type="date"
+            value={together}
+            aria-label="Fecha de aniversario"
+            onChange={(e) => onFacts({ together: e.target.value })}
+          />
+        </label>
+      </div>
+      {names.length > 1 && (
+        <div className="ch-fact">
+          <span className="ch-fact-label">En la pareja, vos sos</span>
+          <span className="ch-fact-who">
+            {names.map((n) => (
+              <button
+                key={n}
+                type="button"
+                className={`ch-fact-chip ${plan.you === n ? "on" : ""}`}
+                aria-pressed={plan.you === n}
+                onClick={() => onFacts({ you: n })}
+              >
+                {n}
+              </button>
+            ))}
+          </span>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function ToneXIcon() {
   return (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -329,6 +382,7 @@ export default function PlanCard({
   onAskMore,
   onCorrectAssumption,
   onRemoveSection,
+  onFacts,
   collapsed = false,
 }: {
   plan: Plan;
@@ -345,6 +399,8 @@ export default function PlanCard({
   onCorrectAssumption: (oldText: string, newText: string) => void;
   /** eliminar una sección: la saca del plan al instante. */
   onRemoveSection: (index: number) => void;
+  /** corregir los datos duros (aniversario / quién sos): edición local del plan. */
+  onFacts: (facts: { you?: string; together?: string }) => void;
   /** durante un refinamiento el plan anterior queda colapsado como "historial". */
   collapsed?: boolean;
 }) {
@@ -422,6 +478,9 @@ export default function PlanCard({
       </p>
       <h2 className="ch-plan-title">{plan.title}</h2>
       <p className="ch-plan-angle">{plan.angle}</p>
+
+      {/* los datos duros del sitio: aniversario + quién de los dos sos */}
+      <PlanFacts plan={plan} onFacts={onFacts} />
 
       {/* estilo: plantilla (previews reales) + paleta, arriba del plan */}
       <TemplateChooser template={template} onTemplate={onTemplate} />

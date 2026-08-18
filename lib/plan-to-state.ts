@@ -19,7 +19,7 @@
 //  cliente de upload y el server usan exactamente la misma clave (`planSectionSlugs`).
 // ─────────────────────────────────────────────────────────────────────────────
 
-import type { Plan, PlanSection } from "./plan";
+import { planNarrator, type Plan, type PlanSection } from "./plan";
 import { zWizardState, type WizardState, type WizardSection } from "./draft";
 import { slugifyCouple } from "./subdomain";
 
@@ -47,6 +47,16 @@ export function planSectionSlugs(plan: Plan): PlanSectionSlug[] {
     used.add(category);
     return { section, category };
   });
+}
+
+/**
+ * La categoría de fotos de la sección `closing` — de ahí sale la imagen del
+ * dibujo del cierre (`content.drawing.src`). Vive acá, con el resto del mapeo
+ * plan → estado, para que el cliente (paso de fotos) y el server (alta) no la
+ * deriven cada uno por su cuenta.
+ */
+export function planClosingCategory(plan: Plan): string | undefined {
+  return planSectionSlugs(plan).find((s) => s.section.kind === "closing")?.category;
 }
 
 /** ¿Está `p` entre las 5 paletas del template? Si no, cae a "rosa". */
@@ -96,6 +106,11 @@ export function planToWizardState(plan: Plan, palette?: string): WizardState {
       left: { name: leftName },
       right: { name: rightName },
     },
+    // El aniversario sale del intake (skills/orchestrator lo pregunta): alimenta
+    // el contador, el eyebrow del hero y la línea del cierre. Sin él, esos campos
+    // quedan vacíos — NUNCA con la fecha de la demo.
+    dates: { together: plan.dates.together, met: plan.dates.met },
+    narrator: planNarrator(plan).you,
     story,
     sections,
     categories,

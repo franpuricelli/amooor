@@ -52,11 +52,46 @@ export const zPlanSection = z.object({
 });
 export type PlanSection = z.infer<typeof zPlanSection>;
 
+/**
+ * Normaliza una fecha del LLM a ISO `yyyy-mm-dd`. Acepta lo que suele dropear:
+ * ISO, `dd/mm/yyyy`, `dd-mm-yyyy` y `yyyy-mm` (→ día 1). Cualquier otra cosa
+ * (incluido "no sé") queda como "" y el sitio simplemente no muestra la fecha.
+ */
+export function normalizePlanDate(input: unknown): string {
+  const raw = typeof input === "string" ? input.trim() : "";
+  if (!raw) return "";
+  const iso = /^(\d{4})-(\d{1,2})(?:-(\d{1,2}))?$/.exec(raw);
+  if (iso) {
+    const [, y, m, d] = iso;
+    return `${y}-${m.padStart(2, "0")}-${(d ?? "1").padStart(2, "0")}`;
+  }
+  const dmy = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/.exec(raw);
+  if (dmy) {
+    const [, d, m, y] = dmy;
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+  return "";
+}
+
+const zPlanDates = z
+  .object({
+    /** aniversario: desde cuándo están juntos (ancla del contador y del hero) */
+    together: z.unknown().transform(normalizePlanDate).default(""),
+    /** el día que se conocieron (opcional, alimenta el bloque del contador) */
+    met: z.unknown().transform(normalizePlanDate).default(""),
+  })
+  .default({ together: "", met: "" });
+
 /** El plan estructurado que el agente propone tras entender la historia. */
 export const zPlan = z
   .object({
     /** nombres de las dos personas (para personalizar el título del plan) */
     names: z.array(z.string()).default([]),
+    /** cuál de los dos es la persona que está armando el sitio (su nombre tal
+     *  cual aparece en `names`). Firma el cierre y el crédito del footer. */
+    you: z.string().default(""),
+    /** las fechas de la pareja (aniversario + cuándo se conocieron) */
+    dates: zPlanDates,
     /** título/ángulo editorial del sitio (voz de la pareja) */
     title: z.string().min(1),
     /** el ángulo narrativo en 1–2 frases: de qué va este sitio */
@@ -97,4 +132,17 @@ export type Plan = z.infer<typeof zPlan>;
 export function parsePlan(data: unknown): Plan | null {
   const res = zPlan.safeParse(data);
   return res.success ? res.data : null;
+}
+
+/**
+ * El nombre de quien arma el sitio y el de su pareja, según `plan.you`. Si el
+ * plan no lo trae (o no matchea), asumimos el primero de `names` — pero el
+ * intake lo pregunta explícitamente (skills/orchestrator).
+ */
+export function planNarrator(plan: Plan): { you: string; partner: string } {
+  const names = plan.names.map((n) => n.trim()).filter(Boolean);
+  const norm = (s: string) => s.toLowerCase();
+  const i = plan.you ? names.findIndex((n) => norm(n) === norm(plan.you.trim())) : -1;
+  const idx = i >= 0 ? i : 0;
+  return { you: names[idx] ?? "", partner: names[idx === 0 ? 1 : 0] ?? "" };
 }

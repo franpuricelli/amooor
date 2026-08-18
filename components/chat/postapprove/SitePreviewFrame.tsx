@@ -165,6 +165,8 @@ export default function SitePreviewFrame({
   const [doc, setDoc] = useState<Document | null>(null);
   // vista escritorio ↔ celular (el toggle de la barra del navegador del preview)
   const [device, setDevice] = useState<Device>("desktop");
+  // cartel de "esto se edita acá" — se va al primer toque sobre el sitio o con la ✕
+  const [hint, setHint] = useState(true);
 
   // ── scroll-spy: la sección cuyo tope ya pasó la línea de referencia (30% del
   //    alto visible) es la "activa". rAF para no disparar en cada píxel. ─────────
@@ -242,16 +244,36 @@ export default function SitePreviewFrame({
         </div>
         {toolbar && <div className="pa-frame-tools">{toolbar}</div>}
       </div>
-      <div className={`pa-frame-body ${device === "mobile" ? "is-mobile" : ""}`}>
+      {/* La superficie es EDITABLE y no se nota: lo decimos una vez, arriba del
+          sitio, hasta que la persona edite algo (o lo cierre). */}
+      {edit && hint && (
+        <div className="pa-edit-hint">
+          <span>
+            Tocá cualquier <b>texto</b> del sitio para editarlo, o una <b>foto</b> para
+            cambiarla.
+          </span>
+          <button type="button" aria-label="Entendido" onClick={() => setHint(false)}>
+            ✕
+          </button>
+        </div>
+      )}
+      {/* Los eventos de un portal suben por el árbol de REACT, no por el DOM: un
+          click adentro del <iframe> llega igual hasta acá, así que un solo handler
+          en captura baja el cartel sin tener que envolver la API de edición. */}
+      <div
+        className={`pa-frame-body ${device === "mobile" ? "is-mobile" : ""}`}
+        onClickCapture={hint ? () => setHint(false) : undefined}
+      >
         {device === "mobile" ? (
-          // en mobile el preview es view-only (se edita en escritorio)
+          // la vista celular también edita: es el mismo árbol de React portaleado
+          // dentro del iframe, así que el copy y las fotos responden igual.
           <PreviewViewport
             width={390}
             title="Vista celular"
             className="pa-mobile-iframe"
             onDoc={setDoc}
           >
-            <PreviewSite content={content} theme={theme} framed />
+            <PreviewSite content={content} theme={theme} edit={edit} framed />
           </PreviewViewport>
         ) : (
           // escritorio: se rinde a DESIGN_WIDTH y se escala al panel, así el sitio ve

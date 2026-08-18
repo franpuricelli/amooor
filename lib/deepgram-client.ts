@@ -63,8 +63,15 @@ export async function startDeepgram(
         : "No pude iniciar el dictado. Probá de nuevo."
     );
   }
-  const { access_token } = await tokenRes.json();
+  const { access_token, scheme } = await tokenRes.json();
   if (!access_token) throw new Error("Token de dictado inválido.");
+  // Deepgram distingue la credencial por SUBPROTOCOLO: la key real viaja como
+  // "token" y el token efímero de /auth/grant (un JWT) como "bearer". Mandar el
+  // JWT como "token" hace que rechace el handshake y el WS muera al instante:
+  // en dev andaba (DEEPGRAM_ALLOW_RAW_KEY sirve la key real) y en prod siempre
+  // fallaba con "Se cortó la conexión con el dictado". Default = bearer, que es
+  // el camino normal; el server nos dice cuál usar.
+  const authProto = scheme === "token" ? "token" : "bearer";
 
   // 2) micrófono (con timeout: en algunos entornos getUserMedia se cuelga).
   const mediaStream = await withTimeout(
@@ -100,7 +107,7 @@ export async function startDeepgram(
     const m = pickMimeType();
     return new MediaRecorder(mediaStream, m ? { mimeType: m } : undefined);
   })();
-  const ws = new WebSocket(DG_WS_URL, ["token", access_token]);
+  const ws = new WebSocket(DG_WS_URL, [authProto, access_token]);
 
   let finalText = "";
   let interim = "";
@@ -166,6 +173,13 @@ export async function startDeepgram(
     }
   };
   ws.onerror = () => {
+    cb.onError("Se cortó la conexión con el dictado.");
+    stop("error");
+  };
+  // Si el socket se cierra solo (no lo cerramos nosotros), sin esto el micrófono
+  // se queda abierto y la UI grabando para siempre. Cortamos con lo que haya.
+  ws.onclose = () => {
+    if (stopped) return;
     cb.onError("Se cortó la conexión con el dictado.");
     stop("error");
   };

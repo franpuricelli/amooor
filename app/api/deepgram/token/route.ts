@@ -37,7 +37,13 @@ export async function POST(req: NextRequest) {
     console.warn(
       "[deepgram/token] DEV: sirviendo la key REAL al browser (DEEPGRAM_ALLOW_RAW_KEY). No usar en prod."
     );
-    return NextResponse.json({ access_token: key, expires_in: 0, dev_raw_key: true });
+    // scheme "token": así se autentica la KEY REAL en el WS (ver el cliente).
+    return NextResponse.json({
+      access_token: key,
+      expires_in: 0,
+      dev_raw_key: true,
+      scheme: "token",
+    });
   }
 
   try {
@@ -59,9 +65,12 @@ export async function POST(req: NextRequest) {
     }
     const data = await res.json();
     // La API devuelve { access_token, expires_in }. Sólo eso llega al browser.
+    // scheme "bearer": el token efímero es un JWT y Deepgram lo rechaza si se
+    // manda como "token" (ese subprotocolo es para la key real).
     return NextResponse.json({
       access_token: data.access_token,
       expires_in: data.expires_in ?? TTL_SECONDS,
+      scheme: "bearer",
     });
   } catch (e) {
     return NextResponse.json(

@@ -54,6 +54,9 @@ export interface EventProps {
   plan_generated: { sections: number; kinds: string[]; refined: boolean };
   plan_section_removed: { kind: string; remaining: number };
   plan_assumption_corrected: { remaining: number };
+  /** la pareja corrigió a mano los datos duros del plan (tarjeta del plan) */
+  plan_narrator_set: Record<string, never>;
+  plan_anniversary_set: { had_date: boolean };
   plan_approved: { sections: number; palette: string; template: string };
   /** atajo de dev "skip wizard" — sirve para excluir sesiones internas */
   demo_plan_loaded: Record<string, never>;

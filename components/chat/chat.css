@@ -743,6 +743,77 @@
   line-height: 1.55;
   margin: 0 0 0.9rem;
 }
+/* ── datos duros del plan: aniversario + quién de los dos sos ───────────────── */
+.ch-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.4rem;
+  align-items: center;
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--mk-line-soft);
+  border-radius: var(--mk-r-md);
+  background: var(--mk-card);
+}
+.ch-fact {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.ch-fact-label {
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mk-ink-3);
+}
+/* la fecha: se ve como un chip y abre el date picker nativo al tocarla */
+.ch-fact-date {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.28rem 0.6rem;
+  border: 1px solid var(--mk-line);
+  border-radius: 999px;
+  font-size: 0.86rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.ch-fact-date.missing {
+  border-color: var(--mk-rose);
+  color: var(--mk-rose-text);
+  background: var(--mk-rose-soft);
+}
+.ch-fact-date input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  cursor: pointer;
+}
+.ch-fact-who {
+  display: inline-flex;
+  gap: 0.3rem;
+}
+.ch-fact-chip {
+  padding: 0.28rem 0.65rem;
+  border: 1px solid var(--mk-line);
+  border-radius: 999px;
+  font-size: 0.86rem;
+  color: var(--mk-ink-2);
+  background: transparent;
+  transition: background 0.14s, color 0.14s, border-color 0.14s;
+}
+.ch-fact-chip:hover {
+  border-color: var(--mk-rose);
+}
+.ch-fact-chip.on {
+  background: var(--mk-ink);
+  border-color: var(--mk-ink);
+  color: #fff;
+}
+
 .ch-plan-tone {
   font-size: 0.9rem;
   color: var(--mk-ink-2);
@@ -3285,6 +3356,32 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
+}
+
+/* cartel de "el preview se edita acá" (sólo en el editor, hasta la 1ª edición) */
+.pa-edit-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.84rem;
+  color: var(--mk-ink-2);
+  background: var(--mk-rose-soft);
+  border-bottom: 1px solid var(--mk-line-soft);
+}
+.pa-edit-hint b {
+  color: var(--mk-ink);
+  font-weight: 650;
+}
+.pa-edit-hint button {
+  margin-left: auto;
+  flex: none;
+  line-height: 1;
+  color: var(--mk-ink-3);
+  padding: 0.15rem 0.3rem;
+}
+.pa-edit-hint button:hover {
+  color: var(--mk-ink);
 }
 
 /* editor de textos (panel "Textos") */

@@ -10,6 +10,8 @@ export const SKIP_WIZARD_TRIGGER = "skip wizard";
 
 export const PURIVI_PLAN: Plan = {
   names: ["Puri", "Ivi"],
+  you: "Puri",
+  dates: { together: "2022-07-26", met: "2022-03-15" },
   title: "Cuatro años, un mismo lugar",
   angle:
     "La historia de Puri e Ivi contada como una cápsula de tiempo: de la facu al living, con las escapadas y los días chiquitos que se volvieron un hogar.",

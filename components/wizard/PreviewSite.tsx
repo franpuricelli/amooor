@@ -15,7 +15,7 @@ import { TenantProvider } from "@/lib/tenant";
 import { EditProvider, type EditAPI } from "@/lib/edit-context";
 import { SECTION_REGISTRY } from "@/components/sections/registry";
 import MatchaSite from "@/components/templates/MatchaSite";
-import { resolvePalette, paletteVars } from "@/lib/theme";
+import { themeVars } from "@/lib/theme";
 import { fontVariables } from "@/app/fonts";
 import type { Content } from "@/lib/content";
 import type { Theme } from "@/lib/template";
@@ -34,15 +34,19 @@ export default function PreviewSite({
    *  desactiva Lenis para usar el scroll nativo del contenedor. */
   framed?: boolean;
 }) {
-  const paletteStyle = paletteVars(resolvePalette(theme)) as React.CSSProperties;
+  // Paleta + tokens del skin elegido (derivados de esa misma paleta), como vars
+  // inline sobre el root del preview.
+  const paletteStyle = themeVars(theme) as React.CSSProperties;
 
   // "Matcha" is a different structure (not a [data-template] skin): render the
   // whole story page from the same content via the adapter, inside the tenant
   // provider so useContent()/usePhotos() resolve this draft's copy + photos.
   const isMatcha = theme.template === "matcha";
 
+  // El preview es del BUILDER: mientras la pareja todavía no subió fotos a una
+  // sección, mostramos marcos vacíos (no las fotos de la demo, ni un hueco).
   const tree = (
-    <TenantProvider content={content}>
+    <TenantProvider content={content} placeholders>
       {isMatcha ? (
         <MatchaSite />
       ) : (
@@ -72,9 +76,13 @@ export default function PreviewSite({
   // root: su CSS (app/globals.css) re-estiliza tipografía/bordes/tratamiento. Las
   // vars de fuente viajan con el div, así el skin rinde igual en escritorio
   // (in-tree) y en el <iframe> celular (portal) de SitePreviewFrame.
+  //
+  // `site-canvas` hace de <body>: el preview vive dentro de un iframe cuyo body NO
+  // tiene las vars de la paleta (van en ESTE div), así que sin esta clase el fondo
+  // caía al gradiente rosa por defecto de :root y la paleta elegida no se veía.
   return (
     <div
-      className={fontVariables}
+      className={`${fontVariables} site-canvas`}
       data-template={theme.template ?? "romantic"}
       style={paletteStyle}
     >

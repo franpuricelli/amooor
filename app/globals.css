@@ -57,14 +57,14 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
-body {
+/* El lienzo del sitio. Los stops del gradiente salen de la PALETA (--grad-a/-b,
+   --canvas*): antes eran rgba rosas fijos, así que el fondo seguía tirando a rosa
+   con cualquier otra paleta. */
+body,
+.site-canvas {
   background: var(--canvas);
-  background-image: radial-gradient(
-      70% 55% at 12% -5%,
-      rgba(247, 224, 234, 0.9) 0%,
-      transparent 60%
-    ),
-    radial-gradient(55% 45% at 90% 8%, rgba(224, 171, 196, 0.85) 0%, transparent 55%),
+  background-image: radial-gradient(70% 55% at 12% -5%, var(--grad-a) 0%, transparent 60%),
+    radial-gradient(55% 45% at 90% 8%, var(--canvas) 0%, transparent 55%),
     linear-gradient(180deg, var(--canvas-soft) 0%, var(--canvas) 45%, var(--canvas-deep) 100%);
   background-attachment: fixed;
   color: var(--ink);
@@ -73,6 +73,19 @@ body {
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
   line-height: 1.5;
+}
+/* dentro del preview el root hace de body: tiene que cubrir todo el alto */
+.site-canvas {
+  min-height: 100%;
+  background-attachment: local;
+}
+/* Hay skins que pintan el lienzo en el ROOT (su bloque [data-template]): en el
+   tenant real ese root es <html>, así que el <body> tiene que dejarlo pasar. Si no,
+   el sitio publicado se ve distinto del preview (p.ej. brutalist perdía su grilla).
+   Quién lo hace lo declara el registro de skins (`paintsCanvas`, lib/theme.ts) y
+   llega acá como atributo — nada de enumerar plantillas en el CSS. */
+html[data-canvas-root] body {
+  background: none;
 }
 
 img {
@@ -1835,22 +1848,24 @@ section {
    (no necesita bloque). Cada plantilla se documenta en docs/templates/<id>.md;
    AL AGREGAR UNA NUEVA PLANTILLA, sumá su bloque acá + su .md.
 
-   Los 6 tokens que PreviewSite/layout inyectan inline sobre el MISMO elemento
-   (--canvas/-soft/-deep, --pink, --ink, --dark) llevan !important para ganarle
-   al style inline; el resto son selectores de descendientes (sin inline) y no lo
-   necesitan. Las fuentes se cargan en app/fonts.ts.
+   ⚠️ Los COLORES de cada skin ya NO se hardcodean acá: los deriva de la paleta
+   elegida `templateVars()` (lib/theme.ts) y viajan como vars inline sobre el mismo
+   elemento (app/layout.tsx en el tenant, PreviewSite en el preview). Antes estos
+   bloques los fijaban con !important y por eso elegir una paleta no cambiaba nada
+   en editorial/brutalist. Lo que queda acá son (a) los valores de FALLBACK, que el
+   inline pisa, y (b) el tratamiento: tipografía, filetes, radios, sombras.
+   Las fuentes se cargan en app/fonts.ts.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ── EDITORIAL — fine-art claro: crema cálido, tinta carbón, filetes finos,
-   trío tipográfico Parisienne / Cormorant / Montserrat. ─────────────────────── */
+/* ── EDITORIAL — fine-art claro: lienzo casi neutro tintado por la paleta, tinta
+   del mismo tono, filetes finos, trío Parisienne / Cormorant / Montserrat. ──── */
 [data-template="editorial"] {
-  /* canvas — crema/greige (gana al inline) */
-  --canvas: #f3f0ea !important;
-  --canvas-soft: #eae5dc !important;
-  --canvas-deep: #e6e0d6 !important;
-  /* monocromo: el "accent" es carbón */
-  --pink: #2a251f !important;
-  --ink: #2a251f !important;
+  /* canvas — crema/greige (fallback; `templateVars` lo tinta con la paleta) */
+  --canvas: #f3f0ea;
+  --canvas-soft: #eae5dc;
+  --canvas-deep: #e6e0d6;
+  --pink: #2a251f;
+  --ink: #2a251f;
   --ink-70: rgba(42, 37, 31, 0.66);
   --ink-50: rgba(42, 37, 31, 0.46);
   /* "blanco sobre oscuro" → "carbón sobre claro" (la base usa --white p/ texto) */
@@ -1858,11 +1873,18 @@ section {
   --white-70: rgba(42, 37, 31, 0.66);
   --white-45: rgba(42, 37, 31, 0.46);
   /* superficies — paneles claros planos + filetes (sin blur de glass) */
-  --dark: #e7e1d7 !important;
+  --dark: #e7e1d7;
   --glass: #f7f4ee;
   --glass-strong: #efeae1;
   --glass-border: rgba(42, 37, 31, 0.16);
   --glass-border-soft: rgba(42, 37, 31, 0.1);
+  --skin-wash-a: #faf8f3;
+  --skin-wash-b: #efe9df;
+  --skin-panel-a: #eee9e0;
+  --skin-panel-b: #e2dbd0;
+  --skin-panel-c: #f1ece3;
+  --skin-tint-1: rgba(42, 37, 31, 0.04);
+  --skin-tint-2: rgba(42, 37, 31, 0.07);
   /* fuentes */
   --font-sans: var(--font-montserrat), "Montserrat", -apple-system, sans-serif;
   --font-serif: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
@@ -1877,8 +1899,8 @@ section {
   color: var(--ink);
   font-weight: 400;
   background: var(--canvas);
-  background-image: radial-gradient(60% 50% at 8% -8%, #faf8f3 0%, transparent 60%),
-    radial-gradient(50% 45% at 100% 0%, #efe9df 0%, transparent 55%);
+  background-image: radial-gradient(60% 50% at 8% -8%, var(--skin-wash-a) 0%, transparent 60%),
+    radial-gradient(50% 45% at 100% 0%, var(--skin-wash-b) 0%, transparent 55%);
 }
 /* paneles claros planos — sin blur ni sombra pesada */
 [data-template="editorial"] .glass,
@@ -1919,12 +1941,12 @@ section {
 }
 /* chips → tono sobre tono con filete */
 [data-template="editorial"] .chip {
-  background: rgba(42, 37, 31, 0.04);
+  background: var(--skin-tint-1);
   border: 1px solid var(--glass-border-soft);
   color: var(--ink);
 }
 [data-template="editorial"] .chip-btn:hover {
-  background: rgba(42, 37, 31, 0.07);
+  background: var(--skin-tint-2);
   border-color: var(--glass-border);
 }
 /* botones → outline recto, tinta sobre crema, se rellena en hover */
@@ -1973,25 +1995,25 @@ section {
   border-top: 1px solid var(--glass-border);
 }
 [data-template="editorial"] .pais-panel:nth-child(3n + 1) {
-  background: linear-gradient(180deg, #eee9e0 0%, #e7e1d7 100%);
+  background: linear-gradient(180deg, var(--skin-panel-a) 0%, var(--dark) 100%);
 }
 [data-template="editorial"] .pais-panel:nth-child(3n + 2) {
-  background: linear-gradient(180deg, #e9e3d9 0%, #e2dbd0 100%);
+  background: linear-gradient(180deg, var(--canvas-soft) 0%, var(--skin-panel-b) 100%);
 }
 [data-template="editorial"] .pais-panel:nth-child(3n) {
-  background: linear-gradient(180deg, #f1ece3 0%, #eae4da 100%);
+  background: linear-gradient(180deg, var(--skin-panel-c) 0%, var(--canvas-soft) 100%);
 }
-/* collage polaroid → passe-partout carbón fino + sombra suave */
+/* collage polaroid → passe-partout fino + sombra suave */
 [data-template="editorial"] .collage-tile {
-  border: 1px solid rgba(42, 37, 31, 0.16);
-  box-shadow: 0 14px 34px -20px rgba(42, 37, 31, 0.3);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 14px 34px -20px var(--ink-50);
 }
-/* acentos que eran rosa → carbón (monocromo) */
+/* los acentos llevan el color de la paleta elegida (--pink), sin el glow rosa */
 [data-template="editorial"] .nav-heart,
 [data-template="editorial"] .hero-amp,
 [data-template="editorial"] .watch-feature-note,
 [data-template="editorial"] .lightbox-grid-toggle {
-  color: var(--ink);
+  color: var(--pink);
   text-shadow: none;
 }
 /* tipografía editorial */
@@ -2060,27 +2082,33 @@ section {
   opacity: 0.8;
 }
 
-/* ── BRUTALIST — neo-brutalista: papel cálido, tinta casi negra, azul eléctrico
-   + amarillo, Bricolage Grotesque, Space Mono, bordes 2px, sombras duras. ───── */
+/* ── BRUTALIST — neo-brutalista: papel cálido, tinta casi negra, el ACENTO de la
+   paleta como "pop" (+ un realce claro del mismo tono), Bricolage Grotesque,
+   Space Mono, bordes 2px, sombras duras. Los colores son fallback: los deriva de
+   la paleta `templateVars()`. ─────────────────────────────────────────────── */
 [data-template="brutalist"] {
-  --canvas: #f4efe1 !important;
-  --canvas-soft: #efe8d6 !important;
-  --canvas-deep: #eae2cd !important;
-  --pink: #2f27e0 !important; /* accent → azul eléctrico */
-  --ink: #141210 !important;
+  --canvas: #f4efe1;
+  --canvas-soft: #efe8d6;
+  --canvas-deep: #eae2cd;
+  --pink: #2f27e0;
+  --ink: #141210;
   --ink-70: rgba(20, 18, 16, 0.72);
   --ink-50: rgba(20, 18, 16, 0.5);
   /* mantené white para el único bloque oscuro (section-dark) */
   --white: #ffffff;
   --white-70: rgba(255, 255, 255, 0.74);
   --white-45: rgba(255, 255, 255, 0.5);
-  --dark: #141210 !important; /* section-dark → bloque negro sólido */
+  --dark: #141210; /* section-dark → bloque oscuro sólido */
   --glass: #ffffff;
   --glass-strong: #ffffff;
   --glass-border: #141210;
   --glass-border-soft: #141210;
   --pop: #2f27e0;
-  --pop-yellow: #ffcf2e;
+  --on-pop: #ffffff;
+  --pop-soft: #ffcf2e;
+  --skin-panel-a: #cfe0ff;
+  --skin-panel-b: #ffe9a3;
+  --skin-grid: rgba(20, 18, 16, 0.05);
   --border: 2px solid var(--ink);
   --shadow: 5px 5px 0 var(--ink);
   --font-sans: var(--font-archivo), "Archivo", system-ui, sans-serif;
@@ -2094,8 +2122,8 @@ section {
   color: var(--ink);
   /* papel + grilla de ingeniería tenue */
   background: var(--canvas);
-  background-image: linear-gradient(rgba(20, 18, 16, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(20, 18, 16, 0.05) 1px, transparent 1px);
+  background-image: linear-gradient(var(--skin-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--skin-grid) 1px, transparent 1px);
   background-size: 30px 30px;
 }
 /* display / headings → grotesque robusta */
@@ -2134,14 +2162,14 @@ section {
   letter-spacing: 0.02em;
   font-weight: 700;
 }
-/* eyebrow → tag mono amarillo con sombra dura (no una pill de glass) */
+/* eyebrow → tag mono con el realce de la paleta y sombra dura (no una pill de glass) */
 [data-template="brutalist"] .eyebrow {
   font-family: var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-weight: 700;
   color: var(--ink);
-  background: var(--pop-yellow);
+  background: var(--pop-soft);
   border: var(--border);
   box-shadow: 3px 3px 0 var(--ink);
   padding: 0.5rem 0.85rem;
@@ -2151,7 +2179,7 @@ section {
 /* paneles → cajas blancas sólidas, borde grueso, sombra dura, sin blur */
 [data-template="brutalist"] .glass,
 [data-template="brutalist"] .glass-card {
-  background: #fff;
+  background: var(--glass);
   color: var(--ink);
   border: var(--border);
   box-shadow: var(--shadow);
@@ -2159,18 +2187,18 @@ section {
   -webkit-backdrop-filter: none;
 }
 [data-template="brutalist"] .chip {
-  background: #fff;
+  background: var(--glass);
   color: var(--ink);
   border: var(--border);
 }
 [data-template="brutalist"] .chip-btn:hover {
-  background: var(--pop-yellow);
+  background: var(--pop-soft);
   transform: translate(-1px, -1px);
 }
-/* botones → bloque azul eléctrico que "se hunde" en hover */
+/* botones → bloque del color de la paleta que "se hunde" en hover */
 [data-template="brutalist"] .btn {
   background: var(--pop);
-  color: #fff;
+  color: var(--on-pop);
   border: var(--border);
   box-shadow: 4px 4px 0 var(--ink);
   letter-spacing: 0.04em;
@@ -2180,11 +2208,11 @@ section {
   transform: translate(2px, 2px);
   box-shadow: 1px 1px 0 var(--ink);
 }
-/* section-dark → bloque negro sólido, sin glow rosa */
+/* section-dark → bloque oscuro sólido, sin glow */
 [data-template="brutalist"] .section-dark {
   background: var(--dark);
   background-image: none;
-  color: #fff;
+  color: var(--white);
   border-top: var(--border);
   border-bottom: var(--border);
 }
@@ -2204,21 +2232,21 @@ section {
   border: var(--border);
   box-shadow: var(--shadow);
 }
-/* deck de países → bloques azul/amarillo/papel, borde superior grueso */
+/* deck de países → bloques de la paleta + papel, borde superior grueso */
 [data-template="brutalist"] .pais-panel {
   border-top: 3px solid var(--ink);
   box-shadow: 0 -10px 0 -6px var(--ink);
 }
 [data-template="brutalist"] .pais-panel:nth-child(3n + 1) {
-  background: #cfe0ff;
+  background: var(--skin-panel-a);
 }
 [data-template="brutalist"] .pais-panel:nth-child(3n + 2) {
-  background: #ffe9a3;
+  background: var(--skin-panel-b);
 }
 [data-template="brutalist"] .pais-panel:nth-child(3n) {
   background: var(--canvas);
 }
-/* acentos que eran rosa → azul eléctrico */
+/* acentos → el color de la paleta elegida */
 [data-template="brutalist"] .nav-heart,
 [data-template="brutalist"] .watch-feature-note,
 [data-template="brutalist"] .lightbox-grid-toggle {
@@ -2241,7 +2269,7 @@ section {
 }
 [data-template="brutalist"] ::selection {
   background: var(--pop);
-  color: #fff;
+  color: var(--on-pop);
 }
 /* esquinas rectas en todos lados */
 [data-template="brutalist"] .eyebrow,

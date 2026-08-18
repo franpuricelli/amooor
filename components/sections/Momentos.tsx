@@ -5,12 +5,15 @@ import { fill } from "@/lib/content";
 import { useContent } from "@/lib/tenant";
 import { usePhotos } from "@/lib/photos-context";
 import { useLightbox } from "@/components/Lightbox";
-import { EditableText } from "@/lib/edit-context";
+import { EditableText, useEditableImgClass, usePhotoAction } from "@/lib/edit-context";
 
 export default function Momentos({ id }: { id: string }) {
   const { open } = useLightbox();
   const { moments, ui } = useContent();
   const { full, photos, thumb } = usePhotos();
+  // en el editor, tocar la carta lleva a CAMBIAR esa foto (no al lightbox)
+  const photoClick = usePhotoAction();
+  const editableImg = useEditableImgClass();
 
   return (
     <section id={id} className="section-pad">
@@ -31,9 +34,9 @@ export default function Momentos({ id }: { id: string }) {
           return (
             <button
               key={m.cat}
-              className={`moment-card reveal-scale span-${i < 2 ? 3 : 2}`}
+              className={`moment-card reveal-scale span-${i < 2 ? 3 : 2} ${editableImg}`}
               style={{ "--reveal-delay": `${(i % 3) * 0.07}s` } as React.CSSProperties}
-              onClick={() => open(items, 0)}
+              onClick={photoClick(m.cat, slugs[0], () => open(items, 0))}
               aria-label={fill(ui.momentAria, { title: m.title })}
             >
               <img

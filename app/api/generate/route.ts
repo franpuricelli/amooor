@@ -3,7 +3,7 @@ import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 import { parseWizardState, type WizardState } from "@/lib/draft";
 import { parsePlan } from "@/lib/plan";
-import { planToWizardState, planSectionSlugs } from "@/lib/plan-to-state";
+import { planToWizardState, planClosingCategory } from "@/lib/plan-to-state";
 import { generateContent, mediaFromPhotos } from "@/lib/generate";
 import { enhanceNarrative } from "@/lib/ai";
 import { stylizeClosingDrawing, isFalImage } from "@/lib/fal";
@@ -75,10 +75,9 @@ export async function POST(req: NextRequest) {
   const rows = await c.query(api.photos.listDraftPhotos, { draftToken });
   // Música de fondo subida (mp3 del navbar) → content.media.audioUrl.
   const audioRow = await c.query(api.audio.getDraftAudio, { draftToken });
-  const media =
-    rows.length || audioRow
-      ? mediaFromPhotos(rows, audioRow?.src)
-      : undefined;
+  // Siempre (aunque no haya subido nada): un sitio con `media` presente usa SUS
+  // fotos — sin él caería al manifiesto estático de la demo (Puri & Ivi).
+  const media = mediaFromPhotos(rows, audioRow?.src);
 
   // Rama chat-first: si el draft tiene `intakePlan` aprobado y NO tiene answers
   // del wizard viejo, generamos desde el plan (Plan → WizardState). Si no, se
@@ -90,9 +89,7 @@ export async function POST(req: NextRequest) {
   let closingCategory: string | null = null;
   if (intakePlan && !hasWizardAnswers) {
     state = planToWizardState(intakePlan, draft.theme?.palette);
-    closingCategory =
-      planSectionSlugs(intakePlan).find((s) => s.section.kind === "closing")
-        ?.category ?? null;
+    closingCategory = planClosingCategory(intakePlan) ?? null;
   } else {
     state = parseWizardState(draft.answers);
   }
@@ -109,7 +106,11 @@ export async function POST(req: NextRequest) {
     };
   }
 
-  let content = generateContent({ state, media });
+  let content = generateContent({
+    state,
+    media,
+    ...(closingCategory ? { closingCat: closingCategory } : {}),
+  });
   content = await enhanceNarrative(content, state);
 
   // Imagen del cierre (el "dibujo" que se da vuelta) → content.drawing.src.

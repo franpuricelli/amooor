@@ -53,7 +53,8 @@ export default function Pelis({ id }: { id: string }) {
           ))}
         </div>
 
-        <p className="watch-more reveal">{watch.moreLabel}</p>
+        {/* "…y las que faltan" sólo tiene sentido si ya hay títulos cargados */}
+        {list.length > 0 && <p className="watch-more reveal">{watch.moreLabel}</p>}
 
         {/* the never-ending movie */}
         {hasVideo && (

@@ -17,8 +17,10 @@ El sistema te indica el OBJETIVO (el plan o el sitio) y te adjunta el artefacto 
 ## objetivo: el plan
 
 Recibís el plan anterior (JSON) y el usuario pidió cambios. Devolvé el plan revisado
-COMPLETO, con exactamente las claves names, title, angle, tone,
-sections[{kind, title, intent}], assumptions. Respetá las reglas de estructura del
+COMPLETO, con exactamente las claves names, you, dates{together, met}, title, angle,
+tone, sections[{kind, title, intent}], assumptions. `you` es quién arma el sitio y
+`dates.together` el aniversario (yyyy-mm-dd): si el usuario los corrige, actualizalos;
+si no los tocó, dejalos tal cual venían. Respetá las reglas de estructura del
 template: la primera sección es siempre un "hero" y la última siempre un "closing";
 cada "kind" es uno de hero, story, travel, moments, watch, stats, gallery, closing.
 La voz del plan es editorial (mayúsculas normales, con oficio), no la de la charla.

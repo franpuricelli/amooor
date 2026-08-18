@@ -51,3 +51,88 @@ a `preview:` key gave `TeamNotFound` — a `dev:` key worked.
   frame borders + the `.ch-profile` circle. Unresolved: confirm with the user
   what to remove (the circle, the divider lines, or the whole column → full-bleed
   preview). Not in PR #4.
+
+---
+
+## 2026-08-17 — branch `delhi` — 4 hallazgos de QA del builder
+
+QA sobre `/comenzar`: (1) al elegir template + paleta el template no tomaba el
+color, (2) el preview de "Fotos" mostraba fotos y datos de Puri & Ivi en vez de la
+plantilla elegida, (3) el bot nunca preguntó la fecha de aniversario ni quién de
+los dos es la persona que habla, (4) "en Tu sitio no puedo editar desde el
+preview".
+
+### 1. La paleta no llegaba a la plantilla
+
+Dos causas, las dos verificadas en el navegador:
+
+- Los skins `[data-template="editorial"|"brutalist"]` fijaban sus colores con
+  `!important` justamente para ganarle a las vars inline de la paleta → elegir
+  paleta no cambiaba NADA en esas plantillas. Ahora los colores del skin los
+  **deriva de la paleta** `templateVars()` (`lib/theme.ts`) y viajan inline con
+  `themeVars()`; el CSS quedó con el tratamiento + colores de fallback, sin
+  `!important`. Regla nueva en `docs/templates/README.md`.
+- En el preview, el fondo lo pintaba `body { background: … }` del iframe, pero las
+  vars viven en el `<div>` raíz portaleado adentro → el lienzo caía al gradiente
+  rosa de `:root` aun con otra paleta. El root del preview ahora lleva
+  `.site-canvas` (mismas reglas que `body`), y el gradiente de `body` usa tokens
+  de paleta en vez de rgba rosas fijos.
+- De paso: `--ink-70/--ink-50` salían de `:root` (rosa) — ahora los deriva
+  `paletteVars()` de `palette.ink`.
+
+### 2. "Purivi" filtrado en el preview
+
+`lib/content.ts` es el content de la DEMO y `generateContent` lo usaba como
+fallback campo por campo: fotos (938 imágenes del manifiesto estático), fecha
+(26·07·2022), pelis (The Notebook…), momentos, el lede de viajes ("Bariloche fue
+el primero…"), el dibujo `/drawing.png`, la canción `when-i-was-your-man` y el
+crédito "hecho por Puri". Ahora el esqueleto sólo aporta chrome (labels, aria) y
+todo dato personal sale del plan o va vacío. Además:
+
+- `content.media` se setea SIEMPRE (aunque no haya fotos): su presencia es lo que
+  le dice a `PhotoProvider` "este sitio tiene SUS fotos". Sin él caía al
+  manifiesto estático (también en `/api/generate`, que sólo lo mandaba con fotos).
+- El preview del builder pide `placeholders`: las secciones sin fotos muestran
+  marcos vacíos (SVG neutro) en vez de nada — se ve dónde van a entrar.
+- **`RevealInit` no funcionaba dentro del iframe del preview**: buscaba los
+  `.reveal` en `document` (el padre) y creaba el IntersectionObserver con la
+  ventana del padre, así que ninguna sección se revelaba nunca y el preview se
+  veía como bloques de color vacíos. Ahora usa el documento donde está montado.
+
+### 3. Fecha de aniversario + quién sos
+
+El `Plan` no tenía dónde guardarlos, así que el intake no los pedía y el sitio
+inventaba (fecha de la demo, firma "De: Fran"). Ahora `zPlan` tiene
+`dates{together,met}` (normalizadas desde varios formatos) y `you`; el
+`orchestrator` los pide temprano y son BLOQUEANTES en el checklist oculto
+(`lib/intake-prompt.ts`); `prepare-plan`/`adapt`/`edit` los llevan en el contrato
+JSON. Viajan por `planToWizardState` → `WizardState.dates` + `narrator` → contador,
+eyebrow del hero, línea del cierre, firma del dibujo y crédito del footer. La
+tarjeta del plan los muestra y deja corregirlos sin re-sintetizar (`PlanFacts`).
+
+### 4. "No puedo editar desde el preview"
+
+El camino de escritorio SÍ funcionaba (verificado con clicks reales: foco, tipeo y
+commit en blur, con el iframe escalado). Lo que estaba roto/faltaba:
+
+- La **vista celular** del preview no recibía `edit` → era view-only en silencio.
+- Sólo la foto de PORTADA abría Multimedia; el resto abría el lightbox. Ahora
+  todas las fotos del preview (collage de historia, viajes, momentos, muro) usan
+  `usePhotoAction()` (`lib/edit-context.tsx`): en edición abren Multimedia en esa
+  foto, fuera de edición el lightbox de siempre.
+- No había ninguna pista de que el preview se editara: cartel `pa-edit-hint` arriba
+  del sitio, que se va con la primera edición.
+
+**Ojo al testear con puppeteer:** el iframe del preview está escalado con
+`transform: scale(k)`, y `frame.click(selector)` de puppeteer calcula mal las
+coordenadas (aterriza en otro elemento). Hay que mapear a mano:
+`page.mouse.click(rect.x + x*k, rect.y + y*k)`. Un click de usuario real funciona
+bien. Los eventos de React SÍ llegan dentro del iframe (React engancha los
+listeners en el contenedor del portal).
+
+### Abierto
+
+- La `watch.list` queda vacía en el pase determinista (el plan no la trae y
+  `enhanceNarrative` no la escribe): la sección de pelis se ve sin títulos hasta
+  que la pareja los pida por el chat del editor. Candidato: sumarla al plan.
+- `Stats` no tiene copy editable inline (el resto de las secciones sí).
