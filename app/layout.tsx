@@ -4,7 +4,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { esES } from "@clerk/localizations";
 import "./globals.css";
 import { fontVariables } from "./fonts";
-import { themeVars } from "@/lib/theme";
+import { skinPaintsCanvas, themeVars } from "@/lib/theme";
 import { TenantProvider } from "@/lib/tenant";
 import { resolveSite } from "@/lib/site-server";
 import PostHogProvider from "@/components/analytics/PostHogProvider";
@@ -50,6 +50,8 @@ export default async function RootLayout({
       // la plantilla elegida re-estiliza el sitio vía CSS `[data-template]`
       // (app/globals.css). Sin ella → base "romantic".
       data-template={theme.template ?? "romantic"}
+      // los skins que pintan el lienzo acá necesitan que el <body> no los tape
+      data-canvas-root={skinPaintsCanvas(theme.template) ? "" : undefined}
       style={paletteStyle}
     >
       <body>

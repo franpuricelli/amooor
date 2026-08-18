@@ -79,11 +79,12 @@ body,
   min-height: 100%;
   background-attachment: local;
 }
-/* En un skin, el lienzo lo pinta el ROOT (bloque [data-template]): en el tenant
-   real ese root es <html>, así que el <body> tiene que dejarlo pasar. Si no, el
-   sitio publicado se ve distinto del preview (p.ej. brutalist perdía su grilla). */
-html[data-template="editorial"] body,
-html[data-template="brutalist"] body {
+/* Hay skins que pintan el lienzo en el ROOT (su bloque [data-template]): en el
+   tenant real ese root es <html>, así que el <body> tiene que dejarlo pasar. Si no,
+   el sitio publicado se ve distinto del preview (p.ej. brutalist perdía su grilla).
+   Quién lo hace lo declara el registro de skins (`paintsCanvas`, lib/theme.ts) y
+   llega acá como atributo — nada de enumerar plantillas en el CSS. */
+html[data-canvas-root] body {
   background: none;
 }
 

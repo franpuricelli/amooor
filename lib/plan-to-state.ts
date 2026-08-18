@@ -49,6 +49,16 @@ export function planSectionSlugs(plan: Plan): PlanSectionSlug[] {
   });
 }
 
+/**
+ * La categoría de fotos de la sección `closing` — de ahí sale la imagen del
+ * dibujo del cierre (`content.drawing.src`). Vive acá, con el resto del mapeo
+ * plan → estado, para que el cliente (paso de fotos) y el server (alta) no la
+ * deriven cada uno por su cuenta.
+ */
+export function planClosingCategory(plan: Plan): string | undefined {
+  return planSectionSlugs(plan).find((s) => s.section.kind === "closing")?.category;
+}
+
 /** ¿Está `p` entre las 5 paletas del template? Si no, cae a "rosa". */
 function safePalette(p: string | undefined): PaletteName {
   return (PALETTES as readonly string[]).includes(p ?? "")

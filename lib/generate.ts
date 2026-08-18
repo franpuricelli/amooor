@@ -20,6 +20,7 @@ import {
   type SectionType,
 } from "./content";
 import { palettes, type PaletteId } from "./theme";
+import { fmtDate } from "./dates";
 import type { WizardState, WizardSection } from "./draft";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -28,18 +29,10 @@ const clone = <T>(x: T): T =>
     ? structuredClone(x)
     : (JSON.parse(JSON.stringify(x)) as T);
 
-/** "2022-07-26" → "26 · 07 · 2022". Vacío si la fecha no es válida. */
-function fmtDate(iso: string): string {
+/** Años cumplidos desde una fecha ISO (para el contador/eyebrow); 0 sin fecha. */
+function yearsSince(iso: string): number {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso ?? "");
-  if (!m) return "";
-  const [, y, mo, d] = m;
-  return `${d} · ${mo} · ${y}`;
-}
-
-/** Años cumplidos desde una fecha ISO (para el contador/eyebrow). */
-function yearsSince(iso: string, fallback: number): number {
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso ?? "");
-  if (!m) return fallback;
+  if (!m) return 0;
   const then = new Date(`${m[1]}-${m[2]}-${m[3]}T00:00:00`);
   const now = new Date();
   let years = now.getFullYear() - then.getFullYear();
@@ -112,7 +105,7 @@ export function generateContent({ state, media, closingCat }: GenerateInput): Co
   const rightName = state.people.right.name || nameB || "";
   const couple =
     state.couple || [leftName, rightName].filter(Boolean).join(" & ") || "Nuestra historia";
-  const years = yearsSince(state.dates.together, 0);
+  const years = yearsSince(state.dates.together);
 
   // ── site metadata ──────────────────────────────────────────────────────────
   c.couple = couple;
@@ -260,9 +253,7 @@ export function generateContent({ state, media, closingCat }: GenerateInput): Co
   // ── footer + drawing + music ────────────────────────────────────────────────
   // `narrator` = quién arma el sitio (el intake lo pregunta): es quien firma.
   const author = state.narrator?.trim() || leftName;
-  const shortDate = state.dates.together
-    ? state.dates.together.slice(0, 10).split("-").reverse().join(".")
-    : "";
+  const shortDate = fmtDate(state.dates.together, ".");
   c.footer = {
     ...c.footer,
     title: couple,

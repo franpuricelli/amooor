@@ -22,7 +22,7 @@ export interface Swatch {
   palette: Palette;
 }
 
-const clamp = (n: number, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, n));
+export const clamp = (n: number, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, n));
 
 export function hexToHsl(hex: string): [number, number, number] {
   let h = hex.replace("#", "").trim();

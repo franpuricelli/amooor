@@ -18,7 +18,7 @@ import type { UseConversation } from "@/lib/use-conversation";
 import { convexClient, isConvexConfigured } from "@/lib/convex-browser";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
-import { planSectionSlugs, planToWizardState } from "@/lib/plan-to-state";
+import { planClosingCategory, planSectionSlugs, planToWizardState } from "@/lib/plan-to-state";
 import { generateContent, mediaFromPhotos } from "@/lib/generate";
 import { uploadImage, uploadVideo, uploadAudio } from "@/lib/media-client";
 import { slugifyCouple } from "@/lib/subdomain";
@@ -167,13 +167,10 @@ export default function UploadStep({
   );
   const previewContent = useMemo(() => {
     if (!convo.plan) return null;
-    const closingCat = planSectionSlugs(convo.plan).find(
-      (s) => s.section.kind === "closing"
-    )?.category;
     return generateContent({
       state: planToWizardState(convo.plan, convo.palette),
       media,
-      closingCat,
+      closingCat: planClosingCategory(convo.plan),
     });
   }, [convo.plan, convo.palette, media]);
   const theme: Theme = useMemo(() => {

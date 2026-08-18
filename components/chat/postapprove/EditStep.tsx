@@ -9,7 +9,7 @@
 //   Mobile: una pill "Previsualizar" alterna el flujo ↔ el preview.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { UseConversation, Message } from "@/lib/use-conversation";
 import type { Activity } from "@/lib/chat-format";
 import { convexClient, isConvexConfigured } from "@/lib/convex-browser";
@@ -167,19 +167,26 @@ export default function EditStep({
   );
 
   // ── API de edición inline (copy + click imagen) ─────────────────────────────
-  const editApi: EditAPI = {
-    editing: true,
-    onEditText: (path, value) => {
-      const next = setByPath(content, path, value);
-      onContent(next);
-      scheduleSave(next, path);
-    },
-    onPickImage: (cat, slug) => {
-      setTool("media");
-      setMediaFocus({ cat, slug });
-      setMobilePane("flow");
-    },
-  };
+  //  Va memoizada porque viaja como VALUE de <EditProvider>: si cambia de
+  //  identidad, re-renderiza todo el árbol del preview. Sin esto se rearmaba en
+  //  cada render del editor — incluido el scroll-spy, que actualiza la sección
+  //  visible mientras scrolleás.
+  const editApi: EditAPI = useMemo(
+    () => ({
+      editing: true,
+      onEditText: (path, value) => {
+        const next = setByPath(content, path, value);
+        onContent(next);
+        scheduleSave(next, path);
+      },
+      onPickImage: (cat, slug) => {
+        setTool("media");
+        setMediaFocus({ cat, slug });
+        setMobilePane("flow");
+      },
+    }),
+    [content, onContent, scheduleSave]
+  );
 
   // ── rebind de media (reorder/agregar/borrar fotos → sin pisar copy) ─────────
   const rebind = useCallback(async () => {

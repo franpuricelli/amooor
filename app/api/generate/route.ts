@@ -3,7 +3,7 @@ import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 import { parseWizardState, type WizardState } from "@/lib/draft";
 import { parsePlan } from "@/lib/plan";
-import { planToWizardState, planSectionSlugs } from "@/lib/plan-to-state";
+import { planToWizardState, planClosingCategory } from "@/lib/plan-to-state";
 import { generateContent, mediaFromPhotos } from "@/lib/generate";
 import { enhanceNarrative } from "@/lib/ai";
 import { stylizeClosingDrawing, isFalImage } from "@/lib/fal";
@@ -89,9 +89,7 @@ export async function POST(req: NextRequest) {
   let closingCategory: string | null = null;
   if (intakePlan && !hasWizardAnswers) {
     state = planToWizardState(intakePlan, draft.theme?.palette);
-    closingCategory =
-      planSectionSlugs(intakePlan).find((s) => s.section.kind === "closing")
-        ?.category ?? null;
+    closingCategory = planClosingCategory(intakePlan) ?? null;
   } else {
     state = parseWizardState(draft.answers);
   }

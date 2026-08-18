@@ -33,16 +33,16 @@ export function useEdit(): EditAPI | null {
  * El click de una FOTO del sitio. En el editor, tocar una foto tiene que llevarte a
  * cambiarla (abre Multimedia en esa sección/foto) — antes eso sólo pasaba en la
  * portada y en el resto se abría el lightbox, así que el preview parecía no
- * editarse. Fuera del editor hace lo de siempre.
+ * editarse. Fuera del editor devuelve el handler de siempre (el `fallback`), o
+ * `undefined` si la foto no hace nada cuando no se está editando.
  *
  *   const photoClick = usePhotoAction();
  *   <button onClick={photoClick(cat, slug, () => open(items, i))} className={...}>
  */
 export function usePhotoAction() {
   const edit = useEdit();
-  return (cat: string, slug: string, fallback: () => void) =>
-    () =>
-      edit?.editing ? edit.onPickImage(cat, slug) : fallback();
+  return (cat: string, slug: string, fallback?: () => void) =>
+    edit?.editing ? () => edit.onPickImage(cat, slug) : fallback;
 }
 
 /** clase de afordancia para una foto clickeable en modo edición ("" si no). */

@@ -29,13 +29,19 @@ type Theme = { palette: PaletteId; template?: string; overrides?: Partial<Palett
   `[data-template="<id>"]`. `romantic` is the base (`:root`, no block). That block
   holds the *treatment* (typography, borders, radii, shadows, photo filters) plus
   **fallback** colors.
-- The skin's **colors follow the chosen palette**: `templateVars()` (`lib/theme.ts`)
-  derives each skin's surface tokens (canvas, ink, glass, `--pop`, panel tints…)
-  from the palette's accent and ships them as inline vars on the render root, next
-  to `paletteVars()` — both come from `themeVars(theme)`. So the template decides
-  *how* the site feels and the palette decides *what color* it is. Never re-add
-  `!important` color declarations to a skin block: that's exactly what made a
-  chosen palette do nothing on editorial/brutalist (QA, ago-2026).
+- The skin's **colors follow the chosen palette**. Everything the code needs to
+  know about a skin lives in one registry — `SKINS` in `lib/theme.ts`:
+  - `vars(tools)` derives that skin's surface tokens (canvas, ink, glass, `--pop`,
+    panel tints…) from the palette's accent. `themeVars(theme)` ships them as
+    inline vars on the render root, on top of the palette's own tokens.
+  - `paintsCanvas` says the skin paints the page background on the root; the
+    render sets `data-canvas-root` from it (`app/layout.tsx`) so the tenant's
+    `<body>` doesn't cover it. Don't enumerate template ids in CSS.
+
+  So the template decides *how* the site feels and the palette decides *what
+  color* it is. Never re-add `!important` color declarations to a skin block:
+  that's exactly what made a chosen palette do nothing on editorial/brutalist
+  (QA, ago-2026).
 - **Fonts** load in `app/fonts.ts` (a shared module) and their `.variable`
   rides in the render root's className (`fontVariables`), so the skin renders the
   same on desktop (in-tree) and inside the mobile `<iframe>` (portal) of
@@ -58,13 +64,15 @@ implementing the `TemplateManifest` contract in `lib/template.ts`) — keep the
    them to `fontVariables`.
 3. **CSS:** add the `[data-template="<id>"] { … }` block in `app/globals.css`
    (next to the other skins) with the treatment + fallback colors — **no
-   `!important` on color tokens**. If the skin needs its own color identity,
-   derive it from the palette in `templateVars()` (`lib/theme.ts`) so it follows
-   whatever palette the couple picked.
-4. **Standalone preview (optional):** if you want the card's "view", export the
+   `!important` on color tokens**.
+4. **Skin (only if it has its own color identity):** add an entry to `SKINS` in
+   `lib/theme.ts` — `vars()` derives its tokens from the palette, `paintsCanvas`
+   says whether it paints the page background on the root. Nothing else in the
+   codebase should branch on the template id.
+5. **Standalone preview (optional):** if you want the card's "view", export the
    static build to `public/template/<id>/` (see `app/template/<id>/page.tsx`).
-5. **Doc:** create `docs/templates/<id>.md` (copy the shape used here).
-6. **Verify:** `/comenzar` → `skip wizard` → pick the template → **Aprobar** →
+6. **Doc:** create `docs/templates/<id>.md` (copy the shape used here).
+7. **Verify:** `/comenzar` → `skip wizard` → pick the template → **Aprobar** →
    the upload preview should look different. `npx tsc --noEmit`.
 
 Nothing else touches the pipeline: `data-template` flows on its own from

@@ -234,13 +234,11 @@ export default function Chat() {
   const correctFacts = useCallback(
     (facts: { you?: string; together?: string }) => {
       if (!convo.plan) return;
-      const next = {
-        ...convo.plan,
-        ...(facts.you !== undefined ? { you: facts.you } : {}),
-        ...(facts.together !== undefined
-          ? { dates: { ...convo.plan.dates, together: facts.together } }
-          : {}),
-      };
+      const next = { ...convo.plan };
+      if (facts.you !== undefined) next.you = facts.you;
+      if (facts.together !== undefined) {
+        next.dates = { ...convo.plan.dates, together: facts.together };
+      }
       convo.setPlan(next);
       if (facts.you !== undefined) {
         correctionsRef.current.push(

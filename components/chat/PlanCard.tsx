@@ -13,6 +13,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { SECTION_KIND_LABELS, type Plan } from "@/lib/plan";
+import { fmtDate } from "@/lib/dates";
 import type { Swatch } from "@/lib/palette-gen";
 import PalettePicker from "./PalettePicker";
 import TemplateChooser from "./TemplateChooser";
@@ -207,15 +208,13 @@ function PlanFacts({
 }) {
   const names = (plan.names ?? []).map((n) => n.trim()).filter(Boolean);
   const together = plan.dates?.together ?? "";
-  const pretty = together
-    ? together.split("-").reverse().join(" · ")
-    : "falta la fecha";
+  const pretty = fmtDate(together);
   return (
     <section className="ch-facts">
       <div className="ch-fact">
         <span className="ch-fact-label">Aniversario</span>
-        <label className={`ch-fact-date ${together ? "" : "missing"}`}>
-          <span>{pretty}</span>
+        <label className={`ch-fact-date ${pretty ? "" : "missing"}`}>
+          <span>{pretty || "falta la fecha"}</span>
           <input
             type="date"
             value={together}
