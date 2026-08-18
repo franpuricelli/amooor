@@ -55,7 +55,11 @@ export default async function RootLayout({
         {/* ClerkProvider must live inside <body> (never around <html>), so
             <html> keeps its per-tenant palette style + font classes. Spanish
             localization matches the app voice. */}
-        <ClerkProvider localization={esES}>
+        <ClerkProvider
+          localization={esES}
+          signInUrl="/sign-in"
+          signUpUrl="/sign-up"
+        >
           {/* PostHog va DENTRO de Clerk: identifica al usuario con useUser(). */}
           <PostHogProvider>
             <TenantProvider content={content}>{children}</TenantProvider>
