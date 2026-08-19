@@ -82,6 +82,67 @@ const zPlanDates = z
   })
   .default({ together: "", met: "" });
 
+/**
+ * Género de una persona, tal como lo dijo quien arma el sitio. Es un dato del
+ * intake (nunca deducido del nombre); "elle" cubre lo no binario. Un valor que no
+ * sea uno de estos se descarta y esa persona se escribe en neutro.
+ */
+export const PRONOUNS = ["el", "ella", "elle"] as const;
+export type Pronoun = (typeof PRONOUNS)[number];
+
+/** Etiqueta legible de cada género — la muestran los chips de la tarjeta del plan. */
+export const PRONOUN_LABELS: Record<Pronoun, string> = {
+  el: "él",
+  ella: "ella",
+  elle: "elle",
+};
+
+/** Normaliza lo que dropee el modelo ("Él", "she", "masculino") a un Pronoun. */
+function normalizePronoun(input: unknown): Pronoun | null {
+  const raw = (typeof input === "string" ? input : "").trim().toLowerCase();
+  const alias: Record<string, Pronoun> = {
+    el: "el",
+    "él": "el",
+    he: "el",
+    him: "el",
+    masculino: "el",
+    varon: "el",
+    "varón": "el",
+    hombre: "el",
+    ella: "ella",
+    she: "ella",
+    her: "ella",
+    femenino: "ella",
+    mujer: "ella",
+    elle: "elle",
+    they: "elle",
+    them: "elle",
+    "no binarie": "elle",
+    "no binario": "elle",
+  };
+  return alias[raw] ?? null;
+}
+
+/**
+ * El mapa nombre → género, tolerante: descarta las entradas que no reconoce en vez
+ * de invalidar el plan entero (perder el plan por un pronombre raro sería peor que
+ * escribir a esa persona en neutro).
+ */
+const zPronouns = z
+  .unknown()
+  .transform((raw) => {
+    const out: Record<string, Pronoun> = {};
+    if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+      for (const [name, value] of Object.entries(raw as Record<string, unknown>)) {
+        const key = name.trim();
+        const p = normalizePronoun(value);
+        if (key && p) out[key] = p;
+      }
+    }
+    return out;
+  })
+  .default({});
+
 /** El plan estructurado que el agente propone tras entender la historia. */
 export const zPlan = z
   .object({
@@ -90,6 +151,11 @@ export const zPlan = z
     /** cuál de los dos es la persona que está armando el sitio (su nombre tal
      *  cual aparece en `names`). Firma el cierre y el crédito del footer. */
     you: z.string().default(""),
+    /** género de cada persona, por nombre: { "Ivi": "ella" }. Se PREGUNTA en el
+     *  intake y nunca se deduce del nombre (skills/orchestrator): con esto se
+     *  escribe el copy del sitio, así que suponerlo lo rompe entero. Falta el de
+     *  alguien → esa persona se escribe en neutro. */
+    pronouns: zPronouns,
     /** las fechas de la pareja (aniversario + cuándo se conocieron) */
     dates: zPlanDates,
     /** título/ángulo editorial del sitio (voz de la pareja) */
@@ -132,6 +198,19 @@ export type Plan = z.infer<typeof zPlan>;
 export function parsePlan(data: unknown): Plan | null {
   const res = zPlan.safeParse(data);
   return res.success ? res.data : null;
+}
+
+/**
+ * El género de una persona del plan, por nombre (tolerante a mayúsculas y
+ * espacios). "" si no se preguntó: quien escriba tiene que ir a neutro.
+ */
+export function planPronoun(plan: Plan, name: string): Pronoun | "" {
+  const want = name.trim().toLowerCase();
+  if (!want) return "";
+  const hit = Object.entries(plan.pronouns).find(
+    ([n]) => n.trim().toLowerCase() === want
+  );
+  return hit ? hit[1] : "";
 }
 
 /**

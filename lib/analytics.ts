@@ -52,10 +52,14 @@ export interface EventProps {
   chat_reply_failed: { mode: "chat" | "refine" | "converse"; ms: number; reason: string };
   /** el agente devolvió un plan (primero o refinado) */
   plan_generated: { sections: number; kinds: string[]; refined: boolean };
+  /** llegó un "plan" que no pasa el contrato (zPlan) → la UI avisa en vez de callar */
+  plan_invalid: Record<string, never>;
   plan_section_removed: { kind: string; remaining: number };
   plan_assumption_corrected: { remaining: number };
   /** la pareja corrigió a mano los datos duros del plan (tarjeta del plan) */
   plan_narrator_set: Record<string, never>;
+  /** corrigieron a mano el género de una de las dos personas */
+  plan_pronoun_set: { had_pronoun: boolean };
   plan_anniversary_set: { had_date: boolean };
   plan_approved: { sections: number; palette: string; template: string };
   /** atajo de dev "skip wizard" — sirve para excluir sesiones internas */

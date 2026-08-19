@@ -116,17 +116,30 @@ export async function enhanceNarrative(
 
   const system = composeSystem("website");
 
+  // El género de cada persona viaja explícito: sin esto el modelo lo deduce del
+  // nombre y escribe medio sitio en el género equivocado. "" = escribir en neutro.
+  const GENEROS: Record<string, string> = {
+    el: "él (masculino)",
+    ella: "ella (femenino)",
+    elle: "elle (lenguaje neutro, no binarie)",
+  };
+  const genero = (p: string) =>
+    GENEROS[p] ?? "no lo sabemos: escribí en neutro, sin adjetivos con género";
+
   const user = JSON.stringify({
     instruccion:
       "Reescribí los textos con la voz de esta pareja usando su historia. " +
-      "Sé concreto y emotivo, nada cursi ni genérico. Respetá los nombres.",
+      "Sé concreto y emotivo, nada cursi ni genérico. Respetá los nombres y el " +
+      "género de cada persona (no lo deduzcas del nombre).",
     pareja: content.couple,
     persona_izquierda: {
       nombre: content.people.left.name,
+      genero: genero(state.people.left.pronoun),
       personalidad: state.people.left.personality,
     },
     persona_derecha: {
       nombre: content.people.right.name,
+      genero: genero(state.people.right.pronoun),
       personalidad: state.people.right.personality,
     },
     historia: state.story,
