@@ -19,7 +19,9 @@ voz de esa pareja y que refleje la personalidad de cada uno. Definí:
 - names: array con los nombres de las dos personas si los conocés (["Martín","Ivi"]).
   Si no sabés alguno, dejá [] o solo el que sepas. No inventes nombres.
 - you: el nombre (tal cual aparece en names) de la persona que está armando el sitio,
-  o "" si no quedó claro. El sitio firma con él el cierre y el crédito del footer.
+  o "" si no quedó claro. El sitio firma con él el cierre y el crédito del footer. Si
+  te pasan contexto de la cuenta (el nombre o el mail con el que entró) y coincide con
+  uno de los dos nombres, ese es el `you`, aunque la charla no lo diga explícito.
 - pronouns: objeto { "<nombre tal cual en names>": "el" | "ella" | "elle" } con el
   género de cada persona TAL COMO lo dijo la persona en la charla. Si de alguien no
   te lo dijeron, dejalo afuera del objeto y anotá en assumptions que falta: NUNCA lo

@@ -22,6 +22,7 @@ import {
 } from "./intake-prompt";
 import { composeSystem } from "./skills";
 import { todayBlock } from "./today";
+import { identityBlock, matchNarrator, type AccountIdentity } from "./identity";
 import { parsePlan, type Plan } from "./plan";
 
 /** Checklist mental (oculto) que el orchestrator cubre conversando, nunca como form. */
@@ -221,13 +222,19 @@ function searchQuery(args: string): string {
  */
 export async function* runAgentTurn(
   messages: ChatMessage[],
+  identity: AccountIdentity | null,
   signal?: AbortSignal
 ): AsyncGenerator<AgentEvent> {
   const p = provider();
   if (!p) throw new Error("KIMI_API_KEY no configurado");
 
+  // Contexto = el checklist mental + quién entró (para confirmar el narrador en
+  // vez de preguntarlo desde cero, ver lib/identity.ts).
+  const context = [CHECKLIST_BLOCK, identityBlock(identity)]
+    .filter(Boolean)
+    .join("\n\n");
   const convo: any[] = [
-    { role: "system", content: composeSystem("orchestrator", CHECKLIST_BLOCK) },
+    { role: "system", content: composeSystem("orchestrator", context) },
     ...messages,
   ];
   const tools = webSearchEnabled()
@@ -408,6 +415,7 @@ export async function* runAgentTurn(
 // ── clasificador: ¿ya alcanza para el plan? (instant, no-stream) ──────────────
 async function assessChecklist(
   messages: ChatMessage[],
+  identity: AccountIdentity | null,
   signal?: AbortSignal
 ): Promise<{ satisfied: boolean; missing: string[] }> {
   const p = provider();
@@ -416,7 +424,12 @@ async function assessChecklist(
     const body = buildBody(
       p,
       [
-        { role: "system", content: `${CHECKLIST_SYSTEM}\n\n${todayBlock()}` },
+        {
+          role: "system",
+          content: [CHECKLIST_SYSTEM, todayBlock(), identityBlock(identity)]
+            .filter(Boolean)
+            .join("\n\n"),
+        },
         ...messages,
       ],
       "instant",
@@ -467,6 +480,7 @@ export function userAsksForPlan(messages: ChatMessage[]): boolean {
 export async function shouldDropPlan(
   messages: ChatMessage[],
   config: IntakeConfig,
+  identity: AccountIdentity | null,
   signal?: AbortSignal
 ): Promise<{ drop: boolean; forced: boolean; progress: number }> {
   const total = HIDDEN_CHECKLIST.length;
@@ -483,7 +497,7 @@ export async function shouldDropPlan(
   if (userTurns(messages) < 2) {
     return { drop: false, forced: false, progress: Math.min(userTurns(messages) * 0.15, 0.3) };
   }
-  const { satisfied, missing } = await assessChecklist(messages, signal);
+  const { satisfied, missing } = await assessChecklist(messages, identity, signal);
   // progreso real = ítems del checklist ya cubiertos / total.
   const covered = Math.max(0, total - Math.min(missing.length, total));
   const progress = satisfied ? 1 : Math.max(0.3, covered / total);
@@ -503,7 +517,12 @@ Respetá el contrato exacto: la primera sección es "hero" y la última es "clos
  */
 export async function synthesizePlan(
   messages: ChatMessage[],
-  opts: { forced?: boolean; previousPlan?: Plan | null; fast?: boolean } = {},
+  opts: {
+    forced?: boolean;
+    previousPlan?: Plan | null;
+    fast?: boolean;
+    identity?: AccountIdentity | null;
+  } = {},
   signal?: AbortSignal
 ): Promise<Plan | null> {
   const p = provider();
@@ -511,16 +530,22 @@ export async function synthesizePlan(
 
   // Refinar un plan existente = skill `edit` (objetivo: el plan). Sintetizar de cero
   // = `prepare-plan` (voz/ángulo) + `adapt` (adaptar el template al material).
+  const identity = opts.identity ?? null;
+  const append = (...blocks: (string | null | undefined)[]) =>
+    blocks.filter(Boolean).join("\n\n") || undefined;
   const system = opts.previousPlan
     ? composeSystem(
         "edit",
-        `Estás editando: EL PLAN.\nEl usuario ya vio este plan y pidió refinarlo. Plan anterior (JSON):\n${JSON.stringify(
-          opts.previousPlan
-        )}`
+        append(
+          `Estás editando: EL PLAN.\nEl usuario ya vio este plan y pidió refinarlo. Plan anterior (JSON):\n${JSON.stringify(
+            opts.previousPlan
+          )}`,
+          identityBlock(identity)
+        )
       )
     : composeSystem(
         ["prepare-plan", "adapt"],
-        opts.forced ? PLAN_FORCED_HINT : undefined
+        append(opts.forced ? PLAN_FORCED_HINT : null, identityBlock(identity))
       );
 
   // Una pasada: pide el plan y lo valida. `hint` se le agrega al system (lo usa el
@@ -551,12 +576,25 @@ export async function synthesizePlan(
   const first = opts.fast
     ? await attempt("instant", 3500)
     : await attempt("deep", 9000);
-  if (first) return first;
+  if (first) return withNarrator(first, identity);
 
   // El pass falló (JSON truncado, envuelto en prosa, o contrato roto). Antes esto
   // se comía el turno entero y la UI ya había cantado "Plan listo": reintentamos
   // UNA vez en instant (sin thinking, más chances de salir con el JSON limpio).
-  return attempt("instant", 3500, PLAN_RETRY_HINT);
+  const retry = await attempt("instant", 3500, PLAN_RETRY_HINT);
+  return retry && withNarrator(retry, identity);
+}
+
+/**
+ * Ata `plan.you` (quién arma el sitio) al nombre de la cuenta cuando el modelo no
+ * lo resolvió. Lo hacemos en código y no sólo en el prompt porque de esto depende
+ * la firma del cierre y el crédito del footer: si matchea sin ambigüedad, no hay
+ * razón para dejarlo librado al modelo ni para preguntárselo a la persona.
+ */
+function withNarrator(plan: Plan, identity: AccountIdentity | null): Plan {
+  if (plan.you.trim()) return plan;
+  const you = matchNarrator(plan.names, identity);
+  return you ? { ...plan, you } : plan;
 }
 
 // ── editor del sitio (Phase 3): instrucción → PATCH parcial de Content ─────────

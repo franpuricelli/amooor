@@ -181,6 +181,17 @@ vez en instant si la pasada deep no devuelve JSON válido (y el deep pasó de 6k
 tokens: el reasoning cuenta y se truncaba). Si el plan llega pero no pasa `zPlan`,
 el cliente avisa en vez de tragárselo en silencio (`plan_invalid`).
 
+### 5. "Quién escribe" sale de la cuenta, no de una pregunta
+
+Para entrar al chat hay que estar logueado, así que el server ya sabe con qué
+nombre y mail entró la persona: `lib/identity.ts` matchea eso contra los dos
+nombres de la pareja (nombre de pila, apellido, apodo dentro del mail; sin acentos
+y sin adivinar cuando empata) y `/api/chat` lo toma de Clerk con `currentUser()`,
+nunca del body. Va por dos caminos: al PROMPT (el agente confirma "vos sos X, no?"
+en vez de preguntar desde cero) y al CÓDIGO (`withNarrator` ata `plan.you` si el
+modelo lo dejó vacío). Del mail sólo viaja la parte local. Lo que la cuenta NO dice
+es el género: eso se sigue preguntando siempre, para las dos personas.
+
 ### Abierto
 
 - El género no se propaga al skill `edit` del sitio: una edición por chat puede

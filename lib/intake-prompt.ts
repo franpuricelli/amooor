@@ -36,7 +36,9 @@ Tres ítems son BLOQUEANTES aunque todo lo demás esté: la fecha de aniversario
 los dos es la persona que habla, y cómo se refiere a cada uno (él/ella/elle). Si falta
 alguno, "satisfied" es false y va en "missing". Ojo con el género: solo cuenta como
 cubierto si la persona lo dijo o se desprende sin ambigüedad de cómo habla de cada uno
-("mi novio", "ella me dijo"); deducirlo del nombre no cuenta.
+("mi novio", "ella me dijo"); deducirlo del nombre no cuenta. En cambio, cuál de los
+dos habla SÍ cuenta como cubierto si el contexto de la cuenta (cuando venga) lo
+identifica sin ambigüedad, aunque no se haya dicho en la charla.
 
 Escalá la exigencia según cuánto hace que están juntos:
 - relación corta o nueva (hasta ~1 año): no exijas detalle fino. Alcanza con el hilo

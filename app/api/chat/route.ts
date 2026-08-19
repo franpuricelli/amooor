@@ -9,7 +9,9 @@ import {
   type ChatMessage,
 } from "@/lib/llm";
 import { parsePlan, type Plan } from "@/lib/plan";
+import type { AccountIdentity } from "@/lib/identity";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { currentUser } from "@clerk/nextjs/server";
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  POST /api/chat — el endpoint SSE del intake conversacional (chat-first).
@@ -47,6 +49,33 @@ const zBody = z.object({
   previousPlan: z.unknown().optional(),
 });
 
+/**
+ * Quién está armando el sitio, según la SESIÓN (no según el cliente: el body no
+ * puede reclamar ser otra persona). Con esto el agente confirma el narrador en vez
+ * de preguntarlo desde cero y `plan.you` se resuelve solo (ver lib/identity.ts).
+ * Del mail viaja sólo la parte local: el dominio no aporta al match.
+ */
+async function accountIdentity(): Promise<AccountIdentity | null> {
+  try {
+    const user = await currentUser();
+    if (!user) return null;
+    const name =
+      [user.firstName, user.lastName].filter(Boolean).join(" ").trim() ||
+      user.fullName?.trim() ||
+      user.username?.trim() ||
+      "";
+    const email =
+      user.primaryEmailAddress?.emailAddress ??
+      user.emailAddresses?.[0]?.emailAddress ??
+      "";
+    const emailLocal = email.split("@")[0] ?? "";
+    return name || emailLocal ? { name, emailLocal } : null;
+  } catch {
+    // Clerk sin configurar o sesión rota: el intake pregunta como antes.
+    return null;
+  }
+}
+
 export async function POST(req: NextRequest) {
   let body: z.infer<typeof zBody>;
   try {
@@ -61,6 +90,7 @@ export async function POST(req: NextRequest) {
   }
 
   const config = intakeConfig();
+  const identity = await accountIdentity();
   const messages: ChatMessage[] = body.messages;
   const encoder = new TextEncoder();
 
@@ -109,7 +139,8 @@ export async function POST(req: NextRequest) {
         // Conversar: el usuario quiere darle más detalle (o refinar sin saber qué);
         // el agente hace preguntas en vez de re-sintetizar el plan.
         if (body.converse) {
-          for await (const ev of runAgentTurn(messages, req.signal)) send(ev);
+          for await (const ev of runAgentTurn(messages, identity, req.signal))
+            send(ev);
           send({ type: "done" });
           return close();
         }
@@ -121,7 +152,7 @@ export async function POST(req: NextRequest) {
           try {
             plan = await synthesizePlan(
               messages,
-              { previousPlan: parsePlan(body.previousPlan), fast: true },
+              { previousPlan: parsePlan(body.previousPlan), fast: true, identity },
               req.signal
             );
           } catch (e) {
@@ -143,7 +174,12 @@ export async function POST(req: NextRequest) {
         }
 
         // ¿seguir preguntando o dropear el plan? (único punto de decisión)
-        const decision = await shouldDropPlan(messages, config, req.signal);
+        const decision = await shouldDropPlan(
+          messages,
+          config,
+          identity,
+          req.signal
+        );
         // progreso real del checklist para la barra del header.
         send({ type: "progress", value: decision.progress });
         if (decision.drop) {
@@ -152,7 +188,7 @@ export async function POST(req: NextRequest) {
           try {
             plan = await synthesizePlan(
               messages,
-              { forced: decision.forced },
+              { forced: decision.forced, identity },
               req.signal
             );
           } catch (e) {
@@ -166,14 +202,16 @@ export async function POST(req: NextRequest) {
             // Si la síntesis falló, seguimos la charla en vez de romper el flujo
             // (y el paso queda marcado como fallido, no como "listo").
             planFailed("Sigo un poco más con vos.");
-            for await (const ev of runAgentTurn(messages, req.signal)) send(ev);
+            for await (const ev of runAgentTurn(messages, identity, req.signal))
+            send(ev);
           }
           send({ type: "done" });
           return close();
         }
 
         // Modo conversación agéntico: razona, puede buscar en la web, y responde.
-        for await (const ev of runAgentTurn(messages, req.signal)) send(ev);
+        for await (const ev of runAgentTurn(messages, identity, req.signal))
+          send(ev);
         send({ type: "done" });
         return close();
       } catch (e) {
