@@ -8,7 +8,7 @@ import {
   llmConfigured,
   type ChatMessage,
 } from "@/lib/llm";
-import { parsePlan } from "@/lib/plan";
+import { parsePlan, type Plan } from "@/lib/plan";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -22,8 +22,8 @@ import { rateLimit, clientIp } from "@/lib/rate-limit";
 //
 //  Decide el modo con lib/llm.shouldDropPlan (único punto de decisión): mientras
 //  el checklist no esté satisfecho streamea preguntas (instant mode); cuando lo
-//  está (o si algún día se setea MAX_USER_TURNS y se alcanza) sintetiza el plan
-//  (thinking mode). La KIMI_API_KEY nunca sale del server (lib/llm es server-only).
+//  está —o cuando la persona pide el plan, o se toca el techo de turnos— sintetiza
+//  el plan (thinking mode). La KIMI_API_KEY nunca sale del server (lib/llm es server-only).
 //  Persistencia: la hace el cliente (lib/use-conversation → drafts.save).
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -88,17 +88,23 @@ export async function POST(req: NextRequest) {
           return close();
         }
 
-        // "Armando el plan…" para el timeline de actividad.
-        const planActivity = (status: "running" | "done") =>
+        // Paso "Armando tu plan" del timeline. Regla: NUNCA se marca listo si no
+        // hay un plan de verdad. Cantar "Plan listo" y no dropear nada (síntesis
+        // fallida) fue el bug reportado: el paso queda en estado de error y la
+        // charla sigue, en vez de mentirle a la persona.
+        const planStep = (
+          label: string,
+          status: "running" | "done" | "error",
+          detail?: string
+        ) =>
           send({
             type: "activity",
-            activity: {
-              id: "plan",
-              kind: "plan",
-              label: status === "running" ? "Armando tu plan" : "Plan listo",
-              status,
-            },
+            activity: { id: "plan", kind: "plan", label, detail, status },
           });
+        const planStart = () => planStep("Armando tu plan", "running");
+        const planDone = () => planStep("Plan listo", "done");
+        const planFailed = (detail?: string) =>
+          planStep("No pude armar el plan", "error", detail);
 
         // Conversar: el usuario quiere darle más detalle (o refinar sin saber qué);
         // el agente hace preguntas en vez de re-sintetizar el plan.
@@ -110,19 +116,28 @@ export async function POST(req: NextRequest) {
 
         // Refinar: ya había un plan y el usuario pidió cambios → re-sintetizar directo.
         if (body.refine) {
-          planActivity("running");
-          const plan = await synthesizePlan(
-            messages,
-            { previousPlan: parsePlan(body.previousPlan), fast: true },
-            req.signal
-          );
-          planActivity("done");
-          if (plan) send({ type: "plan", plan });
-          else
+          planStart();
+          let plan: Plan | null = null;
+          try {
+            plan = await synthesizePlan(
+              messages,
+              { previousPlan: parsePlan(body.previousPlan), fast: true },
+              req.signal
+            );
+          } catch (e) {
+            planFailed();
+            throw e; // lo reporta el catch de afuera (evento `error` + `done`)
+          }
+          if (plan) {
+            send({ type: "plan", plan });
+            planDone();
+          } else {
+            planFailed("Probá reformular el cambio.");
             send({
               type: "error",
               message: "No pude rearmar el plan. Probá reformular el cambio.",
             });
+          }
           send({ type: "done" });
           return close();
         }
@@ -132,17 +147,25 @@ export async function POST(req: NextRequest) {
         // progreso real del checklist para la barra del header.
         send({ type: "progress", value: decision.progress });
         if (decision.drop) {
-          planActivity("running");
-          const plan = await synthesizePlan(
-            messages,
-            { forced: decision.forced },
-            req.signal
-          );
-          planActivity("done");
+          planStart();
+          let plan: Plan | null = null;
+          try {
+            plan = await synthesizePlan(
+              messages,
+              { forced: decision.forced },
+              req.signal
+            );
+          } catch (e) {
+            planFailed();
+            throw e; // lo reporta el catch de afuera (evento `error` + `done`)
+          }
           if (plan) {
             send({ type: "plan", plan });
+            planDone();
           } else {
-            // Si la síntesis falló, seguimos la charla en vez de romper el flujo.
+            // Si la síntesis falló, seguimos la charla en vez de romper el flujo
+            // (y el paso queda marcado como fallido, no como "listo").
+            planFailed("Sigo un poco más con vos.");
             for await (const ev of runAgentTurn(messages, req.signal)) send(ev);
           }
           send({ type: "done" });

@@ -11,6 +11,9 @@ export const SKIP_WIZARD_TRIGGER = "skip wizard";
 export const PURIVI_PLAN: Plan = {
   names: ["Puri", "Ivi"],
   you: "Puri",
+  // El género se pregunta, no se deduce del nombre: la demo lo deja vacío a
+  // propósito (así se ve cómo queda la tarjeta cuando el intake no lo pescó).
+  pronouns: {},
   dates: { together: "2022-07-26", met: "2022-03-15" },
   title: "Cuatro años, un mismo lugar",
   angle:

@@ -11,7 +11,7 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parsePlan, planNarrator, normalizePlanDate } from "./plan";
+import { parsePlan, planNarrator, planPronoun, normalizePlanDate } from "./plan";
 
 const legacy = {
   names: ["Ana", "Bruno"],
@@ -23,10 +23,11 @@ const legacy = {
   assumptions: [],
 };
 
-test("un plan viejo (sin you/dates) sigue parseando", () => {
+test("un plan viejo (sin you/dates/pronouns) sigue parseando", () => {
   const p = parsePlan(legacy);
   assert.ok(p);
   assert.equal(p!.you, "");
+  assert.deepEqual(p!.pronouns, {});
   assert.deepEqual(p!.dates, { together: "", met: "" });
   assert.equal(planNarrator(p!).you, "Ana");
   assert.equal(planNarrator(p!).partner, "Bruno");
@@ -47,4 +48,22 @@ test("dates del LLM en dd/mm/yyyy llegan normalizadas al plan", () => {
   assert.equal(p!.dates.together, "2021-03-08");
   assert.equal(p!.dates.met, "");
   assert.equal(planNarrator(p!).you, "Bruno");
+});
+
+test("pronouns: normaliza lo que dropea el LLM y descarta lo que no entiende", () => {
+  const p = parsePlan({
+    ...legacy,
+    pronouns: { Ana: "Ella", " Bruno ": "él", Nadie: "helicóptero" },
+  });
+  assert.ok(p);
+  assert.equal(planPronoun(p!, "ana"), "ella");
+  assert.equal(planPronoun(p!, "Bruno"), "el");
+  // un valor que no reconocemos se descarta (esa persona va en neutro), pero el
+  // plan entero NO se pierde por eso.
+  assert.equal(planPronoun(p!, "Nadie"), "");
+});
+
+test("pronouns basura (string, array) no invalida el plan", () => {
+  assert.ok(parsePlan({ ...legacy, pronouns: "ella y el" }));
+  assert.ok(parsePlan({ ...legacy, pronouns: ["ella", "el"] }));
 });

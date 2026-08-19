@@ -21,7 +21,9 @@ export interface Activity {
   kind: ActivityKind;
   label: string;
   detail?: string;
-  status: "running" | "done";
+  /** "error" = el paso no salió (p.ej. la síntesis del plan falló). Nunca marcamos
+   *  "done" un paso que no terminó de verdad: la UI tiene que decir la verdad. */
+  status: "running" | "done" | "error";
   meta?: string;
 }
 

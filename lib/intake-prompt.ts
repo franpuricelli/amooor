@@ -13,6 +13,7 @@
 export const HIDDEN_CHECKLIST = [
   "quiénes son los dos: nombres y la PERSONALIDAD de cada uno (qué los hace ser ellos)",
   "CUÁL de los dos es la persona que está hablando (quién arma el sitio)",
+  "CÓMO se refiere a cada uno (él / ella / elle): dicho por la persona, nunca deducido del nombre",
   "la FECHA de aniversario (desde cuándo están juntos): al menos mes y año",
   "el arco general de la relación: cómo se conocieron (a grandes rasgos) y dónde están hoy",
   "si la persona ya tiene una idea de la estructura/secciones que quiere, o prefiere que se la propongamos",
@@ -31,8 +32,11 @@ YA hay suficiente material GENERAL para proponer un plan de sitio.
 Hay suficiente cuando se entiende, a grandes rasgos:
 ${HIDDEN_CHECKLIST.map((c) => `- ${c}`).join("\n")}
 
-Dos ítems son BLOQUEANTES aunque todo lo demás esté: la fecha de aniversario y cuál de
-los dos es la persona que habla. Si falta alguno, "satisfied" es false y va en "missing".
+Tres ítems son BLOQUEANTES aunque todo lo demás esté: la fecha de aniversario, cuál de
+los dos es la persona que habla, y cómo se refiere a cada uno (él/ella/elle). Si falta
+alguno, "satisfied" es false y va en "missing". Ojo con el género: solo cuenta como
+cubierto si la persona lo dijo o se desprende sin ambigüedad de cómo habla de cada uno
+("mi novio", "ella me dijo"); deducirlo del nombre no cuenta.
 
 Escalá la exigencia según cuánto hace que están juntos:
 - relación corta o nueva (hasta ~1 año): no exijas detalle fino. Alcanza con el hilo

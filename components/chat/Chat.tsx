@@ -19,7 +19,7 @@ import { parseDeepen, deriveShared } from "@/lib/chat-format";
 import type { Swatch } from "@/lib/palette-gen";
 import ChatMessages from "./ChatMessages";
 import ChatComposer, { type SendOpts } from "./ChatComposer";
-import PlanCard from "./PlanCard";
+import PlanCard, { type PlanFactsChange } from "./PlanCard";
 import ProfileMenu from "./ProfileMenu";
 import SharedPanel from "./SharedPanel";
 import SelectionReply from "./SelectionReply";
@@ -231,13 +231,19 @@ export default function Chat() {
   // Corregir los datos duros del plan (aniversario / quién de los dos arma el
   // sitio) = edición LOCAL: el sitio los necesita sí o sí y no vale la pena una
   // re-síntesis. La nota queda para que el agente no los vuelva a suponer.
-  const correctFacts = useCallback(
-    (facts: { you?: string; together?: string }) => {
+  const correctFacts = useCallback<PlanFactsChange>(
+    (facts) => {
       if (!convo.plan) return;
       const next = { ...convo.plan };
       if (facts.you !== undefined) next.you = facts.you;
       if (facts.together !== undefined) {
         next.dates = { ...convo.plan.dates, together: facts.together };
+      }
+      if (facts.pronoun) {
+        next.pronouns = {
+          ...convo.plan.pronouns,
+          [facts.pronoun.name]: facts.pronoun.value,
+        };
       }
       convo.setPlan(next);
       if (facts.you !== undefined) {
@@ -251,6 +257,13 @@ export default function Chat() {
           `El aniversario (desde cuándo están juntos) es ${facts.together}. Es un hecho confirmado.`
         );
         track("plan_anniversary_set", { had_date: !!convo.plan.dates.together });
+      }
+      if (facts.pronoun) {
+        const { name, value } = facts.pronoun;
+        correctionsRef.current.push(
+          `De ${name} se habla en "${value}". Es un hecho confirmado: escribí todo el sitio con ese género.`
+        );
+        track("plan_pronoun_set", { had_pronoun: !!convo.plan.pronouns[name] });
       }
     },
     [convo]
@@ -480,6 +493,21 @@ export default function Chat() {
               kinds: p.sections.map((s) => s.kind),
               refined: hasPlan,
             });
+          } else {
+            // Llegó un plan que no pasa el contrato: NO lo tapamos. Si el paso del
+            // timeline ya decía "Plan listo", lo corregimos (fue el bug reportado:
+            // "me puso plan listo y no estaba listo").
+            ensureAssistant();
+            updateLast((m) => ({
+              ...m,
+              activities: (m.activities ?? []).map((a) =>
+                a.id === "plan"
+                  ? { ...a, label: "No pude armar el plan", status: "error" as const }
+                  : a
+              ),
+            }));
+            setError("El plan llegó incompleto. Pedime que lo arme de nuevo.");
+            track("plan_invalid", {});
           }
           setRefining(false); // llegó el plan nuevo → expandimos de nuevo
         } else if (evt.type === "error") {
