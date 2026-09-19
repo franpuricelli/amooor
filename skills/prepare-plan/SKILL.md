@@ -19,10 +19,19 @@ voz de esa pareja y que refleje la personalidad de cada uno. Definí:
 - names: array con los nombres de las dos personas si los conocés (["Martín","Ivi"]).
   Si no sabés alguno, dejá [] o solo el que sepas. No inventes nombres.
 - you: el nombre (tal cual aparece en names) de la persona que está armando el sitio,
-  o "" si no quedó claro. El sitio firma con él el cierre y el crédito del footer.
-- dates: { "together": "yyyy-mm-dd", "met": "yyyy-mm-dd" }. `together` es el
-  ANIVERSARIO (desde cuándo están juntos): es el ancla del contador de tiempo, de la
-  portada y del cierre. Si solo sabés mes y año, poné el día 01; si no lo sabés,
+  o "" si no quedó claro. El sitio firma con él el cierre y el crédito del footer. Si
+  te pasan contexto de la cuenta (el nombre o el mail con el que entró) y coincide con
+  uno de los dos nombres, ese es el `you`, aunque la charla no lo diga explícito.
+- pronouns: objeto { "<nombre tal cual en names>": "el" | "ella" | "elle" } con el
+  género de cada persona TAL COMO lo dijo la persona en la charla. Si de alguien no
+  te lo dijeron, dejalo afuera del objeto y anotá en assumptions que falta: NUNCA lo
+  deduzcas del nombre ni del tipo de pareja. Con esto se escribe todo el copy del
+  sitio, así que un género inventado se filtra en cada frase.
+- dates: { "together": "yyyy-mm-dd", "met": "yyyy-mm-dd" }, siempre con el AÑO real
+  (si la persona dice "hace tres años", calculalo contra la fecha de hoy del contexto
+  temporal, nunca contra lo que creas que es el año). `together` es el ANIVERSARIO
+  (desde cuándo están juntos): es el ancla del contador de tiempo, de la portada y
+  del cierre. Si solo sabés mes y año, poné el día 01; si no lo sabés,
   dejá "" y anotalo en assumptions. `met` (cuándo se conocieron) es opcional.
   No inventes fechas: una fecha inventada rompe el contador del sitio.
 - title: un título o ángulo editorial corto y con alma para el sitio.

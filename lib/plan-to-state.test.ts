@@ -17,6 +17,7 @@ import { planToWizardState, planSectionSlugs } from "./plan-to-state";
 const basePlan: Plan = {
   names: ["Martín", "Ivi"],
   you: "Ivi",
+  pronouns: { "Martín": "el", Ivi: "ella" },
   dates: { together: "2021-03-08", met: "2020-11-02" },
   title: "De la facu al living",
   angle: "Cómo dos desconocidos en un pasillo terminaron compartiendo las llaves.",
@@ -98,4 +99,16 @@ test("narrator = quién arma el sitio (plan.you), con fallback al primero", () =
   assert.equal(planToWizardState({ ...basePlan, you: "" }).narrator, "Martín");
   // un `you` que no matchea ningún nombre no puede ensuciar la firma
   assert.equal(planToWizardState({ ...basePlan, you: "Otro" }).narrator, "Martín");
+});
+
+test("el género de cada uno viaja al WizardState (lo usa el copy)", () => {
+  const s = planToWizardState(basePlan);
+  assert.equal(s.people.left.pronoun, "el");
+  assert.equal(s.people.right.pronoun, "ella");
+});
+
+test("sin género preguntado, la persona queda en neutro (\"\")", () => {
+  const s = planToWizardState({ ...basePlan, pronouns: { Ivi: "ella" } });
+  assert.equal(s.people.left.pronoun, "");
+  assert.equal(s.people.right.pronoun, "ella");
 });

@@ -46,6 +46,7 @@ ni texto extra, con EXACTAMENTE estas claves:
 {
   "names": [...],
   "you": "el nombre de quien arma el sitio (de names), o \"\"",
+  "pronouns": { "<nombre>": "el|ella|elle" },
   "dates": { "together": "yyyy-mm-dd", "met": "yyyy-mm-dd" },
   "title": "...",
   "angle": "...",
@@ -56,4 +57,6 @@ ni texto extra, con EXACTAMENTE estas claves:
 }
 `dates.together` es el aniversario (el ancla del contador): si no lo sabés, dejalo en
 "" y decilo en assumptions — nunca lo inventes. `dates.met` es opcional.
+`pronouns` lleva el género de cada persona SOLO si lo dijeron en la charla (nunca
+deducido del nombre); si falta el de alguien, omitilo y decilo en assumptions.
 El primer elemento de "sections" es siempre un "hero" y el último siempre un "closing".

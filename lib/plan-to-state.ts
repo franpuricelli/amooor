@@ -5,7 +5,8 @@
 //  Plan → WizardState → generateContent().
 //
 //  Reglas (spec §Phase 2):
-//   - `plan.names` → couple + people.left.name / people.right.name.
+//   - `plan.names` → couple + people.left.name / people.right.name (+ `pronoun`,
+//     el género que se preguntó en el intake).
 //   - `plan.title`/`angle`/`tone` → `story` (alimenta el hero lede + beats).
 //   - cada `plan.sections[]` → WizardSection { type: kind, id: slug(title),
 //     title, aiPrompt: intent, categories: [slug(title)] }.
@@ -19,7 +20,7 @@
 //  cliente de upload y el server usan exactamente la misma clave (`planSectionSlugs`).
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { planNarrator, type Plan, type PlanSection } from "./plan";
+import { planNarrator, planPronoun, type Plan, type PlanSection } from "./plan";
 import { zWizardState, type WizardState, type WizardSection } from "./draft";
 import { slugifyCouple } from "./subdomain";
 
@@ -102,9 +103,11 @@ export function planToWizardState(plan: Plan, palette?: string): WizardState {
 
   return zWizardState.parse({
     couple,
+    // El género de cada uno sale del intake (se pregunta, nunca se deduce del
+    // nombre): lo consume el generador de copy para concordar los adjetivos.
     people: {
-      left: { name: leftName },
-      right: { name: rightName },
+      left: { name: leftName, pronoun: planPronoun(plan, leftName) },
+      right: { name: rightName, pronoun: planPronoun(plan, rightName) },
     },
     // El aniversario sale del intake (skills/orchestrator lo pregunta): alimenta
     // el contador, el eyebrow del hero y la línea del cierre. Sin él, esos campos

@@ -136,3 +136,65 @@ listeners en el contenedor del portal).
   `enhanceNarrative` no la escribe): la sección de pelis se ve sin títulos hasta
   que la pareja los pida por el chat del editor. Candidato: sumarla al plan.
 - `Stats` no tiene copy editable inline (el resto de las secciones sí).
+
+---
+
+## 2026-08-19 — branch `claude/amooor-feedback-bugs-umkh7k`
+
+Feedback de una prueba real del intake. Cuatro bugs, cuatro causas distintas:
+
+### 1. "Asumió que somos lesbianas"
+
+El género salía deducido del nombre. Ahora es un DATO del intake, igual que el
+nombre: `orchestrator` lo pide en el PRIMER mensaje junto con los nombres y el
+"cuál de los dos sos vos" (única excepción a un-movimiento-por-turno), es
+BLOQUEANTE en el checklist oculto, y viaja por el contrato: `plan.pronouns`
+(`{ nombre: "el"|"ella"|"elle" }`, tolerante — un valor raro se descarta en vez de
+tirar el plan entero) → `WizardState.people.*.pronoun` → payload de
+`enhanceNarrative`, con la regla en `skills/website`: sin género, se escribe en
+neutro, nunca deducido. La tarjeta del plan (`PlanFacts`) muestra un chip por
+persona para corregirlo antes de aprobar.
+
+### 2. "Asumió que estamos en 2024"
+
+Al modelo nunca se le decía qué día es hoy, así que usaba el año de su
+entrenamiento. `lib/today.ts` arma el bloque de contexto temporal (en zona AR: el
+server corre en UTC y de noche la fecha se iba un día) y `composeSystem` lo mete en
+TODO system prompt; el clasificador del checklist lo recibe aparte.
+
+### 3. "Me puso 'cuando esté listo el borrador te aviso' y no pasó nada"
+
+El agente prometía trabajo futuro que no puede hacer (no tiene forma de volver). El
+skill ahora lo prohíbe explícito y exige cerrar cada turno con una pregunta o un
+empujoncito. Además, dos salidas nuevas para que la entrevista termine siempre:
+`userAsksForPlan()` (si la persona pide el plan, se dropea forzado) y un techo por
+default de 30 turnos (`MAX_USER_TURNS`, antes ilimitado). Forzado = lo que falta
+viaja en `assumptions` y se corrige en la tarjeta.
+
+### 4. "Me puso 'plan listo' y no estaba listo"
+
+`/api/chat` marcaba el paso del timeline como "done" antes de saber si había plan:
+si la síntesis fallaba, la UI cantaba "Plan listo" y seguía charlando. Ahora el
+paso sólo pasa a "done" con un plan válido en la mano, y si no, queda en `error`
+(estado nuevo de `Activity`) con el motivo. `synthesizePlan` además reintenta una
+vez en instant si la pasada deep no devuelve JSON válido (y el deep pasó de 6k a 9k
+tokens: el reasoning cuenta y se truncaba). Si el plan llega pero no pasa `zPlan`,
+el cliente avisa en vez de tragárselo en silencio (`plan_invalid`).
+
+### 5. "Quién escribe" sale de la cuenta, no de una pregunta
+
+Para entrar al chat hay que estar logueado, así que el server ya sabe con qué
+nombre y mail entró la persona: `lib/identity.ts` matchea eso contra los dos
+nombres de la pareja (nombre de pila, apellido, apodo dentro del mail; sin acentos
+y sin adivinar cuando empata) y `/api/chat` lo toma de Clerk con `currentUser()`,
+nunca del body. Va por dos caminos: al PROMPT (el agente confirma "vos sos X, no?"
+en vez de preguntar desde cero) y al CÓDIGO (`withNarrator` ata `plan.you` si el
+modelo lo dejó vacío). Del mail sólo viaja la parte local. Lo que la cuenta NO dice
+es el género: eso se sigue preguntando siempre, para las dos personas.
+
+### Abierto
+
+- El género no se propaga al skill `edit` del sitio: una edición por chat puede
+  reintroducir concordancia equivocada si el content ya la tenía.
+- El evento SSE `progress` sigue sin consumirse en el cliente (la barra del header
+  no usa el progreso real del checklist).

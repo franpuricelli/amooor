@@ -8,8 +8,10 @@ import {
   llmConfigured,
   type ChatMessage,
 } from "@/lib/llm";
-import { parsePlan } from "@/lib/plan";
+import { parsePlan, type Plan } from "@/lib/plan";
+import type { AccountIdentity } from "@/lib/identity";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { currentUser } from "@clerk/nextjs/server";
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  POST /api/chat — el endpoint SSE del intake conversacional (chat-first).
@@ -22,8 +24,8 @@ import { rateLimit, clientIp } from "@/lib/rate-limit";
 //
 //  Decide el modo con lib/llm.shouldDropPlan (único punto de decisión): mientras
 //  el checklist no esté satisfecho streamea preguntas (instant mode); cuando lo
-//  está (o si algún día se setea MAX_USER_TURNS y se alcanza) sintetiza el plan
-//  (thinking mode). La KIMI_API_KEY nunca sale del server (lib/llm es server-only).
+//  está —o cuando la persona pide el plan, o se toca el techo de turnos— sintetiza
+//  el plan (thinking mode). La KIMI_API_KEY nunca sale del server (lib/llm es server-only).
 //  Persistencia: la hace el cliente (lib/use-conversation → drafts.save).
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -47,6 +49,33 @@ const zBody = z.object({
   previousPlan: z.unknown().optional(),
 });
 
+/**
+ * Quién está armando el sitio, según la SESIÓN (no según el cliente: el body no
+ * puede reclamar ser otra persona). Con esto el agente confirma el narrador en vez
+ * de preguntarlo desde cero y `plan.you` se resuelve solo (ver lib/identity.ts).
+ * Del mail viaja sólo la parte local: el dominio no aporta al match.
+ */
+async function accountIdentity(): Promise<AccountIdentity | null> {
+  try {
+    const user = await currentUser();
+    if (!user) return null;
+    const name =
+      [user.firstName, user.lastName].filter(Boolean).join(" ").trim() ||
+      user.fullName?.trim() ||
+      user.username?.trim() ||
+      "";
+    const email =
+      user.primaryEmailAddress?.emailAddress ??
+      user.emailAddresses?.[0]?.emailAddress ??
+      "";
+    const emailLocal = email.split("@")[0] ?? "";
+    return name || emailLocal ? { name, emailLocal } : null;
+  } catch {
+    // Clerk sin configurar o sesión rota: el intake pregunta como antes.
+    return null;
+  }
+}
+
 export async function POST(req: NextRequest) {
   let body: z.infer<typeof zBody>;
   try {
@@ -61,6 +90,7 @@ export async function POST(req: NextRequest) {
   }
 
   const config = intakeConfig();
+  const identity = await accountIdentity();
   const messages: ChatMessage[] = body.messages;
   const encoder = new TextEncoder();
 
@@ -88,69 +118,100 @@ export async function POST(req: NextRequest) {
           return close();
         }
 
-        // "Armando el plan…" para el timeline de actividad.
-        const planActivity = (status: "running" | "done") =>
+        // Paso "Armando tu plan" del timeline. Regla: NUNCA se marca listo si no
+        // hay un plan de verdad. Cantar "Plan listo" y no dropear nada (síntesis
+        // fallida) fue el bug reportado: el paso queda en estado de error y la
+        // charla sigue, en vez de mentirle a la persona.
+        const planStep = (
+          label: string,
+          status: "running" | "done" | "error",
+          detail?: string
+        ) =>
           send({
             type: "activity",
-            activity: {
-              id: "plan",
-              kind: "plan",
-              label: status === "running" ? "Armando tu plan" : "Plan listo",
-              status,
-            },
+            activity: { id: "plan", kind: "plan", label, detail, status },
           });
+        const planStart = () => planStep("Armando tu plan", "running");
+        const planDone = () => planStep("Plan listo", "done");
+        const planFailed = (detail?: string) =>
+          planStep("No pude armar el plan", "error", detail);
 
         // Conversar: el usuario quiere darle más detalle (o refinar sin saber qué);
         // el agente hace preguntas en vez de re-sintetizar el plan.
         if (body.converse) {
-          for await (const ev of runAgentTurn(messages, req.signal)) send(ev);
+          for await (const ev of runAgentTurn(messages, identity, req.signal))
+            send(ev);
           send({ type: "done" });
           return close();
         }
 
         // Refinar: ya había un plan y el usuario pidió cambios → re-sintetizar directo.
         if (body.refine) {
-          planActivity("running");
-          const plan = await synthesizePlan(
-            messages,
-            { previousPlan: parsePlan(body.previousPlan), fast: true },
-            req.signal
-          );
-          planActivity("done");
-          if (plan) send({ type: "plan", plan });
-          else
+          planStart();
+          let plan: Plan | null = null;
+          try {
+            plan = await synthesizePlan(
+              messages,
+              { previousPlan: parsePlan(body.previousPlan), fast: true, identity },
+              req.signal
+            );
+          } catch (e) {
+            planFailed();
+            throw e; // lo reporta el catch de afuera (evento `error` + `done`)
+          }
+          if (plan) {
+            send({ type: "plan", plan });
+            planDone();
+          } else {
+            planFailed("Probá reformular el cambio.");
             send({
               type: "error",
               message: "No pude rearmar el plan. Probá reformular el cambio.",
             });
+          }
           send({ type: "done" });
           return close();
         }
 
         // ¿seguir preguntando o dropear el plan? (único punto de decisión)
-        const decision = await shouldDropPlan(messages, config, req.signal);
+        const decision = await shouldDropPlan(
+          messages,
+          config,
+          identity,
+          req.signal
+        );
         // progreso real del checklist para la barra del header.
         send({ type: "progress", value: decision.progress });
         if (decision.drop) {
-          planActivity("running");
-          const plan = await synthesizePlan(
-            messages,
-            { forced: decision.forced },
-            req.signal
-          );
-          planActivity("done");
+          planStart();
+          let plan: Plan | null = null;
+          try {
+            plan = await synthesizePlan(
+              messages,
+              { forced: decision.forced, identity },
+              req.signal
+            );
+          } catch (e) {
+            planFailed();
+            throw e; // lo reporta el catch de afuera (evento `error` + `done`)
+          }
           if (plan) {
             send({ type: "plan", plan });
+            planDone();
           } else {
-            // Si la síntesis falló, seguimos la charla en vez de romper el flujo.
-            for await (const ev of runAgentTurn(messages, req.signal)) send(ev);
+            // Si la síntesis falló, seguimos la charla en vez de romper el flujo
+            // (y el paso queda marcado como fallido, no como "listo").
+            planFailed("Sigo un poco más con vos.");
+            for await (const ev of runAgentTurn(messages, identity, req.signal))
+            send(ev);
           }
           send({ type: "done" });
           return close();
         }
 
         // Modo conversación agéntico: razona, puede buscar en la web, y responde.
-        for await (const ev of runAgentTurn(messages, req.signal)) send(ev);
+        for await (const ev of runAgentTurn(messages, identity, req.signal))
+          send(ev);
         send({ type: "done" });
         return close();
       } catch (e) {

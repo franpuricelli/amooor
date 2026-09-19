@@ -19,6 +19,9 @@ export const zTrait = z.object({ icon: z.string(), label: z.string() });
 export const zPersonProfile = z.object({
   name: z.string(),
   nickname: z.string().default(""),
+  /** género con el que se escribe a esta persona ("el" | "ella" | "elle"); "" =
+   *  no se preguntó → el copy va en neutro. Viene del intake (`plan.pronouns`). */
+  pronoun: z.string().default(""),
   /** personalidad en texto libre → insumo IA para las traits/narrativa */
   personality: z.string().default(""),
   bands: z.array(z.string()).default([]),

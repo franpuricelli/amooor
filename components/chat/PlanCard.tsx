@@ -12,7 +12,13 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useEffect, useRef, useState } from "react";
-import { SECTION_KIND_LABELS, type Plan } from "@/lib/plan";
+import {
+  PRONOUNS,
+  PRONOUN_LABELS,
+  SECTION_KIND_LABELS,
+  type Plan,
+  type Pronoun,
+} from "@/lib/plan";
 import { fmtDate } from "@/lib/dates";
 import type { Swatch } from "@/lib/palette-gen";
 import PalettePicker from "./PalettePicker";
@@ -193,18 +199,26 @@ function Assumption({
   );
 }
 
+/** Corrección a mano de un dato duro del plan (no re-sintetiza: aplica local). */
+export type PlanFactsChange = (facts: {
+  you?: string;
+  together?: string;
+  pronoun?: { name: string; value: Pronoun };
+}) => void;
+
 /**
- * Los dos datos DUROS del plan: el aniversario (ancla del contador, la portada y el
- * cierre) y cuál de los dos es quien arma el sitio (firma el cierre y el crédito).
- * Se editan acá mismo, sin re-sintetizar el plan: si el intake no los pescó, la
- * pareja los completa en un toque.
+ * Los datos DUROS del plan: el aniversario (ancla del contador, la portada y el
+ * cierre), cuál de los dos es quien arma el sitio (firma el cierre y el crédito) y
+ * el género de cada uno (con eso se escribe TODO el copy). Se editan acá mismo, sin
+ * re-sintetizar el plan: si el intake no los pescó, la pareja los completa en un
+ * toque, y si el agente los supuso mal, los corrige antes de aprobar.
  */
 function PlanFacts({
   plan,
   onFacts,
 }: {
   plan: Plan;
-  onFacts: (facts: { you?: string; together?: string }) => void;
+  onFacts: PlanFactsChange;
 }) {
   const names = (plan.names ?? []).map((n) => n.trim()).filter(Boolean);
   const together = plan.dates?.together ?? "";
@@ -241,6 +255,26 @@ function PlanFacts({
           </span>
         </div>
       )}
+      {/* El género de cada uno: nunca se deduce del nombre, así que si el intake no
+          lo preguntó queda sin marcar y se completa de un toque. */}
+      {names.map((n) => (
+        <div className="ch-fact" key={`pronoun-${n}`}>
+          <span className="ch-fact-label">Hablamos de {n} como</span>
+          <span className="ch-fact-who">
+            {PRONOUNS.map((p) => (
+              <button
+                key={p}
+                type="button"
+                className={`ch-fact-chip ${plan.pronouns?.[n] === p ? "on" : ""}`}
+                aria-pressed={plan.pronouns?.[n] === p}
+                onClick={() => onFacts({ pronoun: { name: n, value: p } })}
+              >
+                {PRONOUN_LABELS[p]}
+              </button>
+            ))}
+          </span>
+        </div>
+      ))}
     </section>
   );
 }
@@ -400,7 +434,7 @@ export default function PlanCard({
   /** eliminar una sección: la saca del plan al instante. */
   onRemoveSection: (index: number) => void;
   /** corregir los datos duros (aniversario / quién sos): edición local del plan. */
-  onFacts: (facts: { you?: string; together?: string }) => void;
+  onFacts: PlanFactsChange;
   /** durante un refinamiento el plan anterior queda colapsado como "historial". */
   collapsed?: boolean;
 }) {

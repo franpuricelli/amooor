@@ -21,6 +21,8 @@ import {
   HIDDEN_CHECKLIST,
 } from "./intake-prompt";
 import { composeSystem } from "./skills";
+import { todayBlock } from "./today";
+import { identityBlock, matchNarrator, type AccountIdentity } from "./identity";
 import { parsePlan, type Plan } from "./plan";
 
 /** Checklist mental (oculto) que el orchestrator cubre conversando, nunca como form. */
@@ -60,13 +62,25 @@ export const llmConfigured = (): boolean => provider() !== null;
 
 // ── Config / seam de límite de turnos ────────────────────────────────────────
 export interface IntakeConfig {
-  /** Seam: null = ilimitado (default v0). Si se setea, al alcanzarlo se fuerza el plan. */
+  /** Techo de turnos del intake: al alcanzarlo se fuerza el plan. null = ilimitado. */
   maxUserTurns: number | null;
 }
 
+/**
+ * Techo de la entrevista si el checklist nunca se da por satisfecho. Existe como
+ * red: sin él la charla puede no terminar nunca (el clasificador siempre encuentra
+ * un hueco) y la persona se queda esperando un plan que no llega. Al tocarlo, el
+ * plan se sintetiza igual y lo que faltó viaja en `assumptions` (corregible en la
+ * tarjeta). `MAX_USER_TURNS=0` lo apaga.
+ */
+const DEFAULT_MAX_USER_TURNS = 30;
+
 export function intakeConfig(): IntakeConfig {
   const raw = process.env.MAX_USER_TURNS;
-  const n = raw ? Number.parseInt(raw, 10) : Number.NaN;
+  if (raw === undefined || raw.trim() === "") {
+    return { maxUserTurns: DEFAULT_MAX_USER_TURNS };
+  }
+  const n = Number.parseInt(raw, 10);
   return { maxUserTurns: Number.isFinite(n) && n > 0 ? n : null };
 }
 
@@ -208,13 +222,19 @@ function searchQuery(args: string): string {
  */
 export async function* runAgentTurn(
   messages: ChatMessage[],
+  identity: AccountIdentity | null,
   signal?: AbortSignal
 ): AsyncGenerator<AgentEvent> {
   const p = provider();
   if (!p) throw new Error("KIMI_API_KEY no configurado");
 
+  // Contexto = el checklist mental + quién entró (para confirmar el narrador en
+  // vez de preguntarlo desde cero, ver lib/identity.ts).
+  const context = [CHECKLIST_BLOCK, identityBlock(identity)]
+    .filter(Boolean)
+    .join("\n\n");
   const convo: any[] = [
-    { role: "system", content: composeSystem("orchestrator", CHECKLIST_BLOCK) },
+    { role: "system", content: composeSystem("orchestrator", context) },
     ...messages,
   ];
   const tools = webSearchEnabled()
@@ -395,6 +415,7 @@ export async function* runAgentTurn(
 // ── clasificador: ¿ya alcanza para el plan? (instant, no-stream) ──────────────
 async function assessChecklist(
   messages: ChatMessage[],
+  identity: AccountIdentity | null,
   signal?: AbortSignal
 ): Promise<{ satisfied: boolean; missing: string[] }> {
   const p = provider();
@@ -402,7 +423,15 @@ async function assessChecklist(
   try {
     const body = buildBody(
       p,
-      [{ role: "system", content: CHECKLIST_SYSTEM }, ...messages],
+      [
+        {
+          role: "system",
+          content: [CHECKLIST_SYSTEM, todayBlock(), identityBlock(identity)]
+            .filter(Boolean)
+            .join("\n\n"),
+        },
+        ...messages,
+      ],
       "instant",
       false,
       250
@@ -422,16 +451,42 @@ async function assessChecklist(
 }
 
 /**
+ * ¿La persona PIDIÓ explícitamente avanzar al plan? ("dale, armá el plan", "ya
+ * está, mostrame el plan"). Es el freno de mano del usuario: sin esto, el único
+ * que decide cuándo termina la entrevista es el clasificador, y si nunca se da por
+ * satisfecho la charla no cierra nunca (feedback: "después de confirmarle el arco
+ * no me generó el plan"). Deliberadamente ESTRICTO: pide un verbo de avanzar + la
+ * palabra plan/sitio, para no cortar la charla cuando dicen "dale" de puro asentir.
+ */
+const PLAN_REQUEST_RE =
+  /(?:^|[^\wáéíóúñ])(arma|armá|armar|armalo|armame|genera|generá|generar|generalo|hace|hacé|hacelo|prepara|prepará|preparalo|mostra|mostrá|mostrame|dame|pasame|quiero ver|avancemos|avanza|avanzá)(?![\wáéíóúñ])[^.?!\n]{0,25}(plan|borrador|propuesta)(?![\wáéíóúñ])/i;
+
+/** Turnos mínimos antes de dejar que un "armá el plan" corte la entrevista. */
+const PLAN_REQUEST_MIN_TURNS = 3;
+
+export function userAsksForPlan(messages: ChatMessage[]): boolean {
+  if (userTurns(messages) < PLAN_REQUEST_MIN_TURNS) return false;
+  const last = [...messages].reverse().find((m) => m.role === "user");
+  return !!last && PLAN_REQUEST_RE.test(last.content);
+}
+
+/**
  * ÚNICO punto de decisión "¿seguir preguntando o dropear el plan?" (spec §Archivos).
- * Combina el seam del cap (MAX_USER_TURNS, default ilimitado) con el checklist
- * oculto (clasificador). Prender el cap en el futuro no toca ninguna otra pieza.
+ * Combina tres cosas, en este orden: el pedido explícito de la persona, el cap de
+ * turnos (MAX_USER_TURNS) y el checklist oculto (clasificador). Las dos primeras
+ * dropean el plan FORZADO: lo que falte viaja en `assumptions` y se corrige en la
+ * tarjeta, que es mucho mejor que una entrevista que no termina nunca.
  */
 export async function shouldDropPlan(
   messages: ChatMessage[],
   config: IntakeConfig,
+  identity: AccountIdentity | null,
   signal?: AbortSignal
 ): Promise<{ drop: boolean; forced: boolean; progress: number }> {
   const total = HIDDEN_CHECKLIST.length;
+  if (userAsksForPlan(messages)) {
+    return { drop: true, forced: true, progress: 1 };
+  }
   if (
     config.maxUserTurns != null &&
     userTurns(messages) >= config.maxUserTurns
@@ -442,7 +497,7 @@ export async function shouldDropPlan(
   if (userTurns(messages) < 2) {
     return { drop: false, forced: false, progress: Math.min(userTurns(messages) * 0.15, 0.3) };
   }
-  const { satisfied, missing } = await assessChecklist(messages, signal);
+  const { satisfied, missing } = await assessChecklist(messages, identity, signal);
   // progreso real = ítems del checklist ya cubiertos / total.
   const covered = Math.max(0, total - Math.min(missing.length, total));
   const progress = satisfied ? 1 : Math.max(0.3, covered / total);
@@ -450,6 +505,11 @@ export async function shouldDropPlan(
 }
 
 // ── síntesis del plan (deep / thinking mode) ─────────────────────────────────
+/** Empujón del reintento cuando la primera pasada no devolvió un plan válido. */
+const PLAN_RETRY_HINT = `La respuesta anterior no se pudo usar. Devolvé AHORA SOLO el
+objeto JSON del plan, sin markdown, sin comentarios y sin una sola palabra alrededor.
+Respetá el contrato exacto: la primera sección es "hero" y la última es "closing".`;
+
 /**
  * Corre el pass de síntesis (thinking mode) y devuelve el PLAN validado por Zod.
  * `forced` = se llegó por el cap de turnos → se le pide completar con supuestos.
@@ -457,7 +517,12 @@ export async function shouldDropPlan(
  */
 export async function synthesizePlan(
   messages: ChatMessage[],
-  opts: { forced?: boolean; previousPlan?: Plan | null; fast?: boolean } = {},
+  opts: {
+    forced?: boolean;
+    previousPlan?: Plan | null;
+    fast?: boolean;
+    identity?: AccountIdentity | null;
+  } = {},
   signal?: AbortSignal
 ): Promise<Plan | null> {
   const p = provider();
@@ -465,33 +530,71 @@ export async function synthesizePlan(
 
   // Refinar un plan existente = skill `edit` (objetivo: el plan). Sintetizar de cero
   // = `prepare-plan` (voz/ángulo) + `adapt` (adaptar el template al material).
+  const identity = opts.identity ?? null;
+  const append = (...blocks: (string | null | undefined)[]) =>
+    blocks.filter(Boolean).join("\n\n") || undefined;
   const system = opts.previousPlan
     ? composeSystem(
         "edit",
-        `Estás editando: EL PLAN.\nEl usuario ya vio este plan y pidió refinarlo. Plan anterior (JSON):\n${JSON.stringify(
-          opts.previousPlan
-        )}`
+        append(
+          `Estás editando: EL PLAN.\nEl usuario ya vio este plan y pidió refinarlo. Plan anterior (JSON):\n${JSON.stringify(
+            opts.previousPlan
+          )}`,
+          identityBlock(identity)
+        )
       )
     : composeSystem(
         ["prepare-plan", "adapt"],
-        opts.forced ? PLAN_FORCED_HINT : undefined
+        append(opts.forced ? PLAN_FORCED_HINT : null, identityBlock(identity))
       );
+
+  // Una pasada: pide el plan y lo valida. `hint` se le agrega al system (lo usa el
+  // reintento). Devuelve null si el modelo no produjo un plan válido.
+  const attempt = async (mode: Mode, maxTokens: number, hint?: string) => {
+    const sys = hint ? `${system}\n\n${hint}` : system;
+    const body = buildBody(
+      p,
+      [{ role: "system", content: sys }, ...messages],
+      mode,
+      false,
+      maxTokens
+    );
+    const res = await kimiFetch(p, body, signal);
+    if (!res.ok) {
+      throw new Error(`Kimi plan ${res.status}: ${await res.text().catch(() => "")}`);
+    }
+    const data = await res.json();
+    const text = data?.choices?.[0]?.message?.content;
+    if (typeof text !== "string") return null;
+    return parsePlan(extractJSON(text));
+  };
 
   // Refinar un plan existente NO necesita razonamiento profundo: usamos modo
   // instant (sin thinking) → respuesta mucho más rápida para cambios chicos. La
-  // síntesis inicial sí usa deep (calidad de la primera pasada).
-  const body = opts.fast
-    ? buildBody(p, [{ role: "system", content: system }, ...messages], "instant", false, 3500)
-    : buildBody(p, [{ role: "system", content: system }, ...messages], "deep", false);
+  // síntesis inicial sí usa deep (calidad de la primera pasada), con aire de sobra:
+  // el reasoning cuenta contra max_tokens y si se trunca no llega el JSON.
+  const first = opts.fast
+    ? await attempt("instant", 3500)
+    : await attempt("deep", 9000);
+  if (first) return withNarrator(first, identity);
 
-  const res = await kimiFetch(p, body, signal);
-  if (!res.ok) {
-    throw new Error(`Kimi plan ${res.status}: ${await res.text().catch(() => "")}`);
-  }
-  const data = await res.json();
-  const text = data?.choices?.[0]?.message?.content;
-  if (typeof text !== "string") return null;
-  return parsePlan(extractJSON(text));
+  // El pass falló (JSON truncado, envuelto en prosa, o contrato roto). Antes esto
+  // se comía el turno entero y la UI ya había cantado "Plan listo": reintentamos
+  // UNA vez en instant (sin thinking, más chances de salir con el JSON limpio).
+  const retry = await attempt("instant", 3500, PLAN_RETRY_HINT);
+  return retry && withNarrator(retry, identity);
+}
+
+/**
+ * Ata `plan.you` (quién arma el sitio) al nombre de la cuenta cuando el modelo no
+ * lo resolvió. Lo hacemos en código y no sólo en el prompt porque de esto depende
+ * la firma del cierre y el crédito del footer: si matchea sin ambigüedad, no hay
+ * razón para dejarlo librado al modelo ni para preguntárselo a la persona.
+ */
+function withNarrator(plan: Plan, identity: AccountIdentity | null): Plan {
+  if (plan.you.trim()) return plan;
+  const you = matchNarrator(plan.names, identity);
+  return you ? { ...plan, you } : plan;
 }
 
 // ── editor del sitio (Phase 3): instrucción → PATCH parcial de Content ─────────

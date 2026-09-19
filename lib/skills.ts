@@ -17,6 +17,7 @@ import "server-only";
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { todayBlock } from "./today";
 
 export type SkillName =
   | "orchestrator"
@@ -46,8 +47,12 @@ function skillBody(name: SkillName): string {
 
 /**
  * Compone el system prompt para una llamada: preámbulo vinculante + el cuerpo de
- * uno o más skills + un bloque de contexto opcional (checklist, artefacto a editar,
- * hint forzado). El orden de `skills` se respeta (p.ej. ["prepare-plan","adapt"]).
+ * uno o más skills + la FECHA DE HOY + un bloque de contexto opcional (checklist,
+ * artefacto a editar, hint forzado). El orden de `skills` se respeta (p.ej.
+ * ["prepare-plan","adapt"]).
+ *
+ * La fecha va SIEMPRE: sin ella el modelo asume el año de su entrenamiento y
+ * calcula mal todo lo que depende del presente (ver lib/today.ts).
  */
 export function composeSystem(
   skills: SkillName | SkillName[],
@@ -55,7 +60,7 @@ export function composeSystem(
 ): string {
   const list = Array.isArray(skills) ? skills : [skills];
   const bodies = list.map(skillBody).join("\n\n---\n\n");
-  return [BINDING_PREAMBLE, bodies, append?.trim() || null]
+  return [BINDING_PREAMBLE, bodies, todayBlock(), append?.trim() || null]
     .filter(Boolean)
     .join("\n\n");
 }

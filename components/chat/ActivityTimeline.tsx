@@ -52,6 +52,15 @@ function KindIcon({ kind }: { kind: ActivityKind }) {
   );
 }
 
+/** Paso fallido: el ícono cambia a una cruz (no mentimos con un check/ícono ok). */
+function FailIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M7 7l10 10M17 7L7 17" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function ChevD() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -83,7 +92,7 @@ export default function ActivityTimeline({
         return (
           <div className={`ch-act-row ${a.status}`} key={a.id}>
             <span className={`ch-act-ic ${a.status === "running" ? "spin" : ""}`}>
-              <KindIcon kind={a.kind} />
+              {a.status === "error" ? <FailIcon /> : <KindIcon kind={a.kind} />}
             </span>
             <div className="ch-act-body">
               <button
